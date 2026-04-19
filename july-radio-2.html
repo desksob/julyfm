@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>July Radio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #e0d9cc; font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  .caster-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+  header { padding: 40px 0 28px; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .logo-slot { width: 160px; height: 56px; border: 1px dashed #333; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex-shrink: 0; }
+  .logo-slot-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #444; }
+  .logo-slot-dim { font-size: 9px; color: #333; }
+  .live-badge { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.15em; color: #888; text-transform: uppercase; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #c8a96e; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+  nav { display: flex; gap: 32px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  nav a { color: #666; text-decoration: none; cursor: pointer; transition: color 0.2s; }
+  nav a.active, nav a:hover { color: #e0d9cc; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .player-section { padding: 40px 0; }
+  .now-playing-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 12px; }
+  .np-row { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+  .album-art { width: 80px; height: 80px; border: 1px solid #222; border-radius: 4px; background: #111; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; transition: all 0.4s ease; }
+  .album-art img { width: 100%; height: 100%; object-fit: cover; }
+  .album-art-placeholder { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; text-align: center; padding: 8px; }
+  .track-info { flex: 1; }
+  .track-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: #e0d9cc; letter-spacing: -0.5px; line-height: 1.1; transition: opacity 0.3s; }
+  .track-artist { font-size: 13px; color: #c8a96e; margin-top: 6px; letter-spacing: 0.05em; transition: opacity 0.3s; }
+  .track-show { font-size: 11px; color: #555; margin-top: 4px; letter-spacing: 0.08em; }
+  .lastfm-badge { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid #d5100633; color: #d51007; padding: 3px 8px; border-radius: 2px; margin-top: 10px; display: inline-block; }
+  .waveform { display: flex; align-items: center; gap: 3px; height: 36px; margin-bottom: 20px; }
+  .bar { width: 3px; background: #2a2a2a; border-radius: 2px; animation: wave 1.4s ease-in-out infinite; }
+  .bar.active { background: #c8a96e; }
+  @keyframes wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.3); } }
+  .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
+  .play-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid #c8a96e; background: transparent; color: #c8a96e; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .play-btn:hover { background: #c8a96e; color: #0a0a0a; }
+  .play-btn.playing { background: #c8a96e22; }
+  .vol-wrap { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .vol-label { font-size: 10px; color: #444; letter-spacing: 0.1em; text-transform: uppercase; }
+  input[type=range] { -webkit-appearance: none; flex: 1; height: 2px; background: #222; border-radius: 1px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #c8a96e; cursor: pointer; }
+  .status-msg { font-size: 11px; color: #555; letter-spacing: 0.08em; margin-bottom: 20px; }
+  .status-msg.live { color: #c8a96e; }
+  .section-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #444; padding: 32px 0 16px; display: flex; align-items: center; gap: 12px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #1a1a1a; }
+  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #141414; opacity: 0.6; transition: opacity 0.2s; gap: 12px; }
+  .history-item:hover { opacity: 1; }
+  .hi-art { width: 36px; height: 36px; border: 1px solid #1a1a1a; border-radius: 3px; background: #111; flex-shrink: 0; overflow: hidden; }
+  .hi-art img { width: 100%; height: 100%; object-fit: cover; }
+  .hi-title { font-size: 13px; color: #e0d9cc; }
+  .hi-artist { font-size: 11px; color: #666; margin-top: 2px; }
+  .hi-time { font-size: 10px; color: #444; letter-spacing: 0.05em; flex-shrink: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1a1a; margin-top: 32px; }
+  .dj-card { background: #0a0a0a; padding: 28px; transition: background 0.2s; cursor: pointer; }
+  .dj-card:hover { background: #111; }
+  .dj-avatar { width: 56px; height: 56px; border-radius: 50%; background: #1a1a1a; border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 22px; color: #c8a96e; margin-bottom: 16px; }
+  .dj-name { font-family: 'DM Serif Display', serif; font-size: 20px; color: #e0d9cc; margin-bottom: 6px; }
+  .dj-show { font-size: 11px; color: #c8a96e; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .dj-bio { font-size: 12px; color: #555; line-height: 1.7; }
+  .dj-tags { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  .tag { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid #2a2a2a; padding: 3px 9px; border-radius: 2px; color: #555; }
+  .schedule-grid { margin-top: 32px; }
+  .day-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #444; padding: 20px 0 8px; border-bottom: 1px solid #1a1a1a; }
+  .show-row { display: grid; grid-template-columns: 100px 1fr auto; align-items: center; padding: 16px 0; border-bottom: 1px solid #111; gap: 16px; }
+  .show-time { font-size: 11px; color: #555; letter-spacing: 0.05em; }
+  .show-name { font-size: 14px; color: #e0d9cc; }
+  .show-dj { font-size: 11px; color: #666; margin-top: 3px; }
+  .show-tag { font-size: 10px; padding: 3px 10px; border: 1px solid #2a2a2a; border-radius: 2px; color: #555; white-space: nowrap; letter-spacing: 0.08em; }
+  .show-tag.on-air { border-color: #c8a96e55; color: #c8a96e; }
+</style>
+</head>
+<body>
+
+<div class="caster-hidden">
+  <div data-type="newStreamPlayer" data-publicToken="4d4decf5-2296-455a-964c-7b45f9ebe173" data-theme="light" data-color="e81e4d" data-channelId="" data-rendered="false" class="cstrEmbed">
+    <a href="https://www.caster.fm">Shoutcast Hosting</a>
+  </div>
+  <script src="//cdn.cloud.caster.fm//widgets/embed.js"></script>
+</div>
+
+<div class="container">
+  <header>
+    <div class="logo-slot">
+      <div class="logo-slot-label">Your logo here</div>
+      <div class="logo-slot-dim">400 × 140 px · PNG / SVG</div>
+    </div>
+    <div class="live-badge"><div class="dot"></div> Live · 24/7</div>
+  </header>
+
+  <nav>
+    <a class="active" onclick="show('listen',this)">Listen</a>
+    <a onclick="show('schedule',this)">Schedule</a>
+    <a onclick="show('djs',this)">DJs</a>
+  </nav>
+
+  <div id="listen" class="section active">
+    <div class="player-section">
+      <div class="now-playing-label">Now Playing</div>
+      <div class="np-row">
+        <div class="album-art" id="albumArt">
+          <div class="album-art-placeholder" id="artPlaceholder">art</div>
+        </div>
+        <div class="track-info">
+          <div class="track-title" id="trackTitle">July Radio</div>
+          <div class="track-artist" id="trackArtist">—</div>
+          <div class="track-show" id="trackAlbum">syncing with last.fm...</div>
+          <div class="lastfm-badge">via last.fm · injeton</div>
+        </div>
+      </div>
+
+      <div class="waveform" id="waveform"></div>
+      <div class="status-msg" id="statusMsg">— press play to tune in</div>
+
+      <div class="controls">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+        <div class="vol-wrap">
+          <span class="vol-label">Vol</span>
+          <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
+        </div>
+      </div>
+
+      <div class="section-label">Recent plays</div>
+      <div id="historyList">
+        <div style="font-size:11px;color:#444;padding:16px 0;">Loading history...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="schedule" class="section">
+    <div class="schedule-grid">
+      <div class="day-label">Today</div>
+      <div class="show-row"><div class="show-time">00:00 – 03:00</div><div><div class="show-name">Deep Static</div><div class="show-dj">Remi O.</div></div><div class="show-tag">ambient</div></div>
+      <div class="show-row"><div class="show-time">09:00 – 12:00</div><div><div class="show-name">Sunday Tape</div><div class="show-dj">Sana K.</div></div><div class="show-tag">indie / lo-fi</div></div>
+      <div class="show-row"><div class="show-time">14:00 – 16:00</div><div><div class="show-name">Frequency</div><div class="show-dj">Chris M.</div></div><div class="show-tag">mix</div></div>
+      <div class="show-row"><div class="show-time">20:00 – 23:00</div><div><div class="show-name">Late Frequency</div><div class="show-dj">Ade</div></div><div class="show-tag on-air">on air now</div></div>
+    </div>
+  </div>
+
+  <div id="djs" class="section">
+    <div class="grid-2">
+      <div class="dj-card"><div class="dj-avatar">A</div><div class="dj-name">Ade</div><div class="dj-show">Late Frequency · Sun 20:00</div><div class="dj-bio">Three hours of dreamwave, post-punk, and obscure 80s textures.</div><div class="dj-tags"><div class="tag">dreamwave</div><div class="tag">80s</div></div></div>
+      <div class="dj-card"><div class="dj-avatar">S</div><div class="dj-name">Sana K.</div><div class="dj-show">Sunday Tape · Sun 09:00</div><div class="dj-bio">Slow mornings as a medium. Bedroom pop, found sound, overcast days.</div><div class="dj-tags"><div class="tag">indie</div><div class="tag">lo-fi</div></div></div>
+      <div class="dj-card"><div class="dj-avatar">R</div><div class="dj-name">Remi O.</div><div class="dj-show">Deep Static · 00:00</div><div class="dj-bio">Insomniac sets. Heavy in texture, light in structure.</div><div class="dj-tags"><div class="tag">ambient</div><div class="tag">drone</div></div></div>
+      <div class="dj-card"><div class="dj-avatar">K</div><div class="dj-name">Kobe R.</div><div class="dj-show">Interlude · Mon 12:00</div><div class="dj-bio">Underground rap mixed with deep soul. No obvious choices.</div><div class="dj-tags"><div class="tag">rap</div><div class="tag">soul</div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
+  const LASTFM_USER = 'injeton';
+  let playing = false;
+  let audio = null;
+  let lastTrack = '';
+  const streamUrl = 'http://morcast.caster.fm:14030/wIQnq';
+
+  // Waveform
+  const bars = [];
+  const waveform = document.getElementById('waveform');
+  for (let i = 0; i < 48; i++) {
+    const b = document.createElement('div');
+    b.className = 'bar' + (i < 26 ? ' active' : '');
+    b.style.height = (Math.random() * 28 + 8) + 'px';
+    b.style.animationDelay = (Math.random() * 1.4) + 's';
+    b.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
+    b.style.animationPlayState = 'paused';
+    waveform.appendChild(b);
+    bars.push(b);
+  }
+
+  function togglePlay() {
+    if (!playing) {
+      audio = new Audio(streamUrl);
+      audio.volume = document.getElementById('volSlider').value / 100;
+      audio.play().then(() => {
+        playing = true;
+        document.getElementById('playBtn').innerHTML = '&#9646;&#9646;';
+        document.getElementById('playBtn').classList.add('playing');
+        document.getElementById('statusMsg').textContent = '— live now';
+        document.getElementById('statusMsg').classList.add('live');
+        bars.forEach(b => b.style.animationPlayState = 'running');
+      }).catch(() => {
+        document.getElementById('statusMsg').textContent = '— could not connect to stream';
+      });
+    } else {
+      audio.pause();
+      audio = null;
+      playing = false;
+      document.getElementById('playBtn').innerHTML = '&#9654;';
+      document.getElementById('playBtn').classList.remove('playing');
+      document.getElementById('statusMsg').textContent = '— paused';
+      document.getElementById('statusMsg').classList.remove('live');
+      bars.forEach(b => b.style.animationPlayState = 'paused');
+    }
+  }
+
+  function setVol(v) { if (audio) audio.volume = v / 100; }
+
+  function show(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function timeAgo(unixTime) {
+    const diff = Math.floor(Date.now() / 1000) - unixTime;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' hr ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  function getBestImage(images) {
+    const sizes = ['extralarge', 'large', 'medium', 'small'];
+    for (const size of sizes) {
+      const img = images.find(i => i.size === size);
+      if (img && img['#text']) return img['#text'];
+    }
+    return null;
+  }
+
+  async function fetchNowPlaying() {
+    try {
+      const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_KEY}&format=json&limit=10`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const tracks = data.recenttracks.track;
+      if (!tracks || tracks.length === 0) return;
+
+      const current = tracks[0];
+      const isLive = current['@attr'] && current['@attr']['nowplaying'] === 'true';
+      const trackName = current.name;
+      const artistName = current.artist['#text'];
+      const albumName = current.album['#text'];
+      const trackKey = trackName + artistName;
+
+      if (trackKey !== lastTrack) {
+        lastTrack = trackKey;
+        document.getElementById('trackTitle').textContent = trackName;
+        document.getElementById('trackArtist').textContent = artistName;
+        document.getElementById('trackAlbum').textContent = albumName || '—';
+
+        const imgUrl = getBestImage(current.image);
+        const artEl = document.getElementById('albumArt');
+        if (imgUrl) {
+          artEl.innerHTML = `<img src="${imgUrl}" alt="album art">`;
+        } else {
+          artEl.innerHTML = `<div class="album-art-placeholder">art</div>`;
+        }
+      }
+
+      // History
+      const history = tracks.slice(isLive ? 1 : 0, (isLive ? 1 : 0) + 6);
+      const historyEl = document.getElementById('historyList');
+      historyEl.innerHTML = history.map(t => {
+        const img = getBestImage(t.image);
+        const time = t.date ? timeAgo(parseInt(t.date.uts)) : '—';
+        return `<div class="history-item">
+          <div class="hi-art">${img ? `<img src="${img}" alt="">` : ''}</div>
+          <div style="flex:1"><div class="hi-title">${t.name}</div><div class="hi-artist">${t.artist['#text']}</div></div>
+          <div class="hi-time">${time}</div>
+        </div>`;
+      }).join('');
+
+    } catch (e) {
+      console.log('Last.fm fetch error', e);
+    }
+  }
+
+  fetchNowPlaying();
+  setInterval(fetchNowPlaying, 15000);
+</script>
+</body>
+</html>
