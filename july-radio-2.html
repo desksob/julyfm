@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>July Radio</title>
+<title>july.fm</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,14 +29,11 @@
   .album-art img { width: 100%; height: 100%; object-fit: cover; }
   .album-art-placeholder { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; text-align: center; padding: 8px; }
   .track-info { flex: 1; }
-  .track-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: #e0d9cc; letter-spacing: -0.5px; line-height: 1.1; transition: opacity 0.3s; }
-  .track-artist { font-size: 13px; color: #c8a96e; margin-top: 6px; letter-spacing: 0.05em; transition: opacity 0.3s; }
+  .track-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: #e0d9cc; letter-spacing: -0.5px; line-height: 1.1; transition: opacity 0.3s; text-transform: uppercase; }
+  .track-artist { font-size: 13px; color: #c8a96e; margin-top: 6px; letter-spacing: 0.05em; transition: opacity 0.3s; text-transform: uppercase; }
   .track-show { font-size: 11px; color: #555; margin-top: 4px; letter-spacing: 0.08em; }
   .lastfm-badge { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid #d5100633; color: #d51007; padding: 3px 8px; border-radius: 2px; margin-top: 10px; display: inline-block; }
-  .waveform { display: flex; align-items: center; gap: 3px; height: 36px; margin-bottom: 20px; }
-  .bar { width: 3px; background: #2a2a2a; border-radius: 2px; animation: wave 1.4s ease-in-out infinite; }
-  .bar.active { background: #c8a96e; }
-  @keyframes wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.3); } }
+
   .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
   .play-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid #c8a96e; background: transparent; color: #c8a96e; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .play-btn:hover { background: #c8a96e; color: #0a0a0a; }
@@ -71,17 +68,14 @@
   .show-time { font-size: 11px; color: #555; letter-spacing: 0.05em; }
   .show-name { font-size: 14px; color: #e0d9cc; }
   .show-dj { font-size: 11px; color: #666; margin-top: 3px; }
-  .show-tag { font-size: 10px; padding: 3px 10px; border: 1px solid #2a2a2a; border-radius: 2px; color: #555; white-space: nowrap; letter-spacing: 0.08em; }
-  .show-tag.on-air { border-color: #c8a96e55; color: #c8a96e; }
+  .show-tag { font-size: 10px; padding: 3px 10px; border: 1px solid #2a2a2a; border-radius: 2px; color: #555; white-space: nowrap; letter-spacing: 0.08em; text-transform: uppercase; }
+  .show-tag.on-air { border-color: #ff3a3a55; color: #ff3a3a; }
 </style>
 </head>
 <body>
 
 <div class="caster-hidden">
-  <div data-type="newStreamPlayer" data-publicToken="4d4decf5-2296-455a-964c-7b45f9ebe173" data-theme="light" data-color="e81e4d" data-channelId="" data-rendered="false" class="cstrEmbed">
-    <a href="https://www.caster.fm">Shoutcast Hosting</a>
-  </div>
-  <script src="//cdn.cloud.caster.fm//widgets/embed.js"></script>
+  <script src="//myradiostream.com/embed/desksob"></script>
 </div>
 
 <div class="container">
@@ -110,11 +104,10 @@
           <div class="track-title" id="trackTitle">July Radio</div>
           <div class="track-artist" id="trackArtist">—</div>
           <div class="track-show" id="trackAlbum">syncing with last.fm...</div>
-          <div class="lastfm-badge">via last.fm · injeton</div>
+          <div class="lastfm-badge">LIVE</div>
         </div>
       </div>
 
-      <div class="waveform" id="waveform"></div>
       <div class="status-msg" id="statusMsg">— press play to tune in</div>
 
       <div class="controls">
@@ -134,20 +127,34 @@
 
   <div id="schedule" class="section">
     <div class="schedule-grid">
-      <div class="day-label">Today</div>
-      <div class="show-row"><div class="show-time">00:00 – 03:00</div><div><div class="show-name">Deep Static</div><div class="show-dj">Remi O.</div></div><div class="show-tag">ambient</div></div>
-      <div class="show-row"><div class="show-time">09:00 – 12:00</div><div><div class="show-name">Sunday Tape</div><div class="show-dj">Sana K.</div></div><div class="show-tag">indie / lo-fi</div></div>
-      <div class="show-row"><div class="show-time">14:00 – 16:00</div><div><div class="show-name">Frequency</div><div class="show-dj">Chris M.</div></div><div class="show-tag">mix</div></div>
-      <div class="show-row"><div class="show-time">20:00 – 23:00</div><div><div class="show-name">Late Frequency</div><div class="show-dj">Ade</div></div><div class="show-tag on-air">on air now</div></div>
+      <div class="day-label">Monday</div>
+      <div class="show-row"><div class="show-time">18:00 – 20:00</div><div><div class="show-name">Playlist</div><div class="show-dj">C.</div></div><div class="show-tag">CURATED</div></div>
+
+      <div class="day-label" style="margin-top:12px;">Wednesday</div>
+      <div class="show-row"><div class="show-time">19:00 – 21:00</div><div><div class="show-name">di:scovery</div><div class="show-dj">C.</div></div><div class="show-tag">NEW MUSIC</div></div>
+
+      <div class="day-label" style="margin-top:12px;">Friday</div>
+      <div class="show-row"><div class="show-time">20:00 – 22:00</div><div><div class="show-name">Open Air</div><div class="show-dj">C.</div></div><div class="show-tag on-air">ON AIR NOW</div></div>
+
+      <div class="day-label" style="margin-top:12px;">Sunday</div>
+      <div class="show-row"><div class="show-time">14:00 – 16:00</div><div><div class="show-name">Shuffle+</div><div class="show-dj">C.</div></div><div class="show-tag">RANDOM</div></div>
     </div>
   </div>
 
   <div id="djs" class="section">
-    <div class="grid-2">
-      <div class="dj-card"><div class="dj-avatar">A</div><div class="dj-name">Ade</div><div class="dj-show">Late Frequency · Sun 20:00</div><div class="dj-bio">Three hours of dreamwave, post-punk, and obscure 80s textures.</div><div class="dj-tags"><div class="tag">dreamwave</div><div class="tag">80s</div></div></div>
-      <div class="dj-card"><div class="dj-avatar">S</div><div class="dj-name">Sana K.</div><div class="dj-show">Sunday Tape · Sun 09:00</div><div class="dj-bio">Slow mornings as a medium. Bedroom pop, found sound, overcast days.</div><div class="dj-tags"><div class="tag">indie</div><div class="tag">lo-fi</div></div></div>
-      <div class="dj-card"><div class="dj-avatar">R</div><div class="dj-name">Remi O.</div><div class="dj-show">Deep Static · 00:00</div><div class="dj-bio">Insomniac sets. Heavy in texture, light in structure.</div><div class="dj-tags"><div class="tag">ambient</div><div class="tag">drone</div></div></div>
-      <div class="dj-card"><div class="dj-avatar">K</div><div class="dj-name">Kobe R.</div><div class="dj-show">Interlude · Mon 12:00</div><div class="dj-bio">Underground rap mixed with deep soul. No obvious choices.</div><div class="dj-tags"><div class="tag">rap</div><div class="tag">soul</div></div></div>
+    <div style="padding: 40px 0;">
+      <div class="dj-card" style="background:#0f0f0f; border: 1px solid #1a1a1a; padding: 32px;">
+        <div class="dj-avatar">C</div>
+        <div class="dj-name">C.</div>
+        <div class="dj-show">Host · All shows</div>
+        <div class="dj-bio">Curator and host of July Radio. Running four shows across the week — each one a different mode of listening.</div>
+        <div class="dj-tags">
+          <div class="tag">Playlist</div>
+          <div class="tag">Open Air</div>
+          <div class="tag">di:scovery</div>
+          <div class="tag">Shuffle+</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -158,21 +165,7 @@
   let playing = false;
   let audio = null;
   let lastTrack = '';
-  const streamUrl = 'http://morcast.caster.fm:14030/wIQnq';
-
-  // Waveform
-  const bars = [];
-  const waveform = document.getElementById('waveform');
-  for (let i = 0; i < 48; i++) {
-    const b = document.createElement('div');
-    b.className = 'bar' + (i < 26 ? ' active' : '');
-    b.style.height = (Math.random() * 28 + 8) + 'px';
-    b.style.animationDelay = (Math.random() * 1.4) + 's';
-    b.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
-    b.style.animationPlayState = 'paused';
-    waveform.appendChild(b);
-    bars.push(b);
-  }
+  const streamUrl = 'http://s48.myradiostream.com:14790/;stream.mp3';
 
   function togglePlay() {
     if (!playing) {
@@ -184,7 +177,6 @@
         document.getElementById('playBtn').classList.add('playing');
         document.getElementById('statusMsg').textContent = '— live now';
         document.getElementById('statusMsg').classList.add('live');
-        bars.forEach(b => b.style.animationPlayState = 'running');
       }).catch(() => {
         document.getElementById('statusMsg').textContent = '— could not connect to stream';
       });
@@ -196,7 +188,6 @@
       document.getElementById('playBtn').classList.remove('playing');
       document.getElementById('statusMsg').textContent = '— paused';
       document.getElementById('statusMsg').classList.remove('live');
-      bars.forEach(b => b.style.animationPlayState = 'paused');
     }
   }
 
