@@ -83,6 +83,27 @@
   .show-tag { font-size: 10px; padding: 3px 10px; border: 1px solid #2a2a2a; border-radius: 2px; color: #555; white-space: nowrap; letter-spacing: 0.08em; text-transform: uppercase; }
   .show-tag.on-air { border-color: #ff3a3a55; color: #ff3a3a; }
 
+  .show-row.live-row {
+    border: 1px solid #ff3a3a44;
+    border-radius: 4px;
+    padding: 16px 12px;
+    margin: 4px 0;
+    box-shadow: 0 0 12px #ff3a3a22, inset 0 0 20px #ff3a3a08;
+    position: relative;
+  }
+
+  .show-row.live-row .show-name { color: #fff; }
+
+  .live-dot-inline {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #ff3a3a;
+    display: inline-block;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+
   .viz-btn {
     font-family: 'DM Mono', monospace;
     font-size: 10px; letter-spacing: 0.15em;
@@ -112,6 +133,7 @@
     <a onclick="show('schedule',this)">Schedule</a>
     <a onclick="show('djs',this)">DJs</a>
     <a onclick="show('visualizer',this)">Visualizer</a>
+    <a onclick="show('about',this)">About</a>
   </nav>
 
   <div id="listen" class="section active">
@@ -136,6 +158,14 @@
         <div class="vol-wrap">
           <span class="vol-label">Vol</span>
           <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
+        </div>
+      </div>
+
+      <div id="miniOnAir" onclick="show('schedule', document.querySelector('nav a:nth-child(2)'))" style="cursor:pointer;border:1px solid #ff3a3a44;border-radius:4px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 10px #ff3a3a1a;margin-bottom:28px;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 0 18px #ff3a3a33'" onmouseout="this.style.boxShadow='0 0 10px #ff3a3a1a'">
+        <div class="live-dot-inline"></div>
+        <div>
+          <div id="miniShowName" style="font-size:12px;color:#e0d9cc;letter-spacing:0.05em;">—</div>
+          <div style="font-size:10px;color:#555;letter-spacing:0.08em;margin-top:2px;">NOW ON AIR · TAP FOR SCHEDULE</div>
         </div>
       </div>
 
@@ -176,6 +206,22 @@
         <button onclick="setVizMode('scope')" class="viz-btn" id="btn-scope">SCOPE</button>
         <button onclick="setVizMode('xp')" class="viz-btn" id="btn-xp">XP MODE</button>
       </div>
+    </div>
+  </div>
+
+  <div id="about" class="section">
+    <div style="padding:60px 0 40px;max-width:520px;">
+      <div style="font-family:'DM Serif Display',serif;font-size:36px;color:#e0d9cc;letter-spacing:-1px;margin-bottom:24px;">July Radio</div>
+      <div style="font-size:13px;color:#555;line-height:2;margin-bottom:40px;">A personal radio station. Running four shows daily — curated playlists, new music discovery, focused listening, and live open air sets. On air around the clock.</div>
+      <div style="font-size:11px;color:#333;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Shows</div>
+      <div style="font-size:12px;color:#555;line-height:2.2;">
+        Playlist &mdash; curated selections, all day<br>
+        di:scovery &mdash; new music, every morning<br>
+        Shuffle+ &mdash; random, always different<br>
+        in:focus &mdash; 5 artists or albums of the day<br>
+        Open Air &mdash; live mix, evenings
+      </div>
+      <div style="margin-top:60px;font-size:12px;color:#333;font-style:italic;">made with love by desksob</div>
     </div>
   </div>
 </div>
@@ -406,10 +452,13 @@
 
   // Dynamic schedule
   const shows = [
-    { day: 1, name: 'Playlist',   host: 'C.', start: 18, end: 20, tag: 'CURATED' },
-    { day: 3, name: 'di:scovery', host: 'C.', start: 19, end: 21, tag: 'NEW MUSIC' },
-    { day: 5, name: 'Open Air',   host: 'C.', start: 20, end: 22, tag: 'LIVE MIX' },
-    { day: 0, name: 'Shuffle+',   host: 'C.', start: 14, end: 16, tag: 'RANDOM' },
+    { name: 'Playlist',   host: 'C.', start: 0,  end: 8,  tag: 'CURATED' },
+    { name: 'di:scovery', host: 'C.', start: 8,  end: 12, tag: 'NEW MUSIC' },
+    { name: 'Playlist',   host: 'C.', start: 12, end: 14, tag: 'CURATED' },
+    { name: 'Shuffle+',   host: 'C.', start: 14, end: 16, tag: 'RANDOM' },
+    { name: 'in:focus',   host: 'C.', start: 16, end: 18, tag: '5 ARTISTS' },
+    { name: 'Open Air',   host: 'C.', start: 18, end: 20, tag: 'LIVE MIX' },
+    { name: 'Playlist',   host: 'C.', start: 20, end: 24, tag: 'CURATED' },
   ];
 
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -421,34 +470,21 @@
     const grid = document.getElementById('scheduleGrid');
     if (!grid) return;
 
-    // Sort shows starting from today
-    const ordered = [...shows].sort((a, b) => {
-      const da = (a.day - todayDay + 7) % 7;
-      const db = (b.day - todayDay + 7) % 7;
-      return da - db;
-    });
+    let html = `<div class="day-label">Today · ${dayNames[todayDay]}</div>`;
 
-    let lastDay = null;
-    let html = '';
-
-    ordered.forEach(show => {
-      const isToday = show.day === todayDay;
-      const isLive = isToday && todayHour >= show.start && todayHour < show.end;
-      const isPast = isToday && todayHour >= show.end;
-      const dayLabel = isToday ? 'Today · ' + dayNames[show.day] : dayNames[show.day];
-
-      if (show.day !== lastDay) {
-        html += `<div class="day-label" style="${lastDay !== null ? 'margin-top:12px;' : ''}">${dayLabel}</div>`;
-        lastDay = show.day;
-      }
-
+    shows.forEach(show => {
+      const isLive = todayHour >= show.start && todayHour < show.end;
+      const isPast = todayHour >= show.end;
       const tagClass = isLive ? 'show-tag on-air' : 'show-tag';
       const tagText = isLive ? 'ON AIR NOW' : show.tag;
       const rowOpacity = isPast ? 'opacity:0.3;' : '';
+      const rowClass = isLive ? 'show-row live-row' : 'show-row';
+      const endHour = show.end === 24 ? '00' : String(show.end).padStart(2,'0');
+      const liveDot = isLive ? '<div class="live-dot-inline"></div>' : '';
 
-      html += `<div class="show-row" style="${rowOpacity}">
-        <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${String(show.end).padStart(2,'0')}:00</div>
-        <div><div class="show-name">${show.name}</div><div class="show-dj">${show.host}</div></div>
+      html += `<div class="${rowClass}" style="${rowOpacity}">
+        <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${endHour}:00</div>
+        <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">${show.host}</div></div></div>
         <div class="${tagClass}">${tagText}</div>
       </div>`;
     });
@@ -456,6 +492,15 @@
     grid.innerHTML = html;
   }
 
+  function updateMiniWidget() {
+    const now = new Date();
+    const h = now.getHours();
+    const current = shows.find(s => h >= s.start && h < s.end);
+    const mini = document.getElementById('miniShowName');
+    if (mini) mini.textContent = current ? current.name : '—';
+  }
+  updateMiniWidget();
+  setInterval(updateMiniWidget, 60000);
   renderSchedule();
   setInterval(renderSchedule, 60000);
 
