@@ -370,7 +370,7 @@
           } else {
             artEl.innerHTML = `<div class="album-art-placeholder">art</div>`;
           }
-          updateMediaSession(trackName, artistName, imgUrl);
+
 
           // Fade back in
           titleEl.classList.remove('fading');
@@ -378,6 +378,13 @@
           albumEl.classList.remove('fading');
           artEl.classList.remove('fading');
         }, 600);
+      }
+
+      // Update MediaSession on every poll if playing
+      if (playing) {
+        const imgUrl2 = getBestImage(current.image);
+        updateMediaSession(trackName, artistName, imgUrl2);
+        navigator.mediaSession.playbackState = 'playing';
       }
 
       // History
