@@ -280,6 +280,12 @@
         document.getElementById('statusMsg').textContent = '— live now';
         document.getElementById('statusMsg').classList.add('live');
         startVisualizer();
+        updateMediaSession(
+          document.getElementById('trackTitle').textContent,
+          document.getElementById('trackArtist').textContent,
+          null
+        );
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
       }).catch(() => {
         document.getElementById('statusMsg').textContent = '— could not connect to stream';
       });
@@ -290,6 +296,7 @@
       document.getElementById('playBtn').innerHTML = '&#9654;';
       document.getElementById('playBtn').classList.remove('playing');
       document.getElementById('statusMsg').textContent = '— paused';
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
       document.getElementById('statusMsg').classList.remove('live');
       stopVisualizer();
     }
@@ -363,6 +370,7 @@
           } else {
             artEl.innerHTML = `<div class="album-art-placeholder">art</div>`;
           }
+          updateMediaSession(trackName, artistName, imgUrl);
 
           // Fade back in
           titleEl.classList.remove('fading');
@@ -390,6 +398,28 @@
     }
   }
 
+
+
+  // MediaSession API for iOS/Android lock screen
+  function updateMediaSession(title, artist, artUrl) {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: title || 'July Radio',
+        artist: artist || 'Live Stream',
+        album: 'July Radio',
+        artwork: artUrl ? [
+          { src: artUrl, sizes: '300x300', type: 'image/jpeg' },
+          { src: artUrl, sizes: '96x96',  type: 'image/jpeg' },
+        ] : [
+          { src: 'july-logo.png', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => { if (!playing) togglePlay(); });
+      navigator.mediaSession.setActionHandler('pause', () => { if (playing) togglePlay(); });
+      navigator.mediaSession.setActionHandler('stop', () => { if (playing) togglePlay(); });
+    }
+  }
 
   // Blurred background from album art
   function updateBg(imgUrl) {
