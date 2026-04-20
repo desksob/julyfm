@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>july.fm</title>
+<title>July Radio</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,9 +35,9 @@
   .lastfm-badge { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid #d5100633; color: #d51007; padding: 3px 8px; border-radius: 2px; margin-top: 10px; display: inline-block; }
 
   .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
-  .play-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid #c8a96e; background: transparent; color: #c8a96e; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-  .play-btn:hover { background: #c8a96e; color: #0a0a0a; }
-  .play-btn.playing { background: #c8a96e22; }
+  .play-btn { width: 52px; height: 52px; border-radius: 50%; border: none; background: transparent; color: #c8a96e; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; padding: 0; }
+  .play-btn:hover { color: #e0d9cc; }
+  .play-btn.playing { color: #c8a96e; }
   .vol-wrap { display: flex; align-items: center; gap: 10px; flex: 1; }
   .vol-label { font-size: 10px; color: #444; letter-spacing: 0.1em; text-transform: uppercase; }
   input[type=range] { -webkit-appearance: none; flex: 1; height: 2px; background: #222; border-radius: 1px; outline: none; }
@@ -126,19 +126,7 @@
   </div>
 
   <div id="schedule" class="section">
-    <div class="schedule-grid">
-      <div class="day-label">Monday</div>
-      <div class="show-row"><div class="show-time">18:00 – 20:00</div><div><div class="show-name">Playlist</div><div class="show-dj">C.</div></div><div class="show-tag">CURATED</div></div>
-
-      <div class="day-label" style="margin-top:12px;">Wednesday</div>
-      <div class="show-row"><div class="show-time">19:00 – 21:00</div><div><div class="show-name">di:scovery</div><div class="show-dj">C.</div></div><div class="show-tag">NEW MUSIC</div></div>
-
-      <div class="day-label" style="margin-top:12px;">Friday</div>
-      <div class="show-row"><div class="show-time">20:00 – 22:00</div><div><div class="show-name">Open Air</div><div class="show-dj">C.</div></div><div class="show-tag on-air">ON AIR NOW</div></div>
-
-      <div class="day-label" style="margin-top:12px;">Sunday</div>
-      <div class="show-row"><div class="show-time">14:00 – 16:00</div><div><div class="show-name">Shuffle+</div><div class="show-dj">C.</div></div><div class="show-tag">RANDOM</div></div>
-    </div>
+    <div class="schedule-grid" id="scheduleGrid"></div>
   </div>
 
   <div id="djs" class="section">
@@ -165,7 +153,7 @@
   let playing = false;
   let audio = null;
   let lastTrack = '';
-  const streamUrl = 'http://s48.myradiostream.com:14790/;stream.mp3';
+  const streamUrl = 'https://july-radio-static.sxrsq1.workers.dev/';
 
   function togglePlay() {
     if (!playing) {
@@ -267,6 +255,62 @@
 
   fetchNowPlaying();
   setInterval(fetchNowPlaying, 15000);
+
+  // Dynamic schedule
+  const shows = [
+    { day: 1, name: 'Playlist',   host: 'C.', start: 18, end: 20, tag: 'CURATED' },
+    { day: 3, name: 'di:scovery', host: 'C.', start: 19, end: 21, tag: 'NEW MUSIC' },
+    { day: 5, name: 'Open Air',   host: 'C.', start: 20, end: 22, tag: 'LIVE MIX' },
+    { day: 0, name: 'Shuffle+',   host: 'C.', start: 14, end: 16, tag: 'RANDOM' },
+  ];
+
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  function renderSchedule() {
+    const now = new Date();
+    const todayDay = now.getDay();
+    const todayHour = now.getHours();
+    const grid = document.getElementById('scheduleGrid');
+    if (!grid) return;
+
+    // Sort shows starting from today
+    const ordered = [...shows].sort((a, b) => {
+      const da = (a.day - todayDay + 7) % 7;
+      const db = (b.day - todayDay + 7) % 7;
+      return da - db;
+    });
+
+    let lastDay = null;
+    let html = '';
+
+    ordered.forEach(show => {
+      const isToday = show.day === todayDay;
+      const isLive = isToday && todayHour >= show.start && todayHour < show.end;
+      const isPast = isToday && todayHour >= show.end;
+      const dayLabel = isToday ? 'Today · ' + dayNames[show.day] : dayNames[show.day];
+
+      if (show.day !== lastDay) {
+        html += `<div class="day-label" style="${lastDay !== null ? 'margin-top:12px;' : ''}">${dayLabel}</div>`;
+        lastDay = show.day;
+      }
+
+      const tagClass = isLive ? 'show-tag on-air' : 'show-tag';
+      const tagText = isLive ? 'ON AIR NOW' : show.tag;
+      const rowOpacity = isPast ? 'opacity:0.3;' : '';
+
+      html += `<div class="show-row" style="${rowOpacity}">
+        <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${String(show.end).padStart(2,'0')}:00</div>
+        <div><div class="show-name">${show.name}</div><div class="show-dj">${show.host}</div></div>
+        <div class="${tagClass}">${tagText}</div>
+      </div>`;
+    });
+
+    grid.innerHTML = html;
+  }
+
+  renderSchedule();
+  setInterval(renderSchedule, 60000);
+
 </script>
 </body>
 </html>
