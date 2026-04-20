@@ -272,6 +272,10 @@
   function togglePlay() {
     if (!playing) {
       audio = new Audio(streamUrl);
+      audio.setAttribute('playsinline', '');
+      audio.setAttribute('webkit-playsinline', '');
+      audio.setAttribute('x-webkit-airplay', 'allow');
+      audio.preload = 'none';
       audio.volume = document.getElementById('volSlider').value / 100;
       audio.play().then(() => {
         playing = true;
@@ -422,9 +426,23 @@
         ]
       });
 
+      // Live stream controls only — no skip, no scrubbing
       navigator.mediaSession.setActionHandler('play', () => { if (!playing) togglePlay(); });
       navigator.mediaSession.setActionHandler('pause', () => { if (playing) togglePlay(); });
       navigator.mediaSession.setActionHandler('stop', () => { if (playing) togglePlay(); });
+      try { navigator.mediaSession.setActionHandler('seekforward', null); } catch(e) {}
+      try { navigator.mediaSession.setActionHandler('seekbackward', null); } catch(e) {}
+      try { navigator.mediaSession.setActionHandler('nexttrack', null); } catch(e) {}
+      try { navigator.mediaSession.setActionHandler('previoustrack', null); } catch(e) {}
+
+      // Set position state to hint live stream to iOS
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: Infinity,
+          playbackRate: 1,
+          position: 0
+        });
+      } catch(e) {}
     }
   }
 
