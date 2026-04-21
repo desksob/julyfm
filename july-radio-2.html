@@ -233,14 +233,28 @@
   </div>
 
   <div id="visualizer" class="section">
-    <div style="padding: 40px 0;">
-      <canvas id="vizCanvas" style="width:100%;height:300px;display:block;background:#000;border:1px solid #1a1a1a;border-radius:4px;image-rendering:pixelated;"></canvas>
-      <div style="font-size:10px;color:#333;letter-spacing:0.15em;text-transform:uppercase;margin-top:12px;text-align:center;">Press play on the Listen tab to activate</div>
-      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
-        <button onclick="setVizMode('bars')" class="viz-btn active" id="btn-bars">BARS</button>
-        <button onclick="setVizMode('scope')" class="viz-btn" id="btn-scope">SCOPE</button>
-        <button onclick="setVizMode('xp')" class="viz-btn" id="btn-xp">XP MODE</button>
+    <div style="padding:32px 0 0;">
+      <div style="border:2px solid #fff;background:#000;font-family:'Tahoma',sans-serif;margin-bottom:16px;">
+        <div style="background:linear-gradient(to right,#1a1aff,#000080);padding:4px 8px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:6px;color:#fff;font-size:12px;font-weight:bold;">
+            <div style="width:14px;height:14px;background:#ff6600;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;">♪</div>
+            visualizer
+          </div>
+          <div style="display:flex;gap:2px;">
+            <div style="width:16px;height:14px;background:#c0c0c0;border:1px outset #fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:bold;">─</div>
+            <div style="width:16px;height:14px;background:#c0c0c0;border:1px outset #fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:bold;">□</div>
+            <div style="width:16px;height:14px;background:#c0c0c0;border:1px outset #fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:bold;">✕</div>
+          </div>
+        </div>
+        <canvas id="vizCanvas" style="width:100%;height:300px;display:block;background:#000;"></canvas>
+        <div style="background:#1a1a1a;padding:4px 8px;display:flex;gap:6px;border-top:1px solid #333;">
+          <button onclick="setVizMode('butterchurn')" class="viz-btn active" id="btn-butterchurn">MILKDROP</button>
+          <button onclick="setVizMode('bars')" class="viz-btn" id="btn-bars">BARS</button>
+          <button onclick="setVizMode('scope')" class="viz-btn" id="btn-scope">SCOPE</button>
+          <button onclick="nextPreset()" class="viz-btn" id="btn-next">NEXT PRESET</button>
+        </div>
       </div>
+      <div style="font-size:10px;color:#333;letter-spacing:0.15em;text-transform:uppercase;text-align:center;">press play on the listen tab to activate</div>
     </div>
   </div>
 
@@ -454,108 +468,146 @@
     }
   }
 
-  // Visualizer - animated fake mode
-  let vizMode = 'bars';
+  // Visualizer
+  let vizMode = 'butterchurn';
   let animFrame;
   let isVizRunning = false;
-  let fakeData = [];
-  let targets = [];
+  let audioCtx, analyser, sourceNode;
+  let butterchurnViz = null;
+  let bcPresets = null;
+  let bcPresetKeys = [];
+  let bcPresetIdx = 0;
   const NUM_BARS = 64;
-
-  for (let i = 0; i < NUM_BARS; i++) {
-    fakeData.push(Math.random() * 0.3);
-    targets.push(Math.random());
-  }
+  let fakeData = new Float32Array(NUM_BARS).fill(0);
+  let fakeTargets = Float32Array.from({length: NUM_BARS}, () => Math.random());
 
   function setVizMode(mode) {
     vizMode = mode;
     document.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-' + mode).classList.add('active');
+    const btn = document.getElementById('btn-' + mode);
+    if (btn) btn.classList.add('active');
   }
 
-  function startVisualizer() {
+  function nextPreset() {
+    if (!butterchurnViz || !bcPresetKeys.length) return;
+    bcPresetIdx = (bcPresetIdx + 1) % bcPresetKeys.length;
+    butterchurnViz.loadPreset(bcPresets[bcPresetKeys[bcPresetIdx]], 2.0);
+  }
+
+  async function startVisualizer() {
     if (isVizRunning) return;
     isVizRunning = true;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      audio.crossOrigin = 'anonymous';
+      sourceNode = audioCtx.createMediaElementSource(audio);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+
+      // Try load ButterChurn
+      const bcScript = document.createElement('script');
+      bcScript.src = 'https://unpkg.com/butterchurn@2.6.7/lib/butterchurn.min.js';
+      bcScript.onload = async () => {
+        const presetsScript = document.createElement('script');
+        presetsScript.src = 'https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js';
+        presetsScript.onload = () => {
+          const canvas = document.getElementById('vizCanvas');
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          butterchurnViz = butterchurn.default.createVisualizer(audioCtx, canvas, {
+            width: canvas.width,
+            height: canvas.height
+          });
+          bcPresets = butterchurnPresets.getPresets();
+          bcPresetKeys = Object.keys(bcPresets);
+          bcPresetIdx = Math.floor(Math.random() * bcPresetKeys.length);
+          butterchurnViz.loadPreset(bcPresets[bcPresetKeys[bcPresetIdx]], 0.0);
+          butterchurnViz.connectAudio(analyser);
+        };
+        document.head.appendChild(presetsScript);
+      };
+      document.head.appendChild(bcScript);
+    } catch(e) {
+      console.log('Audio context failed, using fake viz', e);
+    }
+
     drawViz();
   }
 
   function stopVisualizer() {
     isVizRunning = false;
     if (animFrame) cancelAnimationFrame(animFrame);
+    butterchurnViz = null;
+    if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
     const canvas = document.getElementById('vizCanvas');
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   }
 
+  function updateFakeData() {
+    for (let i = 0; i < NUM_BARS; i++) {
+      if (Math.random() < 0.04) fakeTargets[i] = Math.pow(Math.random(), 1.5);
+      fakeData[i] += (fakeTargets[i] - fakeData[i]) * 0.07;
+    }
+  }
+
   function drawViz() {
     if (!isVizRunning) return;
+    animFrame = requestAnimationFrame(drawViz);
+
+    updateFakeData();
+
     const canvas = document.getElementById('vizCanvas');
     if (!canvas) return;
+
+    if (vizMode === 'butterchurn' && butterchurnViz) {
+      butterchurnViz.render();
+      return;
+    }
+
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
 
-    // Update fake data with smooth random movement
-    for (let i = 0; i < NUM_BARS; i++) {
-      if (Math.random() < 0.05) targets[i] = Math.random() * 0.9 + 0.05;
-      fakeData[i] += (targets[i] - fakeData[i]) * 0.08;
+    let data = fakeData;
+    if (analyser) {
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(buf);
+      data = Float32Array.from(buf.slice(0, NUM_BARS), v => v / 255);
     }
 
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, W, H);
 
-    if (vizMode === 'bars') {
-      const barW = Math.floor(canvas.width / NUM_BARS) - 1;
+    if (vizMode === 'bars' || vizMode === 'butterchurn') {
+      const bw = Math.floor(W / NUM_BARS) - 1;
       for (let i = 0; i < NUM_BARS; i++) {
-        const v = fakeData[i];
-        const h = v * canvas.height * 0.9;
-        const alpha = 0.4 + v * 0.6;
-        ctx.fillStyle = `rgba(200, 169, 110, ${alpha})`;
-        ctx.fillRect(i * (barW + 1), canvas.height - h, barW, h);
-      }
-    } else if (vizMode === 'xp') {
-      const barW = Math.floor(canvas.width / NUM_BARS) - 1;
-      for (let i = 0; i < NUM_BARS; i++) {
-        const v = fakeData[i];
-        const h = v * canvas.height * 0.85;
-        const r = v > 0.5 ? 255 : Math.floor(v * 2 * 255);
-        const g = v > 0.5 ? Math.floor((1 - (v - 0.5) * 2) * 200) : 200;
-        ctx.fillStyle = `rgb(${r},${g},0)`;
-        ctx.globalAlpha = 1;
-        ctx.fillRect(i * (barW + 1), canvas.height / 2 - h, barW, h);
-        ctx.globalAlpha = 0.25;
-        ctx.fillRect(i * (barW + 1), canvas.height / 2, barW, h * 0.4);
-        ctx.globalAlpha = 1;
-        // Peak dot
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(i * (barW + 1), canvas.height / 2 - h - 3, barW, 2);
+        const v = data[i];
+        const h = v * H * 0.9;
+        ctx.fillStyle = `rgba(200,169,110,${0.4 + v * 0.6})`;
+        ctx.fillRect(i * (bw + 1), H - h, bw, h);
       }
     } else if (vizMode === 'scope') {
-      ctx.lineWidth = 2;
       ctx.strokeStyle = '#c8a96e';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      const sliceW = canvas.width / NUM_BARS;
+      const sw = W / NUM_BARS;
       for (let i = 0; i < NUM_BARS; i++) {
-        const v = fakeData[i];
-        const y = canvas.height / 2 + (v - 0.5) * canvas.height * 0.8;
-        i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sliceW, y);
+        const v = data[i];
+        const y = H / 2 + (v - 0.5) * H * 0.8;
+        i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sw, y);
       }
       ctx.stroke();
-      // Center line
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = '#1a1a1a';
-      ctx.beginPath();
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
     }
-
-    animFrame = requestAnimationFrame(drawViz);
   }
+
 
   fetchNowPlaying();
   setInterval(fetchNowPlaying, 15000);
