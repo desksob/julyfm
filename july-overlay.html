@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>July Radio — OBS Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .bg-blur {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(120px) saturate(0.3) brightness(0.15);
+    transform: scale(1.2);
+    transition: background-image 2s ease;
+    z-index: 0;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1;
+  }
+
+  .content {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+
+  /* TOP BAR */
+  .top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 40px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    height: 56px;
+    width: auto;
+  }
+
+  .live-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,58,58,0.12);
+    border: 1px solid rgba(255,58,58,0.4);
+    padding: 6px 16px;
+    border-radius: 2px;
+    font-size: 13px;
+    color: #ff3a3a;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #ff3a3a;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.8); }
+  }
+
+  /* LISTENER COUNT */
+  .listeners {
+    position: absolute;
+    top: 52px;
+    right: 60px;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .listeners span { color: #c8a96e; }
+
+  /* NOW PLAYING */
+  .now-playing {
+    position: absolute;
+    bottom: 60px;
+    left: 60px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 4px;
+    padding: 18px 24px;
+    transition: opacity 0.6s ease;
+  }
+
+  .now-playing.fading { opacity: 0; }
+
+  .np-art {
+    width: 72px; height: 72px;
+    border-radius: 3px;
+    border: 1px solid #1a1a1a;
+    background: #111;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: opacity 0.6s ease;
+  }
+
+  .np-art img { width: 100%; height: 100%; object-fit: cover; }
+
+  .np-label { font-size: 10px; color: #555; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; }
+  .np-title { font-size: 18px; color: #e0d9cc; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.2; }
+  .np-artist { font-size: 13px; color: #c8a96e; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* SHOW INFO */
+  .show-info {
+    position: absolute;
+    bottom: 60px;
+    right: 60px;
+    text-align: right;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 4px;
+    padding: 18px 24px;
+  }
+
+  .show-label { font-size: 10px; color: #555; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; }
+  .show-name { font-size: 18px; color: #e0d9cc; letter-spacing: 0.05em; }
+  .show-time { font-size: 11px; color: #555; margin-top: 4px; letter-spacing: 0.1em; }
+
+  /* CLOCK */
+  .clock {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    color: #333;
+    letter-spacing: 0.2em;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blur" id="bgBlur"></div>
+<div class="overlay"></div>
+
+<div class="content">
+  <div class="top-bar">
+    <img src="july-logo.png" alt="July Radio" class="logo" id="logo">
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+  </div>
+
+  <div class="listeners"><span id="listenerCount">—</span> LISTENERS</div>
+
+  <div class="now-playing" id="nowPlaying">
+    <div class="np-art" id="npArt">
+      <img id="npImg" src="" alt="" style="display:none;">
+    </div>
+    <div>
+      <div class="np-label">Now Playing</div>
+      <div class="np-title" id="npTitle">July Radio</div>
+      <div class="np-artist" id="npArtist">—</div>
+    </div>
+  </div>
+
+  <div class="show-info">
+    <div class="show-label">On Air</div>
+    <div class="show-name" id="showName">—</div>
+    <div class="show-time" id="showTime">—</div>
+  </div>
+
+  <div class="clock" id="clock">—</div>
+</div>
+
+<script>
+const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
+const LASTFM_USER = 'injeton';
+let lastTrack = '';
+
+const shows = [
+  { name: 'Playlist',   start: 0,  end: 8  },
+  { name: 'di:scovery', start: 8,  end: 12 },
+  { name: 'Playlist',   start: 12, end: 14 },
+  { name: 'Shuffle+',   start: 14, end: 16 },
+  { name: 'in:focus',   start: 16, end: 18 },
+  { name: 'Open Air',   start: 18, end: 20 },
+  { name: 'Playlist',   start: 20, end: 24 },
+];
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} EAT`;
+}
+
+function updateShow() {
+  const h = new Date().getHours();
+  const show = shows.find(s => h >= s.start && h < s.end);
+  if (show) {
+    document.getElementById('showName').textContent = show.name;
+    document.getElementById('showTime').textContent =
+      `${pad(show.start)}:00 – ${pad(show.end === 24 ? 0 : show.end)}:00`;
+  }
+}
+
+async function getHighResArt(artist, track) {
+  try {
+    const q = encodeURIComponent(`${track} ${artist}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&limit=1`);
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      return data.results[0].artworkUrl100.replace('100x100', '600x600');
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function fetchNowPlaying() {
+  try {
+    const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_KEY}&format=json&limit=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const tracks = data.recenttracks.track;
+    if (!tracks || !tracks.length) return;
+
+    const current = tracks[0];
+    const trackName = current.name;
+    const artistName = current.artist['#text'];
+    const trackKey = trackName + artistName;
+
+    if (trackKey !== lastTrack) {
+      lastTrack = trackKey;
+
+      const npEl = document.getElementById('nowPlaying');
+      npEl.classList.add('fading');
+
+      setTimeout(async () => {
+        document.getElementById('npTitle').textContent = trackName;
+        document.getElementById('npArtist').textContent = artistName;
+
+        const artUrl = await getHighResArt(artistName, trackName);
+        const img = document.getElementById('npImg');
+        const bg = document.getElementById('bgBlur');
+
+        if (artUrl) {
+          img.src = artUrl;
+          img.style.display = 'block';
+          bg.style.backgroundImage = `url(${artUrl})`;
+        } else {
+          const lfmImg = current.image?.find(i => i.size === 'extralarge');
+          if (lfmImg && lfmImg['#text']) {
+            img.src = lfmImg['#text'];
+            img.style.display = 'block';
+            bg.style.backgroundImage = `url(${lfmImg['#text']})`;
+          }
+        }
+
+        npEl.classList.remove('fading');
+      }, 600);
+    }
+  } catch(e) {}
+}
+
+// Listener count from MyRadioStream status
+async function fetchListeners() {
+  try {
+    const res = await fetch('https://s48.myradiostream.com:14791/stats');
+    const text = await res.text();
+    const match = text.match(/Current Listeners.*?(\d+)/);
+    if (match) document.getElementById('listenerCount').textContent = match[1];
+  } catch(e) {
+    // silently fail — listener count not critical
+  }
+}
+
+updateClock();
+updateShow();
+fetchNowPlaying();
+fetchListeners();
+
+setInterval(updateClock, 1000);
+setInterval(updateShow, 60000);
+setInterval(fetchNowPlaying, 15000);
+setInterval(fetchListeners, 30000);
+</script>
+</body>
+</html>
