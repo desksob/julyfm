@@ -455,77 +455,33 @@
   }
 
   // Visualizer
-  let vizMode = 'butterchurn';
+  let vizMode = 'bars';
   let animFrame;
   let isVizRunning = false;
-  let audioCtx, analyser, sourceNode;
-  let butterchurnViz = null;
-  let bcPresets = null;
-  let bcPresetKeys = [];
-  let bcPresetIdx = 0;
   const NUM_BARS = 64;
-  let fakeData = new Float32Array(NUM_BARS).fill(0);
-  let fakeTargets = Float32Array.from({length: NUM_BARS}, () => Math.random());
+  let fakeData = [];
+  let targets = [];
+
+  for (let i = 0; i < NUM_BARS; i++) {
+    fakeData.push(Math.random() * 0.3);
+    targets.push(Math.random());
+  }
 
   function setVizMode(mode) {
     vizMode = mode;
     document.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.getElementById('btn-' + mode);
-    if (btn) btn.classList.add('active');
+    document.getElementById('btn-' + mode).classList.add('active');
   }
 
-  function nextPreset() {
-    if (!butterchurnViz || !bcPresetKeys.length) return;
-    bcPresetIdx = (bcPresetIdx + 1) % bcPresetKeys.length;
-    butterchurnViz.loadPreset(bcPresets[bcPresetKeys[bcPresetIdx]], 2.0);
-  }
-
-  async function startVisualizer() {
+  function startVisualizer() {
     if (isVizRunning) return;
     isVizRunning = true;
-
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
-      sourceNode = audioCtx.createMediaElementSource(audio);
-      sourceNode.connect(analyser);
-      analyser.connect(audioCtx.destination);
-
-      // Try load ButterChurn
-      const bcScript = document.createElement('script');
-      bcScript.src = 'https://unpkg.com/butterchurn@2.6.7/lib/butterchurn.min.js';
-      bcScript.onload = async () => {
-        const presetsScript = document.createElement('script');
-        presetsScript.src = 'https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js';
-        presetsScript.onload = () => {
-          const canvas = document.getElementById('vizCanvas');
-          canvas.width = canvas.offsetWidth;
-          canvas.height = canvas.offsetHeight;
-          butterchurnViz = butterchurn.default.createVisualizer(audioCtx, canvas, {
-            width: canvas.width,
-            height: canvas.height
-          });
-          bcPresets = butterchurnPresets.getPresets();
-          bcPresetKeys = Object.keys(bcPresets);
-          bcPresetIdx = Math.floor(Math.random() * bcPresetKeys.length);
-          butterchurnViz.loadPreset(bcPresets[bcPresetKeys[bcPresetIdx]], 0.0);
-          butterchurnViz.connectAudio(analyser);
-        };
-        document.head.appendChild(presetsScript);
-      };
-      document.head.appendChild(bcScript);
-    } catch(e) {
-      console.log('Audio context failed, using fake viz', e);
-    }
-
     drawViz();
   }
 
   function stopVisualizer() {
     isVizRunning = false;
     if (animFrame) cancelAnimationFrame(animFrame);
-    butterchurnViz = null;
     const canvas = document.getElementById('vizCanvas');
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -534,53 +490,66 @@
     }
   }
 
-  function updateFakeData() {
-    for (let i = 0; i < NUM_BARS; i++) {
-      if (Math.random() < 0.04) fakeTargets[i] = Math.pow(Math.random(), 1.5);
-      fakeData[i] += (fakeTargets[i] - fakeData[i]) * 0.07;
-    }
-  }
-
   function drawViz() {
     if (!isVizRunning) return;
-    animFrame = requestAnimationFrame(drawViz);
-
-    updateFakeData();
-
     const canvas = document.getElementById('vizCanvas');
     if (!canvas) return;
-
-
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
 
-    const data = fakeData;
+    for (let i = 0; i < NUM_BARS; i++) {
+      if (Math.random() < 0.05) targets[i] = Math.random() * 0.9 + 0.05;
+      fakeData[i] += (targets[i] - fakeData[i]) * 0.08;
+    }
 
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (vizMode === 'bars' || vizMode === 'butterchurn') {
-      const bw = Math.floor(W / NUM_BARS) - 1;
+    if (vizMode === 'bars') {
+      const barW = Math.floor(canvas.width / NUM_BARS) - 1;
       for (let i = 0; i < NUM_BARS; i++) {
-        const v = data[i];
-        const h = v * H * 0.9;
-        ctx.fillStyle = `rgba(200,169,110,${0.4 + v * 0.6})`;
-        ctx.fillRect(i * (bw + 1), H - h, bw, h);
+        const v = fakeData[i];
+        const h = v * canvas.height * 0.9;
+        ctx.fillStyle = `rgba(200, 169, 110, ${0.4 + v * 0.6})`;
+        ctx.fillRect(i * (barW + 1), canvas.height - h, barW, h);
+      }
+    } else if (vizMode === 'xp') {
+      const barW = Math.floor(canvas.width / NUM_BARS) - 1;
+      for (let i = 0; i < NUM_BARS; i++) {
+        const v = fakeData[i];
+        const h = v * canvas.height * 0.85;
+        const r = v > 0.5 ? 255 : Math.floor(v * 2 * 255);
+        const g = v > 0.5 ? Math.floor((1 - (v - 0.5) * 2) * 200) : 200;
+        ctx.fillStyle = `rgb(${r},${g},0)`;
+        ctx.globalAlpha = 1;
+        ctx.fillRect(i * (barW + 1), canvas.height / 2 - h, barW, h);
+        ctx.globalAlpha = 0.25;
+        ctx.fillRect(i * (barW + 1), canvas.height / 2, barW, h * 0.4);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(i * (barW + 1), canvas.height / 2 - h - 3, barW, 2);
       }
     } else if (vizMode === 'scope') {
-      ctx.strokeStyle = '#c8a96e';
       ctx.lineWidth = 2;
+      ctx.strokeStyle = '#c8a96e';
       ctx.beginPath();
-      const sw = W / NUM_BARS;
+      const sliceW = canvas.width / NUM_BARS;
       for (let i = 0; i < NUM_BARS; i++) {
-        const v = data[i];
-        const y = H / 2 + (v - 0.5) * H * 0.8;
-        i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sw, y);
+        const v = fakeData[i];
+        const y = canvas.height / 2 + (v - 0.5) * canvas.height * 0.8;
+        i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sliceW, y);
       }
       ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
     }
+
+    animFrame = requestAnimationFrame(drawViz);
   }
 
 
