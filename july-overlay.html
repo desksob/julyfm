@@ -168,8 +168,6 @@
     object-position: top;
     display: block;
     background: #111;
-    opacity: 0;
-    transition: opacity 0.8s ease;
   }
 
   #artistImgPlaceholder {
@@ -381,8 +379,8 @@
     <div id="tickerLabel">July Radio</div>
     <div id="tickerTrack">
       <div id="tickerInner">
-        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Full website coming soon &nbsp;·&nbsp; New music every morning on di:scovery &nbsp;·&nbsp; Five artists a day on in:focus &nbsp;·&nbsp; Now streaming </span>
-        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Full website coming soon &nbsp;·&nbsp; New music every morning on di:scovery &nbsp;·&nbsp; Five artists a day on in:focus &nbsp;·&nbsp; Now streaming </span>
+        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Full website coming soon at julyfm.com &nbsp;·&nbsp; New music every morning on di:scovery &nbsp;·&nbsp; Five artists a day on in:focus &nbsp;·&nbsp; Now streaming — tune in</span>
+        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Full website coming soon at julyfm.com &nbsp;·&nbsp; New music every morning on di:scovery &nbsp;·&nbsp; Five artists a day on in:focus &nbsp;·&nbsp; Now streaming — tune in</span>
       </div>
     </div>
   </div>
@@ -655,15 +653,7 @@ async function fetchArtistInfo(artist) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.image) {
-            const img = new Image();
-            img.onload = function() {
-              imgWrap.innerHTML = '<img id="artistImg" src="' + data.image + '" alt="' + (a.name || artist) + '" style="opacity:0;transition:opacity 0.8s ease;">';
-              setTimeout(function() {
-                const el = document.getElementById('artistImg');
-                if (el) el.style.opacity = '1';
-              }, 50);
-            };
-            img.src = data.image;
+            imgWrap.innerHTML = '<img id="artistImg" src="' + data.image + '" alt="' + (a.name || artist) + '">';
           }
         })
         .catch(function() {});
