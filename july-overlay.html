@@ -645,16 +645,17 @@ async function fetchArtistInfo(artist) {
       const listeners = a.stats && a.stats.listeners ? parseInt(a.stats.listeners).toLocaleString() : '—';
       document.getElementById('artistListeners').innerHTML = '<span>' + listeners + '</span> monthly listeners';
 
-      // Artist image from Deezer
+      // Artist image from Wikipedia
       const imgWrap = document.getElementById('artistImgWrap');
       imgWrap.innerHTML = '<div id="artistImgPlaceholder">' + (a.name || artist) + '</div>';
 
-      fetch('https://api.deezer.com/search/artist?q=' + encodeURIComponent(a.name || artist) + '&limit=1&output=jsonp&callback=deezerCb')
-        .then(function(r) { return r.text(); })
-        .then(function(text) {
-          const json = JSON.parse(text.replace(/^deezerCb\(/, '').replace(/\)$/, ''));
-          if (json.data && json.data[0] && json.data[0].picture_xl) {
-            imgWrap.innerHTML = '<img id="artistImg" src="' + json.data[0].picture_xl + '" alt="' + (a.name || artist) + '">';
+      const wikiArtist = encodeURIComponent(a.name || artist);
+      fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + wikiArtist)
+        .then(function(r) { return r.json(); })
+        .then(function(wiki) {
+          if (wiki.thumbnail && wiki.thumbnail.source) {
+            const bigImg = wiki.thumbnail.source.replace(/\/\d+px-/, '/400px-');
+            imgWrap.innerHTML = '<img id="artistImg" src="' + bigImg + '" alt="' + (a.name || artist) + '">';
           }
         })
         .catch(function() {});
