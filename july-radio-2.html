@@ -557,15 +557,64 @@
   setInterval(fetchNowPlaying, 15000);
 
   // Dynamic schedule
-  const shows = [
-    { name: 'Playlist',   host: 'C.', start: 0,  end: 8,  tag: 'CURATED' },
-    { name: 'di:scovery', host: 'C.', start: 8,  end: 12, tag: 'NEW MUSIC' },
-    { name: 'Playlist',   host: 'C.', start: 12, end: 14, tag: 'CURATED' },
-    { name: 'Shuffle+',   host: 'C.', start: 14, end: 16, tag: 'RANDOM' },
-    { name: 'in:focus',   host: 'C.', start: 16, end: 18, tag: '5 ARTISTS' },
-    { name: 'Open Air',   host: 'C.', start: 18, end: 20, tag: 'LIVE MIX' },
-    { name: 'Playlist',   host: 'C.', start: 20, end: 24, tag: 'CURATED' },
-  ];
+  const schedule = {
+    0: [ // Sunday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'Playlist',  start: 6,  end: 10, tag: 'CURATED' },
+      { name: 'Playlist',  start: 10, end: 14, tag: 'CURATED' },
+      { name: 'in:focus',  start: 14, end: 18, tag: '5 ARTISTS' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Playlist',  start: 22, end: 24, tag: 'CURATED' },
+    ],
+    1: [ // Monday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'Playlist',  start: 10, end: 14, tag: 'CURATED' },
+      { name: 'Blueprint', start: 14, end: 18, tag: 'INFLUENTIAL' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
+    ],
+    2: [ // Tuesday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'in:focus',  start: 10, end: 14, tag: '5 ARTISTS' },
+      { name: 'Shuffle+',  start: 14, end: 18, tag: 'RANDOM' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
+    ],
+    3: [ // Wednesday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'Blueprint', start: 10, end: 14, tag: 'INFLUENTIAL' },
+      { name: 'Playlist',  start: 14, end: 18, tag: 'CURATED' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
+    ],
+    4: [ // Thursday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: '135',       start: 10, end: 14, tag: '135 BPM' },
+      { name: 'in:focus',  start: 14, end: 18, tag: '5 ARTISTS' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Shuffle+',  start: 22, end: 24, tag: 'RANDOM' },
+    ],
+    5: [ // Friday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'Shuffle+',  start: 10, end: 14, tag: 'RANDOM' },
+      { name: 'Blueprint', start: 14, end: 18, tag: 'INFLUENTIAL' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Playlist',  start: 22, end: 24, tag: 'CURATED' },
+    ],
+    6: [ // Saturday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'in:focus',  start: 10, end: 14, tag: '5 ARTISTS' },
+      { name: '135',       start: 14, end: 18, tag: '135 BPM' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Blueprint', start: 22, end: 24, tag: 'INFLUENTIAL' },
+    ],
+  };
 
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
@@ -576,23 +625,31 @@
     const grid = document.getElementById('scheduleGrid');
     if (!grid) return;
 
-    let html = `<div class="day-label">Today · ${dayNames[todayDay]}</div>`;
+    let html = '';
 
-    shows.forEach(show => {
-      const isLive = todayHour >= show.start && todayHour < show.end;
-      const isPast = todayHour >= show.end;
-      const tagClass = isLive ? 'show-tag on-air' : 'show-tag';
-      const tagText = isLive ? 'ON AIR NOW' : show.tag;
-      const rowOpacity = isPast ? 'opacity:0.3;' : '';
-      const rowClass = isLive ? 'show-row live-row' : 'show-row';
-      const endHour = show.end === 24 ? '00' : String(show.end).padStart(2,'0');
-      const liveDot = isLive ? '<div class="live-dot-inline"></div>' : '';
+    // Show today + tomorrow
+    [0, 1].forEach(offset => {
+      const dayIdx = (todayDay + offset) % 7;
+      const isToday = offset === 0;
+      const dayLabel = isToday ? 'Today · ' + dayNames[dayIdx] : 'Tomorrow · ' + dayNames[dayIdx];
+      html += `<div class="day-label" style="${offset > 0 ? 'margin-top:16px;' : ''}">${dayLabel}</div>`;
 
-      html += `<div class="${rowClass}" style="${rowOpacity}">
-        <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${endHour}:00</div>
-        <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">${show.host}</div></div></div>
-        <div class="${tagClass}">${tagText}</div>
-      </div>`;
+      schedule[dayIdx].forEach(show => {
+        const isLive = isToday && todayHour >= show.start && todayHour < show.end;
+        const isPast = isToday && todayHour >= show.end;
+        const tagClass = isLive ? 'show-tag on-air' : 'show-tag';
+        const tagText = isLive ? 'ON AIR NOW' : show.tag;
+        const rowOpacity = isPast ? 'opacity:0.3;' : '';
+        const rowClass = isLive ? 'show-row live-row' : 'show-row';
+        const endHour = show.end === 24 ? '00' : String(show.end).padStart(2,'0');
+        const liveDot = isLive ? '<div class="live-dot-inline"></div>' : '';
+
+        html += `<div class="${rowClass}" style="${rowOpacity}">
+          <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${endHour}:00</div>
+          <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">C.</div></div></div>
+          <div class="${tagClass}">${tagText}</div>
+        </div>`;
+      });
     });
 
     grid.innerHTML = html;
@@ -601,7 +658,8 @@
   function updateMiniWidget() {
     const now = new Date();
     const h = now.getHours();
-    const current = shows.find(s => h >= s.start && h < s.end);
+    const todayShows = schedule[now.getDay()];
+    const current = todayShows.find(s => h >= s.start && h < s.end);
     const mini = document.getElementById('miniShowName');
     if (mini) mini.textContent = current ? current.name : '—';
   }
