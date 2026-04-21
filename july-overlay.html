@@ -645,17 +645,15 @@ async function fetchArtistInfo(artist) {
       const listeners = a.stats && a.stats.listeners ? parseInt(a.stats.listeners).toLocaleString() : '—';
       document.getElementById('artistListeners').innerHTML = '<span>' + listeners + '</span> monthly listeners';
 
-      // Artist image from Wikipedia
+      // Artist image via Cloudflare Worker proxy
       const imgWrap = document.getElementById('artistImgWrap');
       imgWrap.innerHTML = '<div id="artistImgPlaceholder">' + (a.name || artist) + '</div>';
 
-      const wikiArtist = encodeURIComponent(a.name || artist);
-      fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + wikiArtist)
+      fetch('https://julyimages.sxrsq1.workers.dev/?artist=' + encodeURIComponent(a.name || artist))
         .then(function(r) { return r.json(); })
-        .then(function(wiki) {
-          if (wiki.thumbnail && wiki.thumbnail.source) {
-            const bigImg = wiki.thumbnail.source.replace(/\/\d+px-/, '/400px-');
-            imgWrap.innerHTML = '<img id="artistImg" src="' + bigImg + '" alt="' + (a.name || artist) + '">';
+        .then(function(data) {
+          if (data.image) {
+            imgWrap.innerHTML = '<img id="artistImg" src="' + data.image + '" alt="' + (a.name || artist) + '">';
           }
         })
         .catch(function() {});
