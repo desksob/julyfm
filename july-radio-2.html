@@ -540,7 +540,6 @@
     isVizRunning = false;
     if (animFrame) cancelAnimationFrame(animFrame);
     butterchurnViz = null;
-    if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
     const canvas = document.getElementById('vizCanvas');
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -565,22 +564,13 @@
     const canvas = document.getElementById('vizCanvas');
     if (!canvas) return;
 
-    if (vizMode === 'butterchurn' && butterchurnViz) {
-      butterchurnViz.render();
-      return;
-    }
 
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    let data = fakeData;
-    if (analyser) {
-      const buf = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(buf);
-      data = Float32Array.from(buf.slice(0, NUM_BARS), v => v / 255);
-    }
+    const data = fakeData;
 
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
