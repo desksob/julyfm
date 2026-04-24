@@ -362,6 +362,41 @@
 
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .ps-cards { gap: 16px; }
+    .ps-card { width: 120px; }
+    .ps-img { width: 120px; height: 160px; }
+
+    .login-card { max-width: 100%; }
+
+    .dash-header { padding: 16px 20px; }
+    .dash-logo { height: 28px; }
+    .dash-nav { padding: 0 20px; gap: 0; }
+    .dash-nav-item { padding: 12px 14px; font-size: 9px; }
+    .dash-content { padding: 20px; }
+
+    .grid-2 { grid-template-columns: 1fr; }
+
+    .schedule-item { grid-template-columns: 70px 70px 1fr auto; gap: 6px; }
+
+    #nowPlayingBar { padding: 10px 16px; gap: 12px; flex-wrap: wrap; }
+    .np-prev { display: none; }
+    .np-info { min-width: 0; flex: 1; }
+    .np-title-mini { font-size: 11px; }
+    .np-artist-mini { font-size: 10px; }
+    .np-art-mini { width: 36px; height: 36px; }
+    .np-controls { gap: 8px; }
+    .np-label { display: none; }
+
+    .dash-host { gap: 6px; font-size: 10px; }
+    .dash-host-dot { display: none; }
+
+    .btn-row { flex-direction: column; }
+    .btn-row .btn { width: 100%; }
+  }
+
 </style>
 </head>
 <body>
