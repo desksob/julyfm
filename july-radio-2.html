@@ -582,25 +582,54 @@
 
         const imgHtml = photo
           ? '<img src="' + photo + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;object-position:top;">'
-          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:DM Serif Display,serif;font-size:32px;color:#2a2a2a;font-style:italic;">' + name[0] + '</div>';
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:48px;color:#2a2a2a;font-style:italic;">' + name[0] + '</div>';
 
         const socials = [
-          instagram ? '<a href="https://instagram.com/' + instagram.replace('@','') + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;">IG</a>' : '',
-          soundcloud ? '<a href="' + soundcloud + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;">SC</a>' : '',
+          instagram ? '<a href="https://instagram.com/' + instagram.replace('@','') + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;text-transform:uppercase;">Instagram</a>' : '',
+          soundcloud ? '<a href="' + soundcloud + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;text-transform:uppercase;">SoundCloud</a>' : '',
         ].filter(Boolean).join('');
 
-        return '<div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:4px;padding:28px;margin-bottom:16px;">' +
-          '<div class="dj-profile">' +
-            '<div class="dj-profile-img" style="border:1px solid ' + accent + '22;">' + imgHtml + '</div>' +
-            '<div style="flex:1;">' +
-              '<div class="dj-name" style="color:' + accent + ';">' + name + '</div>' +
-              '<div class="dj-show">' + shows + '</div>' +
-              (tagline ? '<div style="font-size:11px;color:#444;margin-top:6px;font-style:italic;">' + tagline + '</div>' : '') +
-              (bio ? '<div class="dj-bio" style="margin-top:10px;">' + bio + '</div>' : '') +
-              (socials ? '<div style="display:flex;gap:6px;margin-top:12px;">' + socials + '</div>' : '') +
-            '</div>' +
-          '</div>' +
-        '</div>';
+        return `
+          <div style="position:relative;margin-bottom:48px;">
+            <div style="display:grid;grid-template-columns:260px 1fr;align-items:start;position:relative;">
+
+              <!-- IMAGE — slightly higher -->
+              <div style="
+                width:260px;
+                height:320px;
+                border:1px solid ${accent}33;
+                overflow:hidden;
+                position:relative;
+                z-index:2;
+                margin-top:0;
+                flex-shrink:0;
+              ">${imgHtml}</div>
+
+              <!-- INFO BOX — overlapping right, slightly lower -->
+              <div style="
+                background:#0d0d0d;
+                border:1px solid #1a1a1a;
+                padding:32px 32px 28px;
+                margin-left:-1px;
+                margin-top:32px;
+                min-height:260px;
+                display:flex;
+                flex-direction:column;
+                justify-content:space-between;
+                z-index:1;
+              ">
+                <div>
+                  <div style="font-family:'DM Serif Display',serif;font-size:32px;color:${accent};letter-spacing:-0.5px;margin-bottom:8px;">${name}</div>
+                  <div style="font-size:10px;color:#555;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px;">${shows}</div>
+                  ${tagline ? '<div style="font-size:12px;color:#444;font-style:italic;margin-bottom:14px;">' + tagline + '</div>' : ''}
+                  ${bio ? '<div style="font-size:12px;color:#555;line-height:1.8;">' + bio + '</div>' : ''}
+                </div>
+                ${socials ? '<div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;">' + socials + '</div>' : ''}
+              </div>
+
+            </div>
+          </div>
+        `;
       }).join('');
     } catch(e) {
       console.log('loadHosts error', e);
