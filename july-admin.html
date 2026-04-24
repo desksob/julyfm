@@ -3,861 +3,726 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>July Radio — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<title>July Radio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Days+One&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #e0d9cc; font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
 
-  :root {
-    --accent: #c8a96e;
-    --accent-dim: #c8a96e22;
-    --accent-border: #c8a96e44;
+  .bg-blur {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(80px) saturate(0.4) brightness(0.18);
+    transform: scale(1.1);
+    transition: background-image 1.5s ease;
+    pointer-events: none;
   }
 
-  body {
-    background: #0a0a0a;
-    color: #e0d9cc;
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    padding-bottom: 100px;
+  .container { position: relative; z-index: 1; }
+  .caster-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+  header { padding: 40px 0 28px; border-bottom: 1px solid #222; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+
+  .live-badge { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.15em; color: #888; text-transform: uppercase; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #c8a96e; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+  nav { display: flex; gap: 32px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  nav a { color: #666; text-decoration: none; cursor: pointer; transition: color 0.2s; }
+  nav a.active, nav a:hover { color: #e0d9cc; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .player-section { padding: 40px 0; }
+  .now-playing-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 12px; }
+  .np-row { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+  .album-art { width: 80px; height: 80px; border: 1px solid #222; border-radius: 4px; background: #111; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; transition: opacity 0.6s ease; }
+  .fading { opacity: 0; }
+  .album-art img { width: 100%; height: 100%; object-fit: cover; }
+  .album-art-placeholder { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; text-align: center; padding: 8px; }
+  .track-info { flex: 1; }
+  .track-title { font-family: 'Days One', sans-serif; font-size: 28px; color: #e0d9cc; letter-spacing: -0.5px; line-height: 1.1; transition: opacity 0.6s ease; text-transform: uppercase; }
+  .track-artist { font-size: 13px; color: #c8a96e; margin-top: 6px; letter-spacing: 0.05em; transition: opacity 0.6s ease; text-transform: uppercase; }
+  .track-show { font-size: 11px; color: #555; margin-top: 4px; letter-spacing: 0.08em; }
+  .lastfm-badge { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid #d5100633; color: #d51007; padding: 3px 8px; border-radius: 2px; margin-top: 10px; display: inline-block; }
+
+  .controls { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
+  .play-btn { width: 52px; height: 52px; border-radius: 50%; border: none; background: transparent; color: #c8a96e; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; padding: 0; }
+  .play-btn:hover { color: #e0d9cc; }
+  .play-btn.playing { color: #c8a96e; }
+  .vol-wrap { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .vol-label { font-size: 10px; color: #444; letter-spacing: 0.1em; text-transform: uppercase; }
+  input[type=range] { -webkit-appearance: none; flex: 1; height: 2px; background: #222; border-radius: 1px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #c8a96e; cursor: pointer; }
+  .status-msg { font-size: 11px; color: #555; letter-spacing: 0.08em; margin-bottom: 20px; }
+  .status-msg.live { color: #c8a96e; }
+  .section-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #444; padding: 32px 0 16px; display: flex; align-items: center; gap: 12px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #1a1a1a; }
+  .history-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #141414; opacity: 0.6; transition: opacity 0.2s; gap: 12px; }
+  .history-item:hover { opacity: 1; }
+  .hi-art { width: 36px; height: 36px; border: 1px solid #1a1a1a; border-radius: 3px; background: #111; flex-shrink: 0; overflow: hidden; }
+  .hi-art img { width: 100%; height: 100%; object-fit: cover; }
+  .hi-title { font-size: 13px; color: #e0d9cc; }
+  .hi-artist { font-size: 11px; color: #666; margin-top: 2px; }
+  .hi-time { font-size: 10px; color: #444; letter-spacing: 0.05em; flex-shrink: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1a1a; margin-top: 32px; }
+  .dj-card { background: #0a0a0a; padding: 28px; transition: background 0.2s; cursor: pointer; }
+  .dj-card:hover { background: #111; }
+  .dj-avatar { width: 56px; height: 56px; border-radius: 50%; background: #1a1a1a; border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 22px; color: #c8a96e; margin-bottom: 16px; }
+  .dj-name { font-family: 'DM Serif Display', serif; font-size: 20px; color: #e0d9cc; margin-bottom: 6px; }
+  .dj-show { font-size: 11px; color: #c8a96e; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .dj-bio { font-size: 12px; color: #555; line-height: 1.7; }
+  .dj-tags { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+  .tag { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid #2a2a2a; padding: 3px 9px; border-radius: 2px; color: #555; }
+  .schedule-grid { margin-top: 32px; }
+  .day-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #444; padding: 20px 0 8px; border-bottom: 1px solid #1a1a1a; }
+  .show-row { display: grid; grid-template-columns: 100px 1fr auto; align-items: center; padding: 16px 0; border-bottom: 1px solid #111; gap: 16px; }
+  .show-time { font-size: 11px; color: #555; letter-spacing: 0.05em; }
+  .show-name { font-size: 14px; color: #e0d9cc; }
+  .show-dj { font-size: 11px; color: #666; margin-top: 3px; }
+  .show-tag { font-size: 10px; padding: 3px 10px; border: 1px solid #2a2a2a; border-radius: 2px; color: #555; white-space: nowrap; letter-spacing: 0.08em; text-transform: uppercase; }
+  .show-tag.on-air { border-color: #ff3a3a55; color: #ff3a3a; }
+
+
+  .dj-profile { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 20px; }
+  .dj-profile-img { width: 100px; height: 100px; border-radius: 4px; border: 1px solid #2a2a2a; background: #111; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+  .dj-profile-img-placeholder { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #333; text-align: center; padding: 8px; line-height: 1.6; }
+  .dj-profile-img img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Mobile responsive */
+  @media (max-width: 600px) {
+    .container { padding: 0 16px 60px; }
+    header { padding: 24px 0 20px; flex-wrap: wrap; gap: 12px; }
+    header img { height: 40px; }
+    nav { gap: 16px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    nav::-webkit-scrollbar { display: none; }
+    .track-title { font-size: 22px; }
+    .np-row { gap: 14px; }
+    .album-art { width: 64px; height: 64px; }
+    .play-btn { font-size: 26px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .show-row { grid-template-columns: 80px 1fr auto; gap: 8px; }
+    .show-time { font-size: 10px; }
+    .dj-profile { flex-direction: column; align-items: flex-start; }
+    .section-label { padding: 24px 0 12px; }
+    #vizCanvas { height: 200px; }
+    .viz-btn { padding: 5px 10px; font-size: 9px; }
   }
 
-  /* ===== VIEWS ===== */
-  .view { display: none; }
-  .view.active { display: block; }
 
-  /* ===== PROFILE SELECT ===== */
-  #profileSelect {
-    min-height: 100vh;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-  }
-  #profileSelect.active { display: flex; }
-
-  .ps-logo { height: 44px; margin-bottom: 48px; }
-
-  .ps-prompt {
-    font-size: 10px;
-    color: #333;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-bottom: 48px;
-  }
-
-  .ps-cards {
-    display: flex;
-    gap: 28px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .ps-card {
-    width: 160px;
-    cursor: pointer;
-    text-align: center;
-  }
-
-  .ps-img {
-    width: 160px;
-    height: 210px;
+  .show-row.live-row {
+    border: 1px solid #ff3a3a44;
     border-radius: 4px;
-    overflow: hidden;
-    border: 2px solid transparent;
-    background: #111;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    padding: 16px 12px;
+    margin: 4px 0;
+    box-shadow: 0 0 12px #ff3a3a22, inset 0 0 20px #ff3a3a08;
     position: relative;
   }
 
-  .ps-img img {
-    width: 100%; height: 100%;
-    object-fit: cover; object-position: top;
-    transition: transform 0.4s;
+  .show-row.live-row .show-name { color: #fff; }
+
+  .live-dot-inline {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #ff3a3a;
+    display: inline-block;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
-  .ps-card:hover .ps-img img { transform: scale(1.04); }
 
-  .ps-placeholder {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'DM Serif Display', serif;
-    font-size: 44px; color: #2a2a2a; font-style: italic;
+  .viz-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.15em;
+    border: 1px solid #2a2a2a; background: transparent;
+    color: #555; padding: 6px 14px; border-radius: 2px;
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
   }
+  .viz-btn.active, .viz-btn:hover { border-color: #c8a96e; color: #c8a96e; }
 
-  .ps-name {
-    font-size: 12px; color: #666;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    margin-top: 14px;
-    transition: color 0.3s;
-  }
-
-  .ps-card:hover .ps-name { color: #e0d9cc; }
-
-  /* ===== LOGIN ===== */
-  #loginView {
-    min-height: 100vh;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-  }
-  #loginView.active { display: flex; }
-
-  .login-card {
-    width: 100%; max-width: 380px;
-    border: 1px solid #1a1a1a;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .login-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #1a1a1a;
-    display: flex; align-items: center; gap: 12px;
-  }
-
-  .login-avatar {
-    width: 36px; height: 36px;
-    border-radius: 3px; overflow: hidden;
-    border: 1px solid #1a1a1a; background: #111; flex-shrink: 0;
-  }
-
-  .login-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .login-avatar-placeholder {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'DM Serif Display', serif; font-size: 16px;
-    color: #2a2a2a; font-style: italic;
-  }
-
-  .login-name { font-size: 13px; color: #e0d9cc; }
-  .login-sub { font-size: 10px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
-
-  .login-body { padding: 24px; }
-
-  /* ===== DASHBOARD ===== */
-  #dashView {
-    display: none;
-    min-height: 100vh;
-  }
-  #dashView.active { display: block; }
-
-  .dash-header {
-    padding: 24px 32px;
-    border-bottom: 1px solid #1a1a1a;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-
-  .dash-logo { height: 36px; }
-
-  .dash-host {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 11px; color: #555;
-    letter-spacing: 0.1em; text-transform: uppercase;
-  }
-
-  .dash-host-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent);
-  }
-
-  .dash-nav {
-    display: flex; gap: 0;
-    border-bottom: 1px solid #1a1a1a;
-    padding: 0 32px;
-    overflow-x: auto;
-  }
-
-  .dash-nav-item {
-    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: #555; padding: 14px 20px; cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s; white-space: nowrap;
-  }
-
-  .dash-nav-item.active { color: #e0d9cc; border-bottom-color: var(--accent); }
-  .dash-nav-item:hover { color: #888; }
-
-  .dash-content { padding: 32px; }
-
-  .dash-panel { display: none; }
-  .dash-panel.active { display: block; }
-
-  /* ===== SHARED FORM STYLES ===== */
-  .field { margin-bottom: 20px; }
-  .field-label {
-    font-size: 10px; color: #555; letter-spacing: 0.15em;
-    text-transform: uppercase; margin-bottom: 8px; display: block;
-  }
-
-  input[type=text], input[type=password], input[type=url], input[type=time], textarea, select {
-    width: 100%; background: #111; border: 1px solid #1a1a1a;
-    border-radius: 2px; color: #e0d9cc;
-    font-family: 'DM Mono', monospace; font-size: 13px;
-    padding: 10px 14px; outline: none; transition: border-color 0.2s;
-  }
-
-  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-  textarea { resize: vertical; min-height: 80px; }
-
-  .btn {
-    background: transparent; border: 1px solid var(--accent);
-    color: var(--accent); font-family: 'DM Mono', monospace;
-    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
-    padding: 10px 20px; border-radius: 2px; cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn:hover { background: var(--accent); color: #0a0a0a; }
-  .btn.full { width: 100%; }
-  .btn.secondary { border-color: #2a2a2a; color: #555; }
-  .btn.secondary:hover { background: #2a2a2a; color: #e0d9cc; }
-  .btn.danger { border-color: #ff3a3a44; color: #ff3a3a; }
-  .btn.danger:hover { background: #ff3a3a; color: #fff; }
-  .btn.small { font-size: 10px; padding: 6px 12px; }
-
-  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-
-  .msg {
-    font-size: 11px; padding: 10px 14px; border-radius: 2px;
-    margin-bottom: 16px; display: none;
-  }
-  .msg.success { background: #0a1a0a; border: 1px solid #1a3a1a; color: #4a8a4a; display: block; }
-  .msg.error { background: #1a0a0a; border: 1px solid #3a1a1a; color: #8a4a4a; display: block; }
-
-  .divider { height: 1px; background: #1a1a1a; margin: 24px 0; }
-
-  /* ===== MODE TOGGLE ===== */
-  .mode-toggle {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 1px; background: #1a1a1a; border-radius: 2px;
-    overflow: hidden; margin-bottom: 24px;
-  }
-
-  .mode-btn {
-    background: #0a0a0a; border: none; color: #555;
-    font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    padding: 12px; cursor: pointer; transition: all 0.2s;
-  }
-
-  .mode-btn.active { background: #111; color: #e0d9cc; }
-
-  /* ===== SCHEDULE ===== */
-  .schedule-list { margin-bottom: 20px; }
-
-  .schedule-item {
-    display: grid; grid-template-columns: 80px 80px 1fr auto;
-    gap: 8px; align-items: center;
-    padding: 12px 0; border-bottom: 1px solid #111;
-  }
-
-  .schedule-item input[type=time] { padding: 6px 10px; font-size: 12px; }
-
-  .day-select { padding: 6px 10px; font-size: 12px; }
-
-  .show-name-input { padding: 6px 10px; font-size: 12px; }
-
-  /* ===== PROFILE IMG PREVIEW ===== */
-  .preview-img {
-    width: 100%; max-height: 200px;
-    object-fit: cover; object-position: top;
-    border-radius: 2px; border: 1px solid #1a1a1a;
-    margin-top: 8px; display: none;
-  }
-
-  /* ===== NOW PLAYING BAR ===== */
-  #nowPlayingBar {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: rgba(10,10,10,0.95);
-    border-top: 1px solid #1a1a1a;
-    padding: 12px 32px;
-    display: flex; align-items: center; gap: 20px;
-    transform: translateY(0);
-    transition: transform 0.4s ease;
-    z-index: 100;
-    backdrop-filter: blur(8px);
-  }
-
-  #nowPlayingBar.hidden { transform: translateY(100%); }
-
-  .np-art-mini {
-    width: 44px; height: 44px;
-    border-radius: 2px; border: 1px solid #1a1a1a;
-    background: #111; flex-shrink: 0; overflow: hidden;
-  }
-
-  .np-art-mini img { width: 100%; height: 100%; object-fit: cover; display: none; }
-
-  .np-info { flex: 1; min-width: 0; }
-  .np-title-mini {
-    font-size: 12px; color: #e0d9cc;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .np-artist-mini { font-size: 11px; color: var(--accent); margin-top: 2px; text-transform: uppercase; }
-
-  .np-prev {
-    display: flex; gap: 16px; align-items: center;
-    border-left: 1px solid #1a1a1a; padding-left: 20px;
-    max-width: 400px; overflow: hidden;
-  }
-
-  .np-prev-item { font-size: 10px; color: #333; white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
-  .np-prev-item span { color: #555; }
-
-  .np-controls { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-
-  .np-play-btn {
-    width: 36px; height: 36px;
-    border: 1px solid var(--accent); border-radius: 50%;
-    background: transparent; color: var(--accent);
-    font-size: 14px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; flex-shrink: 0;
-  }
-
-  .np-play-btn:hover { background: var(--accent); color: #0a0a0a; }
-
-  .np-close-btn {
-    background: none; border: none; color: #333;
-    font-size: 16px; cursor: pointer; padding: 4px;
-    transition: color 0.2s; flex-shrink: 0;
-  }
-
-  .np-close-btn:hover { color: #888; }
-
-  .np-label {
-    font-size: 9px; color: #333; letter-spacing: 0.15em;
-    text-transform: uppercase; flex-shrink: 0;
-  }
-
-  .section-title {
-    font-size: 10px; color: #555; letter-spacing: 0.2em;
-    text-transform: uppercase; margin-bottom: 20px;
-    padding-bottom: 12px; border-bottom: 1px solid #1a1a1a;
-  }
-
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
-<!-- ===== PROFILE SELECT ===== -->
-<div id="profileSelect" class="active">
-  <img src="july-logo.png" alt="July Radio" class="ps-logo">
-  <div class="ps-prompt">Welcome — choose your profile</div>
-  <div class="ps-cards">
-
-    <div class="ps-card" onclick="selectHost('c')">
-      <div class="ps-img" id="ps-wrap-c">
-        <img src="julyhost1.png" alt="C." id="ps-img-c" crossorigin="anonymous">
-      </div>
-      <div class="ps-name">C.</div>
-    </div>
-
-    <div class="ps-card" onclick="selectHost('fziwe')">
-      <div class="ps-img" id="ps-wrap-fziwe" style="--h-accent:#6e8ac8;">
-        <div class="ps-placeholder">F</div>
-      </div>
-      <div class="ps-name">Fziwe</div>
-    </div>
-
-    <div class="ps-card" onclick="selectHost('fiscia')">
-      <div class="ps-img" id="ps-wrap-fiscia" style="--h-accent:#c86e8a;">
-        <div class="ps-placeholder">Fi</div>
-      </div>
-      <div class="ps-name">Fiscia</div>
-    </div>
-
-  </div>
+<div class="bg-blur" id="bgBlur"></div>
+<div class="caster-hidden">
+  <script src="//myradiostream.com/embed/desksob"></script>
 </div>
 
-<!-- ===== LOGIN ===== -->
-<div id="loginView">
-  <div class="login-card">
-    <div class="login-header">
-      <div class="login-avatar" id="loginAvatar"></div>
-      <div>
-        <div class="login-name" id="loginName">—</div>
-        <div class="login-sub">July Radio Admin</div>
+<div class="container">
+  <header>
+    <img src="july-logo.png" alt="July Radio" style="height:56px;width:auto;object-fit:contain;">
+    <div class="live-badge"><div class="dot"></div> Live · 24/7</div>
+  </header>
+
+  <nav>
+    <a class="active" onclick="show('listen',this)">Listen</a>
+    <a onclick="show('schedule',this)">Schedule</a>
+    <a onclick="show('djs',this)">DJs</a>
+    <a onclick="show('visualizer',this)">Visualizer</a>
+    <a onclick="show('about',this)">About</a>
+  </nav>
+
+  <div id="listen" class="section active">
+    <div class="player-section">
+      <div class="now-playing-label">Now Playing</div>
+      <div class="np-row">
+        <div class="album-art" id="albumArt">
+          <div class="album-art-placeholder" id="artPlaceholder">art</div>
+        </div>
+        <div class="track-info">
+          <div class="track-title" id="trackTitle">July Radio</div>
+          <div class="track-artist" id="trackArtist">—</div>
+          <div class="track-show" id="trackAlbum">syncing with last.fm...</div>
+          <div class="lastfm-badge">LIVE</div>
+        </div>
       </div>
-    </div>
-    <div class="login-body">
-      <div class="field">
-        <label class="field-label">Password</label>
-        <input type="password" id="passwordInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()">
+
+      <div class="status-msg" id="statusMsg">— press play to tune in</div>
+
+      <div class="controls">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">&#9654;</button>
+        <div class="vol-wrap">
+          <span class="vol-label">Vol</span>
+          <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
+        </div>
       </div>
-      <div class="msg" id="loginMsg"></div>
-      <div class="btn-row">
-        <button class="btn full" onclick="login()">Enter</button>
-        <button class="btn secondary" onclick="backToProfiles()">Back</button>
+
+      <div id="miniOnAir" onclick="show('schedule', document.querySelector('nav a:nth-child(2)'))" style="cursor:pointer;border:1px solid #ff3a3a44;border-radius:4px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 10px #ff3a3a1a;margin-bottom:28px;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 0 18px #ff3a3a33'" onmouseout="this.style.boxShadow='0 0 10px #ff3a3a1a'">
+        <div class="live-dot-inline"></div>
+        <div>
+          <div id="miniShowName" style="font-size:12px;color:#e0d9cc;letter-spacing:0.05em;">—</div>
+          <div style="font-size:10px;color:#555;letter-spacing:0.08em;margin-top:2px;">NOW ON AIR · TAP FOR SCHEDULE</div>
+        </div>
+      </div>
+
+      <div class="section-label">Recent plays</div>
+      <div id="historyList">
+        <div style="font-size:11px;color:#444;padding:16px 0;">Loading history...</div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ===== DASHBOARD ===== -->
-<div id="dashView">
-  <div class="dash-header">
-    <img src="july-logo.png" alt="July Radio" class="dash-logo">
-    <div class="dash-host">
-      <div class="dash-host-dot"></div>
-      <span id="dashHostName">—</span>
-      <button class="btn secondary small" onclick="logout()" style="margin-left:8px;">Log out</button>
-    </div>
+  <div id="schedule" class="section">
+    <div class="schedule-grid" id="scheduleGrid"></div>
   </div>
 
-  <div class="dash-nav">
-    <div class="dash-nav-item active" onclick="showPanel('broadcast',this)">Broadcast</div>
-    <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
-    <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
-  </div>
-
-  <div class="dash-content">
-
-    <!-- BROADCAST -->
-    <div class="dash-panel active" id="panel-broadcast">
-      <div class="section-title">Broadcast Mode</div>
-      <div class="msg" id="broadcastMsg"></div>
-
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="btnLastfm" onclick="selectMode('lastfm')">Last.fm</button>
-        <button class="mode-btn" id="btnDjset" onclick="selectMode('djset')">DJ Set</button>
-      </div>
-
-      <div id="djFields" style="display:none;">
-        <div class="grid-2">
-          <div class="field">
-            <label class="field-label">Mix Title</label>
-            <input type="text" id="djTitle" placeholder="e.g. Burial — Untrue">
+  <div id="djs" class="section">
+    <div style="padding: 40px 0;">
+      <div class="dj-card" style="background:#0f0f0f; border: 1px solid #1a1a1a; padding: 32px;">
+        <div class="dj-profile">
+          <div class="dj-profile-img">
+            <img src="julyhost1.png" alt="C.">
           </div>
-          <div class="field">
-            <label class="field-label">Your Name</label>
-            <input type="text" id="djName" placeholder="e.g. C.">
+          <div>
+            <div class="dj-name">C.</div>
+            <div class="dj-show">Host · All shows</div>
+            <div class="dj-bio" style="text-transform:uppercase;letter-spacing:0.05em;">Curator and host of July Radio. Running four shows across the week.</div>
           </div>
         </div>
-        <div class="field">
-          <label class="field-label">Set Image URL</label>
-          <input type="url" id="djImage" placeholder="https://..." oninput="previewDjImg()">
-          <img id="djImgPreview" class="preview-img" alt="preview">
+        <div class="dj-tags">
+          <div class="tag">Playlist</div>
+          <div class="tag">Open Air</div>
+          <div class="tag">di:scovery</div>
+          <div class="tag">Shuffle+</div>
+          <div class="tag">in:focus</div>
         </div>
       </div>
-
-      <button class="btn" onclick="saveBroadcast()">Apply</button>
     </div>
+  </div>
 
-    <!-- SCHEDULE -->
-    <div class="dash-panel" id="panel-schedule">
-      <div class="section-title">Your Shows</div>
-      <div class="msg" id="scheduleMsg"></div>
-      <div class="schedule-list" id="scheduleList"></div>
-      <button class="btn secondary" onclick="addShowSlot()">+ Add Show</button>
-      <div class="divider"></div>
-      <button class="btn" onclick="saveSchedule()">Save Schedule</button>
+  <div id="visualizer" class="section">
+    <div style="padding: 40px 0;">
+      <canvas id="vizCanvas" style="width:100%;height:300px;display:block;background:#000;border:1px solid #1a1a1a;border-radius:4px;"></canvas>
+      <div style="font-size:10px;color:#333;letter-spacing:0.15em;text-transform:uppercase;margin-top:12px;text-align:center;">Press play on the Listen tab to activate</div>
+      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+        <button onclick="setVizMode('bars')" class="viz-btn active" id="btn-bars">BARS</button>
+        <button onclick="setVizMode('scope')" class="viz-btn" id="btn-scope">SCOPE</button>
+        <button onclick="setVizMode('xp')" class="viz-btn" id="btn-xp">XP MODE</button>
+      </div>
     </div>
+  </div>
 
-    <!-- PROFILE -->
-    <div class="dash-panel" id="panel-profile">
-      <div class="section-title">Your Profile</div>
-      <div class="msg" id="profileMsg"></div>
-      <div class="grid-2">
-        <div class="field">
-          <label class="field-label">Display Name</label>
-          <input type="text" id="profileName" placeholder="e.g. C.">
-        </div>
-        <div class="field">
-          <label class="field-label">Show Name(s)</label>
-          <input type="text" id="profileShows" placeholder="e.g. Open Air · Playlist">
-        </div>
+  <div id="about" class="section">
+    <div style="padding:60px 0 40px;max-width:520px;">
+      <div style="font-family:'DM Serif Display',serif;font-size:36px;color:#e0d9cc;letter-spacing:-1px;margin-bottom:24px;">July Radio</div>
+      <div style="font-size:13px;color:#555;line-height:2;margin-bottom:40px;">A personal radio station. Running four shows daily — curated playlists, new music discovery, focused listening, and live open air sets. On air around the clock.</div>
+      <div style="font-size:11px;color:#333;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Shows</div>
+      <div style="font-size:12px;color:#555;line-height:2.2;">
+        Playlist &mdash; curated selections, all day<br>
+        di:scovery &mdash; new music, every morning<br>
+        Shuffle+ &mdash; random, always different<br>
+        in:focus &mdash; 5 artists or albums of the day<br>
+        Open Air &mdash; live mix, evenings
       </div>
-      <div class="field">
-        <label class="field-label">Tagline</label>
-        <input type="text" id="profileTagline" placeholder="e.g. taste over everything.">
-      </div>
-      <div class="field">
-        <label class="field-label">Bio</label>
-        <textarea id="profileBio" placeholder="A short bio about you and your show..."></textarea>
-      </div>
-      <div class="field">
-        <label class="field-label">Photo URL</label>
-        <input type="url" id="profilePhoto" placeholder="https://..." oninput="previewProfileImg()">
-        <img id="profileImgPreview" class="preview-img" alt="preview">
-      </div>
-      <div class="field">
-        <label class="field-label">Instagram</label>
-        <input type="text" id="profileInstagram" placeholder="@handle">
-      </div>
-      <div class="field">
-        <label class="field-label">SoundCloud</label>
-        <input type="text" id="profileSoundcloud" placeholder="soundcloud.com/yourname">
-      </div>
-      <button class="btn" onclick="saveProfile()">Save Profile</button>
+      <div style="margin-top:60px;font-size:12px;color:#333;font-style:italic;">made with love by desksob</div>
     </div>
-
-  </div>
-</div>
-
-<!-- ===== NOW PLAYING BAR ===== -->
-<div id="nowPlayingBar" class="hidden">
-  <div class="np-art-mini" id="npArtMini">
-    <img id="npImgMini" src="" alt="">
-  </div>
-  <div class="np-info">
-    <div class="np-title-mini" id="npTitleMini">—</div>
-    <div class="np-artist-mini" id="npArtistMini">—</div>
-  </div>
-  <div class="np-prev" id="npPrev"></div>
-  <div class="np-controls">
-    <span class="np-label">Monitor</span>
-    <button class="np-play-btn" id="npPlayBtn" onclick="toggleMonitor()">&#9654;</button>
-    <button class="np-close-btn" onclick="closeNowPlaying()" title="Close">✕</button>
   </div>
 </div>
 
 <script>
-const WORKER = 'https://julyimages.sxrsq1.workers.dev';
-const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
-const LASTFM_USER = 'injeton';
+  const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
+  const LASTFM_USER = 'injeton';
+  let playing = false;
+  let audio = null;
+  let lastTrack = '';
+  const streamUrl = 'https://s48.myradiostream.com:14791/listen.mp3';
 
-const HOSTS = {
-  c:      { name: 'C.',     accent: '#c8a96e', password: 'julyat2025', photo: 'julyhost1.png' },
-  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', password: 'fziwe2025',  photo: null },
-  fiscia: { name: 'Fiscia', accent: '#c86e8a', password: 'fiscia2025', photo: null },
-};
-
-const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-let currentHost = null;
-let selectedMode = 'lastfm';
-let monitorAudio = null;
-let monitorPlaying = false;
-let lastTrack = '';
-let scheduleSlots = [];
-
-// ===== PROFILE SELECT =====
-function setupHovers() {
-  Object.keys(HOSTS).forEach(function(id) {
-    const wrap = document.getElementById('ps-wrap-' + id);
-    const host = HOSTS[id];
-    if (!wrap) return;
-    wrap.addEventListener('mouseenter', function() {
-      wrap.style.borderColor = host.accent;
-      wrap.style.boxShadow = '0 0 28px ' + host.accent + '44';
-    });
-    wrap.addEventListener('mouseleave', function() {
-      wrap.style.borderColor = 'transparent';
-      wrap.style.boxShadow = 'none';
-    });
-  });
-}
-
-function selectHost(id) {
-  currentHost = id;
-  const host = HOSTS[id];
-
-  // Set accent color
-  document.documentElement.style.setProperty('--accent', host.accent);
-  document.documentElement.style.setProperty('--accent-dim', host.accent + '22');
-  document.documentElement.style.setProperty('--accent-border', host.accent + '44');
-
-  // Set login card
-  const avatar = document.getElementById('loginAvatar');
-  if (host.photo) {
-    avatar.innerHTML = '<img src="' + host.photo + '" alt="' + host.name + '">';
-  } else {
-    avatar.innerHTML = '<div class="login-avatar-placeholder">' + host.name[0] + '</div>';
-  }
-  document.getElementById('loginName').textContent = host.name;
-
-  document.getElementById('profileSelect').classList.remove('active');
-  document.getElementById('loginView').classList.add('active');
-  setTimeout(function() { document.getElementById('passwordInput').focus(); }, 100);
-}
-
-function backToProfiles() {
-  document.getElementById('loginView').classList.remove('active');
-  document.getElementById('passwordInput').value = '';
-  document.getElementById('profileSelect').classList.add('active');
-}
-
-// ===== LOGIN =====
-async function login() {
-  const pw = document.getElementById('passwordInput').value;
-  const host = HOSTS[currentHost];
-  if (pw !== host.password) {
-    showMsg('loginMsg', 'error', 'Wrong password');
-    return;
-  }
-
-  document.getElementById('loginView').classList.remove('active');
-  document.getElementById('dashView').classList.add('active');
-  document.getElementById('dashHostName').textContent = host.name;
-
-  await loadDashboard();
-  document.getElementById('nowPlayingBar').classList.remove('hidden');
-  startNowPlayingPoll();
-}
-
-function logout() {
-  document.getElementById('dashView').classList.remove('active');
-  document.getElementById('profileSelect').classList.add('active');
-  document.getElementById('passwordInput').value = '';
-  document.getElementById('nowPlayingBar').classList.add('hidden');
-  stopMonitor();
-}
-
-// ===== DASHBOARD =====
-function showPanel(id, el) {
-  document.querySelectorAll('.dash-panel').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.dash-nav-item').forEach(function(n) { n.classList.remove('active'); });
-  document.getElementById('panel-' + id).classList.add('active');
-  el.classList.add('active');
-}
-
-async function loadDashboard() {
-  await loadBroadcastMode();
-  await loadSchedule();
-  await loadProfile();
-}
-
-// ===== BROADCAST =====
-async function loadBroadcastMode() {
-  try {
-    const res = await fetch(WORKER + '/mode');
-    const data = await res.json();
-    selectedMode = data.mode || 'lastfm';
-    updateModeUI();
-    if (data.djset) {
-      document.getElementById('djTitle').value = data.djset.title || '';
-      document.getElementById('djName').value = data.djset.djName || '';
-      document.getElementById('djImage').value = data.djset.image || '';
-      previewDjImg();
+  function togglePlay() {
+    if (!playing) {
+      audio = new Audio(streamUrl);
+      audio.setAttribute('playsinline', '');
+      audio.setAttribute('webkit-playsinline', '');
+      audio.setAttribute('x-webkit-airplay', 'allow');
+      audio.preload = 'none';
+      audio.volume = document.getElementById('volSlider').value / 100;
+      audio.play().then(() => {
+        playing = true;
+        document.getElementById('playBtn').innerHTML = '&#9646;&#9646;';
+        document.getElementById('playBtn').classList.add('playing');
+        document.getElementById('statusMsg').textContent = '— live now';
+        document.getElementById('statusMsg').classList.add('live');
+        startVisualizer();
+        updateMediaSession(
+          document.getElementById('trackTitle').textContent,
+          document.getElementById('trackArtist').textContent,
+          null
+        );
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+      }).catch(() => {
+        document.getElementById('statusMsg').textContent = '— could not connect to stream';
+      });
+    } else {
+      audio.pause();
+      audio = null;
+      playing = false;
+      document.getElementById('playBtn').innerHTML = '&#9654;';
+      document.getElementById('playBtn').classList.remove('playing');
+      document.getElementById('statusMsg').textContent = '— paused';
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+      document.getElementById('statusMsg').classList.remove('live');
+      stopVisualizer();
     }
-  } catch(e) {}
-}
-
-function selectMode(mode) {
-  selectedMode = mode;
-  updateModeUI();
-}
-
-function updateModeUI() {
-  document.getElementById('btnLastfm').className = 'mode-btn' + (selectedMode === 'lastfm' ? ' active' : '');
-  document.getElementById('btnDjset').className = 'mode-btn' + (selectedMode === 'djset' ? ' active' : '');
-  document.getElementById('djFields').style.display = selectedMode === 'djset' ? 'block' : 'none';
-}
-
-async function saveBroadcast() {
-  const body = {
-    password: HOSTS[currentHost].password,
-    mode: selectedMode
-  };
-  if (selectedMode === 'djset') {
-    const title = document.getElementById('djTitle').value;
-    if (!title) { showMsg('broadcastMsg', 'error', 'Please enter a mix title'); return; }
-    body.djset = {
-      title: title,
-      djName: document.getElementById('djName').value || HOSTS[currentHost].name,
-      image: document.getElementById('djImage').value
-    };
   }
-  try {
-    const res = await fetch(WORKER + '/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if (data.ok) showMsg('broadcastMsg', 'success', 'Mode updated — live within 15 seconds');
-    else showMsg('broadcastMsg', 'error', 'Failed to update');
-  } catch(e) { showMsg('broadcastMsg', 'error', 'Connection error'); }
-}
 
-function previewDjImg() {
-  const url = document.getElementById('djImage').value;
-  const img = document.getElementById('djImgPreview');
-  img.src = url; img.style.display = url ? 'block' : 'none';
-}
+  function setVol(v) { if (audio) audio.volume = v / 100; }
 
-// ===== SCHEDULE =====
-async function loadSchedule() {
-  try {
-    const res = await fetch(WORKER + '/schedule?host=' + currentHost);
-    const data = await res.json();
-    scheduleSlots = data.slots || [];
-  } catch(e) { scheduleSlots = []; }
-  renderSchedule();
-}
+  function show(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
 
-function renderSchedule() {
-  const list = document.getElementById('scheduleList');
-  list.innerHTML = '';
-  scheduleSlots.forEach(function(slot, i) {
-    const row = document.createElement('div');
-    row.className = 'schedule-item';
-    row.innerHTML =
-      '<select class="day-select" onchange="scheduleSlots[' + i + '].day=parseInt(this.value)">' +
-        DAYS.map(function(d,j) { return '<option value="' + j + '"' + (slot.day===j?' selected':'') + '>' + d.slice(0,3) + '</option>'; }).join('') +
-      '</select>' +
-      '<input type="time" value="' + (slot.start||'00:00') + '" onchange="scheduleSlots[' + i + '].start=this.value">' +
-      '<input type="text" class="show-name-input" value="' + (slot.name||'') + '" placeholder="Show name" onchange="scheduleSlots[' + i + '].name=this.value">' +
-      '<button class="btn danger small" onclick="removeSlot(' + i + ')">✕</button>';
-    list.appendChild(row);
-  });
-}
+  function timeAgo(unixTime) {
+    const diff = Math.floor(Date.now() / 1000) - unixTime;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' hr ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
 
-function addShowSlot() {
-  scheduleSlots.push({ day: 1, start: '18:00', name: '' });
-  renderSchedule();
-}
-
-function removeSlot(i) {
-  scheduleSlots.splice(i, 1);
-  renderSchedule();
-}
-
-async function saveSchedule() {
-  try {
-    const res = await fetch(WORKER + '/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, slots: scheduleSlots })
-    });
-    const data = await res.json();
-    if (data.ok) showMsg('scheduleMsg', 'success', 'Schedule saved');
-    else showMsg('scheduleMsg', 'error', 'Failed to save');
-  } catch(e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
-}
-
-// ===== PROFILE =====
-async function loadProfile() {
-  try {
-    const res = await fetch(WORKER + '/profile?host=' + currentHost);
-    const data = await res.json();
-    if (data.profile) {
-      const p = data.profile;
-      document.getElementById('profileName').value = p.name || HOSTS[currentHost].name;
-      document.getElementById('profileShows').value = p.shows || '';
-      document.getElementById('profileTagline').value = p.tagline || '';
-      document.getElementById('profileBio').value = p.bio || '';
-      document.getElementById('profilePhoto').value = p.photo || '';
-      document.getElementById('profileInstagram').value = p.instagram || '';
-      document.getElementById('profileSoundcloud').value = p.soundcloud || '';
-      previewProfileImg();
+  function getBestImage(images) {
+    const sizes = ['extralarge', 'large', 'medium', 'small'];
+    for (const size of sizes) {
+      const img = images.find(i => i.size === size);
+      if (img && img['#text']) return img['#text'];
     }
-  } catch(e) {}
-}
+    return null;
+  }
 
-async function saveProfile() {
-  const profile = {
-    name: document.getElementById('profileName').value,
-    shows: document.getElementById('profileShows').value,
-    tagline: document.getElementById('profileTagline').value,
-    bio: document.getElementById('profileBio').value,
-    photo: document.getElementById('profilePhoto').value,
-    instagram: document.getElementById('profileInstagram').value,
-    soundcloud: document.getElementById('profileSoundcloud').value,
-  };
-  try {
-    const res = await fetch(WORKER + '/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, profile })
-    });
-    const data = await res.json();
-    if (data.ok) showMsg('profileMsg', 'success', 'Profile saved');
-    else showMsg('profileMsg', 'error', 'Failed to save');
-  } catch(e) { showMsg('profileMsg', 'error', 'Connection error'); }
-}
+  async function fetchNowPlaying() {
+    try {
+      const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_KEY}&format=json&limit=10`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const tracks = data.recenttracks.track;
+      if (!tracks || tracks.length === 0) return;
 
-function previewProfileImg() {
-  const url = document.getElementById('profilePhoto').value;
-  const img = document.getElementById('profileImgPreview');
-  img.src = url; img.style.display = url ? 'block' : 'none';
-}
+      const current = tracks[0];
+      const isLive = current['@attr'] && current['@attr']['nowplaying'] === 'true';
+      const trackName = current.name;
+      const artistName = current.artist['#text'];
+      const albumName = current.album['#text'];
+      const trackKey = trackName + artistName;
 
-// ===== NOW PLAYING BAR =====
-function startNowPlayingPoll() {
+      if (trackKey !== lastTrack) {
+        lastTrack = trackKey;
+        const imgUrl = getBestImage(current.image);
+
+        // Fade out
+        const titleEl = document.getElementById('trackTitle');
+        const artistEl = document.getElementById('trackArtist');
+        const albumEl = document.getElementById('trackAlbum');
+        const artEl = document.getElementById('albumArt');
+
+        titleEl.classList.add('fading');
+        artistEl.classList.add('fading');
+        albumEl.classList.add('fading');
+        artEl.classList.add('fading');
+
+        setTimeout(() => {
+          // Update content while faded out
+          titleEl.textContent = trackName;
+          artistEl.textContent = artistName;
+          albumEl.textContent = albumName || '—';
+
+          if (imgUrl) {
+            artEl.innerHTML = `<img src="${imgUrl}" alt="album art">`;
+            updateBg(imgUrl);
+          } else {
+            artEl.innerHTML = `<div class="album-art-placeholder">art</div>`;
+          }
+
+
+          // Fade back in
+          titleEl.classList.remove('fading');
+          artistEl.classList.remove('fading');
+          albumEl.classList.remove('fading');
+          artEl.classList.remove('fading');
+        }, 600);
+      }
+
+      // Update MediaSession on every poll if playing
+      if (playing) {
+        const imgUrl2 = getBestImage(current.image);
+        updateMediaSession(trackName, artistName, imgUrl2);
+        navigator.mediaSession.playbackState = 'playing';
+      }
+
+      // History
+      const history = tracks.slice(isLive ? 1 : 0, (isLive ? 1 : 0) + 6);
+      const historyEl = document.getElementById('historyList');
+      historyEl.innerHTML = history.map(t => {
+        const img = getBestImage(t.image);
+        const time = t.date ? timeAgo(parseInt(t.date.uts)) : '—';
+        return `<div class="history-item">
+          <div class="hi-art">${img ? `<img src="${img}" alt="">` : ''}</div>
+          <div style="flex:1"><div class="hi-title">${t.name}</div><div class="hi-artist">${t.artist['#text']}</div></div>
+          <div class="hi-time">${time}</div>
+        </div>`;
+      }).join('');
+
+    } catch (e) {
+      console.log('Last.fm fetch error', e);
+    }
+  }
+
+
+
+  // MediaSession API for iOS/Android lock screen
+  function updateMediaSession(title, artist, artUrl) {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: title || 'July Radio',
+        artist: artist || 'Live Stream',
+        album: 'July Radio',
+        artwork: artUrl ? [
+          { src: artUrl, sizes: '300x300', type: 'image/jpeg' },
+          { src: artUrl, sizes: '96x96',  type: 'image/jpeg' },
+        ] : [
+          { src: 'july-logo.png', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      // Live stream controls only — no skip, no scrubbing
+      navigator.mediaSession.setActionHandler('play', () => { if (!playing) togglePlay(); });
+      navigator.mediaSession.setActionHandler('pause', () => { if (playing) togglePlay(); });
+      navigator.mediaSession.setActionHandler('stop', () => { if (playing) togglePlay(); });
+      try { navigator.mediaSession.setActionHandler('seekforward', null); } catch(e) {}
+      try { navigator.mediaSession.setActionHandler('seekbackward', null); } catch(e) {}
+      try { navigator.mediaSession.setActionHandler('nexttrack', null); } catch(e) {}
+      try { navigator.mediaSession.setActionHandler('previoustrack', null); } catch(e) {}
+
+      // Set position state to hint live stream to iOS
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: Infinity,
+          playbackRate: 1,
+          position: 0
+        });
+      } catch(e) {}
+    }
+  }
+
+  // Blurred background from album art
+  function updateBg(imgUrl) {
+    const bg = document.getElementById('bgBlur');
+    if (imgUrl) {
+      bg.style.backgroundImage = `url(${imgUrl})`;
+    }
+  }
+
+  // Visualizer
+  let vizMode = 'bars';
+  let animFrame;
+  let isVizRunning = false;
+  const NUM_BARS = 64;
+  let fakeData = [];
+  let targets = [];
+
+  for (let i = 0; i < NUM_BARS; i++) {
+    fakeData.push(Math.random() * 0.3);
+    targets.push(Math.random());
+  }
+
+  function setVizMode(mode) {
+    vizMode = mode;
+    document.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + mode).classList.add('active');
+  }
+
+  function startVisualizer() {
+    if (isVizRunning) return;
+    isVizRunning = true;
+    drawViz();
+  }
+
+  function stopVisualizer() {
+    isVizRunning = false;
+    if (animFrame) cancelAnimationFrame(animFrame);
+    const canvas = document.getElementById('vizCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  function drawViz() {
+    if (!isVizRunning) return;
+    const canvas = document.getElementById('vizCanvas');
+    if (!canvas) return;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const ctx = canvas.getContext('2d');
+
+    for (let i = 0; i < NUM_BARS; i++) {
+      if (Math.random() < 0.05) targets[i] = Math.random() * 0.9 + 0.05;
+      fakeData[i] += (targets[i] - fakeData[i]) * 0.08;
+    }
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (vizMode === 'bars') {
+      const barW = Math.floor(canvas.width / NUM_BARS) - 1;
+      for (let i = 0; i < NUM_BARS; i++) {
+        const v = fakeData[i];
+        const h = v * canvas.height * 0.9;
+        ctx.fillStyle = `rgba(200, 169, 110, ${0.4 + v * 0.6})`;
+        ctx.fillRect(i * (barW + 1), canvas.height - h, barW, h);
+      }
+    } else if (vizMode === 'xp') {
+      const barW = Math.floor(canvas.width / NUM_BARS) - 1;
+      for (let i = 0; i < NUM_BARS; i++) {
+        const v = fakeData[i];
+        const h = v * canvas.height * 0.85;
+        const r = v > 0.5 ? 255 : Math.floor(v * 2 * 255);
+        const g = v > 0.5 ? Math.floor((1 - (v - 0.5) * 2) * 200) : 200;
+        ctx.fillStyle = `rgb(${r},${g},0)`;
+        ctx.globalAlpha = 1;
+        ctx.fillRect(i * (barW + 1), canvas.height / 2 - h, barW, h);
+        ctx.globalAlpha = 0.25;
+        ctx.fillRect(i * (barW + 1), canvas.height / 2, barW, h * 0.4);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(i * (barW + 1), canvas.height / 2 - h - 3, barW, 2);
+      }
+    } else if (vizMode === 'scope') {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#c8a96e';
+      ctx.beginPath();
+      const sliceW = canvas.width / NUM_BARS;
+      for (let i = 0; i < NUM_BARS; i++) {
+        const v = fakeData[i];
+        const y = canvas.height / 2 + (v - 0.5) * canvas.height * 0.8;
+        i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sliceW, y);
+      }
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    }
+
+    animFrame = requestAnimationFrame(drawViz);
+  }
+
+
+
+  async function loadHosts() {
+    try {
+      const res = await fetch('https://julyimages.sxrsq1.workers.dev/profiles');
+      const data = await res.json();
+      const grid = document.getElementById('djsGrid');
+      if (!grid) return;
+
+      const defaults = {
+        c:      { name: 'C.',     shows: 'Playlist · Open Air · di:scovery · Shuffle+ · in:focus', tagline: 'taste over everything.', photo: 'julyhost1.png', accent: '#c8a96e' },
+        fziwe:  { name: 'Fziwe',  shows: 'Coming soon', tagline: '—', photo: null, accent: '#6e8ac8' },
+        fiscia: { name: 'Fiscia', shows: 'Coming soon', tagline: '—', photo: null, accent: '#c86e8a' },
+      };
+
+      const hosts = ['c', 'fziwe', 'fiscia'];
+      grid.innerHTML = hosts.map(function(id) {
+        const kv = data.profiles && data.profiles[id];
+        const def = defaults[id];
+        const name = (kv && kv.name) || def.name;
+        const shows = (kv && kv.shows) || def.shows;
+        const tagline = (kv && kv.tagline) || def.tagline;
+        const bio = (kv && kv.bio) || '';
+        const photo = (kv && kv.photo) || def.photo;
+        const instagram = (kv && kv.instagram) || '';
+        const soundcloud = (kv && kv.soundcloud) || '';
+        const accent = def.accent;
+
+        const imgHtml = photo
+          ? '<img src="' + photo + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;object-position:top;">'
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:DM Serif Display,serif;font-size:32px;color:#2a2a2a;font-style:italic;">' + name[0] + '</div>';
+
+        const socials = [
+          instagram ? '<a href="https://instagram.com/' + instagram.replace('@','') + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;">IG</a>' : '',
+          soundcloud ? '<a href="' + soundcloud + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;">SC</a>' : '',
+        ].filter(Boolean).join('');
+
+        return '<div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:4px;padding:28px;margin-bottom:16px;">' +
+          '<div class="dj-profile">' +
+            '<div class="dj-profile-img" style="border:1px solid ' + accent + '22;">' + imgHtml + '</div>' +
+            '<div style="flex:1;">' +
+              '<div class="dj-name" style="color:' + accent + ';">' + name + '</div>' +
+              '<div class="dj-show">' + shows + '</div>' +
+              (tagline ? '<div style="font-size:11px;color:#444;margin-top:6px;font-style:italic;">' + tagline + '</div>' : '') +
+              (bio ? '<div class="dj-bio" style="margin-top:10px;">' + bio + '</div>' : '') +
+              (socials ? '<div style="display:flex;gap:6px;margin-top:12px;">' + socials + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch(e) {
+      console.log('loadHosts error', e);
+    }
+  }
+
   fetchNowPlaying();
   setInterval(fetchNowPlaying, 15000);
-}
+  loadHosts();
 
-async function fetchNowPlaying() {
-  try {
-    const url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=' + LASTFM_USER + '&api_key=' + LASTFM_KEY + '&format=json&limit=5';
-    const res = await fetch(url);
-    const data = await res.json();
-    const tracks = data.recenttracks.track;
-    if (!tracks || !tracks.length) return;
+  // Dynamic schedule
+  const schedule = {
+    0: [ // Sunday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'Playlist',  start: 6,  end: 10, tag: 'CURATED' },
+      { name: 'Playlist',  start: 10, end: 14, tag: 'CURATED' },
+      { name: 'in:focus',  start: 14, end: 18, tag: '5 ARTISTS' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Playlist',  start: 22, end: 24, tag: 'CURATED' },
+    ],
+    1: [ // Monday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'Playlist',  start: 10, end: 14, tag: 'CURATED' },
+      { name: 'Blueprint', start: 14, end: 18, tag: 'INFLUENTIAL' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
+    ],
+    2: [ // Tuesday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'in:focus',  start: 10, end: 14, tag: '5 ARTISTS' },
+      { name: 'Shuffle+',  start: 14, end: 18, tag: 'RANDOM' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
+    ],
+    3: [ // Wednesday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'Blueprint', start: 10, end: 14, tag: 'INFLUENTIAL' },
+      { name: 'Playlist',  start: 14, end: 18, tag: 'CURATED' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
+    ],
+    4: [ // Thursday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: '135',       start: 10, end: 14, tag: '135 BPM' },
+      { name: 'in:focus',  start: 14, end: 18, tag: '5 ARTISTS' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Shuffle+',  start: 22, end: 24, tag: 'RANDOM' },
+    ],
+    5: [ // Friday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'Shuffle+',  start: 10, end: 14, tag: 'RANDOM' },
+      { name: 'Blueprint', start: 14, end: 18, tag: 'INFLUENTIAL' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Playlist',  start: 22, end: 24, tag: 'CURATED' },
+    ],
+    6: [ // Saturday
+      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
+      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
+      { name: 'in:focus',  start: 10, end: 14, tag: '5 ARTISTS' },
+      { name: '135',       start: 14, end: 18, tag: '135 BPM' },
+      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
+      { name: 'Blueprint', start: 22, end: 24, tag: 'INFLUENTIAL' },
+    ],
+  };
 
-    const current = Array.isArray(tracks) ? tracks[0] : tracks;
-    const trackName = current.name;
-    const artistName = current.artist['#text'];
-    const trackKey = trackName + artistName;
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-    if (trackKey !== lastTrack) {
-      lastTrack = trackKey;
-      document.getElementById('npTitleMini').textContent = trackName;
-      document.getElementById('npArtistMini').textContent = artistName;
+  function renderSchedule() {
+    const now = new Date();
+    const todayDay = now.getDay();
+    const todayHour = now.getHours();
+    const grid = document.getElementById('scheduleGrid');
+    if (!grid) return;
 
-      const images = current.image || [];
-      const art = images.find(function(i) { return i.size === 'extralarge'; });
-      const img = document.getElementById('npImgMini');
-      if (art && art['#text']) { img.src = art['#text']; img.style.display = 'block'; }
-    }
+    let html = '';
 
-    // Previous tracks
-    const history = Array.isArray(tracks) ? tracks.slice(1, 4) : [];
-    const prev = document.getElementById('npPrev');
-    prev.innerHTML = history.map(function(t) {
-      return '<div class="np-prev-item"><span>' + t.artist['#text'] + '</span> — ' + t.name + '</div>';
-    }).join('');
+    // Show today + tomorrow
+    [0, 1].forEach(offset => {
+      const dayIdx = (todayDay + offset) % 7;
+      const isToday = offset === 0;
+      const dayLabel = isToday ? 'Today · ' + dayNames[dayIdx] : 'Tomorrow · ' + dayNames[dayIdx];
+      html += `<div class="day-label" style="${offset > 0 ? 'margin-top:16px;' : ''}">${dayLabel}</div>`;
 
-  } catch(e) {}
-}
+      schedule[dayIdx].forEach(show => {
+        const isLive = isToday && todayHour >= show.start && todayHour < show.end;
+        const isPast = isToday && todayHour >= show.end;
+        const tagClass = isLive ? 'show-tag on-air' : 'show-tag';
+        const tagText = isLive ? 'ON AIR NOW' : show.tag;
+        const rowOpacity = isPast ? 'opacity:0.3;' : '';
+        const rowClass = isLive ? 'show-row live-row' : 'show-row';
+        const endHour = show.end === 24 ? '00' : String(show.end).padStart(2,'0');
+        const liveDot = isLive ? '<div class="live-dot-inline"></div>' : '';
 
-function toggleMonitor() {
-  const streamUrl = 'https://s48.myradiostream.com:14791/listen.mp3';
-  if (!monitorPlaying) {
-    monitorAudio = new Audio(streamUrl);
-    monitorAudio.volume = 0.7;
-    monitorAudio.play().then(function() {
-      monitorPlaying = true;
-      document.getElementById('npPlayBtn').innerHTML = '&#9646;&#9646;';
-    }).catch(function() {});
-  } else {
-    monitorAudio.pause();
-    monitorAudio = null;
-    monitorPlaying = false;
-    document.getElementById('npPlayBtn').innerHTML = '&#9654;';
+        html += `<div class="${rowClass}" style="${rowOpacity}">
+          <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${endHour}:00</div>
+          <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">C.</div></div></div>
+          <div class="${tagClass}">${tagText}</div>
+        </div>`;
+      });
+    });
+
+    grid.innerHTML = html;
   }
-}
 
-function stopMonitor() {
-  if (monitorAudio) { monitorAudio.pause(); monitorAudio = null; }
-  monitorPlaying = false;
-}
+  function updateMiniWidget() {
+    const now = new Date();
+    const h = now.getHours();
+    const todayShows = schedule[now.getDay()];
+    const current = todayShows.find(s => h >= s.start && h < s.end);
+    const mini = document.getElementById('miniShowName');
+    if (mini) mini.textContent = current ? current.name : '—';
+  }
+  updateMiniWidget();
+  setInterval(updateMiniWidget, 60000);
+  renderSchedule();
+  setInterval(renderSchedule, 60000);
 
-function closeNowPlaying() {
-  document.getElementById('nowPlayingBar').classList.add('hidden');
-  stopMonitor();
-}
-
-// ===== UTILS =====
-function showMsg(id, type, text) {
-  const el = document.getElementById(id);
-  el.className = 'msg ' + type;
-  el.textContent = text;
-  setTimeout(function() { el.className = 'msg'; }, 4000);
-}
-
-setupHovers();
 </script>
 </body>
 </html>
