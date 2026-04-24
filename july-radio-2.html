@@ -553,8 +553,63 @@
   }
 
 
+
+  async function loadHosts() {
+    try {
+      const res = await fetch('https://julyimages.sxrsq1.workers.dev/profiles');
+      const data = await res.json();
+      const grid = document.getElementById('djsGrid');
+      if (!grid) return;
+
+      const defaults = {
+        c:      { name: 'C.',     shows: 'Playlist · Open Air · di:scovery · Shuffle+ · in:focus', tagline: 'taste over everything.', photo: 'julyhost1.png', accent: '#c8a96e' },
+        fziwe:  { name: 'Fziwe',  shows: 'Coming soon', tagline: '—', photo: null, accent: '#6e8ac8' },
+        fiscia: { name: 'Fiscia', shows: 'Coming soon', tagline: '—', photo: null, accent: '#c86e8a' },
+      };
+
+      const hosts = ['c', 'fziwe', 'fiscia'];
+      grid.innerHTML = hosts.map(function(id) {
+        const kv = data.profiles && data.profiles[id];
+        const def = defaults[id];
+        const name = (kv && kv.name) || def.name;
+        const shows = (kv && kv.shows) || def.shows;
+        const tagline = (kv && kv.tagline) || def.tagline;
+        const bio = (kv && kv.bio) || '';
+        const photo = (kv && kv.photo) || def.photo;
+        const instagram = (kv && kv.instagram) || '';
+        const soundcloud = (kv && kv.soundcloud) || '';
+        const accent = def.accent;
+
+        const imgHtml = photo
+          ? '<img src="' + photo + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;object-position:top;">'
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:DM Serif Display,serif;font-size:32px;color:#2a2a2a;font-style:italic;">' + name[0] + '</div>';
+
+        const socials = [
+          instagram ? '<a href="https://instagram.com/' + instagram.replace('@','') + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;">IG</a>' : '',
+          soundcloud ? '<a href="' + soundcloud + '" target="_blank" style="font-size:10px;color:#555;letter-spacing:0.1em;text-decoration:none;border:1px solid #2a2a2a;padding:3px 10px;border-radius:2px;">SC</a>' : '',
+        ].filter(Boolean).join('');
+
+        return '<div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:4px;padding:28px;margin-bottom:16px;">' +
+          '<div class="dj-profile">' +
+            '<div class="dj-profile-img" style="border:1px solid ' + accent + '22;">' + imgHtml + '</div>' +
+            '<div style="flex:1;">' +
+              '<div class="dj-name" style="color:' + accent + ';">' + name + '</div>' +
+              '<div class="dj-show">' + shows + '</div>' +
+              (tagline ? '<div style="font-size:11px;color:#444;margin-top:6px;font-style:italic;">' + tagline + '</div>' : '') +
+              (bio ? '<div class="dj-bio" style="margin-top:10px;">' + bio + '</div>' : '') +
+              (socials ? '<div style="display:flex;gap:6px;margin-top:12px;">' + socials + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch(e) {
+      console.log('loadHosts error', e);
+    }
+  }
+
   fetchNowPlaying();
   setInterval(fetchNowPlaying, 15000);
+  loadHosts();
 
   // Dynamic schedule
   const schedule = {
