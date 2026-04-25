@@ -133,6 +133,7 @@
   .show-label { font-size: 10px; color: #555; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; }
   #showName { font-size: 20px; color: #e0d9cc; letter-spacing: 0.05em; }
   #showTime { font-size: 11px; color: #555; margin-top: 5px; letter-spacing: 0.1em; }
+  #showDesc { font-size: 11px; color: #444; margin-top: 6px; font-style: italic; letter-spacing: 0.03em; }
 
 
 
@@ -360,6 +361,7 @@
     <div class="show-label">On Air</div>
     <div id="showName">—</div>
     <div id="showTime">—</div>
+    <div id="showDesc"></div>
   </div>
 
   <div id="clock">—</div>
@@ -384,64 +386,32 @@ const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
 const LASTFM_USER = 'injeton';
 let lastTrack = '';
 
-const schedule = {
-  0: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'Playlist',  start: 6,  end: 10 },
-    { name: 'Playlist',  start: 10, end: 14 },
-    { name: 'in:focus',  start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: 'Playlist',  start: 22, end: 24 },
-  ],
-  1: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'di:scovery',start: 6,  end: 10 },
-    { name: 'Playlist',  start: 10, end: 14 },
-    { name: 'Blueprint', start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: '135',       start: 22, end: 24 },
-  ],
-  2: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'di:scovery',start: 6,  end: 10 },
-    { name: 'in:focus',  start: 10, end: 14 },
-    { name: 'Shuffle+',  start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: '135',       start: 22, end: 24 },
-  ],
-  3: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'di:scovery',start: 6,  end: 10 },
-    { name: 'Blueprint', start: 10, end: 14 },
-    { name: 'Playlist',  start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: '135',       start: 22, end: 24 },
-  ],
-  4: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'di:scovery',start: 6,  end: 10 },
-    { name: '135',       start: 10, end: 14 },
-    { name: 'in:focus',  start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: 'Shuffle+',  start: 22, end: 24 },
-  ],
-  5: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'di:scovery',start: 6,  end: 10 },
-    { name: 'Shuffle+',  start: 10, end: 14 },
-    { name: 'Blueprint', start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: 'Playlist',  start: 22, end: 24 },
-  ],
-  6: [
-    { name: 'Late',      start: 0,  end: 6  },
-    { name: 'di:scovery',start: 6,  end: 10 },
-    { name: 'in:focus',  start: 10, end: 14 },
-    { name: '135',       start: 14, end: 18 },
-    { name: 'Open Air',  start: 18, end: 22 },
-    { name: 'Blueprint', start: 22, end: 24 },
-  ],
-};
+let schedule = {};
+
+async function fetchSchedule() {
+  try {
+    const hosts = ['c', 'fziwe', 'fiscia'];
+    const allSlots = [];
+    for (const host of hosts) {
+      const res = await fetch('https://julyimages.sxrsq1.workers.dev/schedule?host=' + host);
+      const data = await res.json();
+      if (data.slots && data.slots.length) {
+        data.slots.forEach(function(slot) {
+          allSlots.push({
+            name: slot.name,
+            start: parseInt((slot.start || '00:00').split(':')[0]),
+            end: parseInt((slot.end || '02:00').split(':')[0]),
+            day: parseInt(slot.day)
+          });
+        });
+      }
+    }
+    for (let d = 0; d < 7; d++) {
+      schedule[d] = allSlots.filter(function(s) { return s.day === d; }).sort(function(a,b) { return a.start - b.start; });
+    }
+    updateShow();
+  } catch(e) {}
+}
 
 function pad(n) { return String(n).padStart(2,'0'); }
 
@@ -454,12 +424,14 @@ function updateClock() {
 function updateShow() {
   const now = new Date();
   const h = now.getHours();
-  const todayShows = schedule[now.getDay()];
-  const show = todayShows.find(s => h >= s.start && h < s.end);
+  const todayShows = schedule[now.getDay()] || [];
+  const show = todayShows.find(function(s) { return h >= s.start && h < s.end; });
   if (show) {
     document.getElementById('showName').textContent = show.name;
     document.getElementById('showTime').textContent =
       pad(show.start) + ':00 – ' + pad(show.end === 24 ? 0 : show.end) + ':00';
+    const descEl = document.getElementById('showDesc');
+    if (descEl) descEl.textContent = show.description || '';
   }
 }
 
@@ -684,12 +656,12 @@ async function fetchArtistInfo(artist) {
 }
 
 updateClock();
-updateShow();
+fetchSchedule();
 fetchNowPlaying();
 fetchRecentTracks();
 
 setInterval(updateClock, 1000);
-setInterval(updateShow, 60000);
+setInterval(fetchSchedule, 60000);
 setInterval(fetchNowPlaying, 15000);
 setInterval(fetchRecentTracks, 20000);
 </script>
