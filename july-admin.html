@@ -494,6 +494,7 @@
     <div class="dash-nav-item active" onclick="showPanel('broadcast',this)">Broadcast</div>
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
+    <div class="dash-nav-item" onclick="showPanel('alerts',this)">Alerts</div>
   </div>
 
   <div class="dash-content">
@@ -520,9 +521,15 @@
           </div>
         </div>
         <div class="field">
-          <label class="field-label">Set Image URL</label>
-          <input type="url" id="djImage" placeholder="https://..." oninput="previewDjImg()">
+          <label class="field-label">Set Image</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <input type="file" id="djImageFile" accept="image/*" style="font-size:11px;color:#555;flex:1;" onchange="uploadDjImage()">
+            <span style="font-size:10px;color:#333;letter-spacing:0.08em;">or</span>
+            <input type="url" id="djImage" placeholder="Paste image URL" oninput="previewDjImg()" style="flex:2;">
+          </div>
+          <div style="font-size:10px;color:#333;letter-spacing:0.08em;margin-bottom:8px;">Upload directly or paste a URL from Imgur, Google Drive etc.</div>
           <img id="djImgPreview" class="preview-img" alt="preview">
+          <div id="uploadStatus" style="font-size:11px;color:#555;margin-top:6px;display:none;"></div>
         </div>
       </div>
 
@@ -577,6 +584,21 @@
       <button class="btn" onclick="saveProfile()">Save Profile</button>
     </div>
 
+
+    <!-- ALERTS -->
+    <div class="dash-panel" id="panel-alerts">
+      <div class="section-title">Send Alert to Listeners</div>
+      <div class="msg" id="alertsMsg"></div>
+      <div class="field">
+        <label class="field-label">Alert Message</label>
+        <input type="text" id="alertText" placeholder="e.g. Taking a 5 min break, back shortly..." maxlength="120">
+        <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Slides in on the website for 8 seconds. Max 120 characters.</div>
+      </div>
+      <button class="btn" onclick="sendAlert()">Send Alert</button>
+      <div class="divider"></div>
+      <button class="btn secondary" onclick="clearAlert()">Clear Active Alert</button>
+    </div>
+
   </div>
 </div>
 
@@ -590,6 +612,11 @@
     <div class="np-artist-mini" id="npArtistMini">—</div>
   </div>
   <div class="np-prev" id="npPrev"></div>
+  <div style="font-size:10px;color:#333;letter-spacing:0.1em;text-align:right;line-height:1.8;flex-shrink:0;">
+    <div id="npClockNairobi">—</div>
+    <div id="npClockLondon">—</div>
+    <div id="npClockNY">—</div>
+  </div>
   <div class="np-controls">
     <span class="np-label">Monitor</span>
     <button class="np-play-btn" id="npPlayBtn" onclick="toggleMonitor()">&#9654;</button>
@@ -1003,6 +1030,85 @@ function closeNotif() {
 function checkSilenceFromAdmin() {
   // This runs every 5 min while admin is open
   // If last.fm hasn't updated in 10+ min, show alert
+}
+
+
+function updateAdminClock() {
+  const now = new Date();
+  const fmt = function(tz, label) {
+    return label + ' ' + now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+  };
+  const n = document.getElementById('npClockNairobi');
+  const l = document.getElementById('npClockLondon');
+  const ny = document.getElementById('npClockNY');
+  if (n) n.textContent = fmt('Africa/Nairobi', 'EAT');
+  if (l) l.textContent = fmt('Europe/London', 'BST');
+  if (ny) ny.textContent = fmt('America/New_York', 'EST');
+}
+setInterval(updateAdminClock, 1000);
+updateAdminClock();
+
+
+
+async function uploadDjImage() {
+  const file = document.getElementById('djImageFile').files[0];
+  if (!file) return;
+  const status = document.getElementById('uploadStatus');
+  status.style.display = 'block';
+  status.textContent = 'Uploading...';
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    // Using imgbb free API
+    const res = await fetch('https://api.imgbb.com/1/upload?key=YOUR_IMGBB_KEY', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('djImage').value = data.data.url;
+      previewDjImg();
+      status.textContent = 'Uploaded successfully';
+      setTimeout(function() { status.style.display = 'none'; }, 3000);
+    } else {
+      status.textContent = 'Upload failed — paste a URL instead';
+    }
+  } catch(e) {
+    status.textContent = 'Upload failed — paste a URL instead';
+  }
+}
+
+async function sendAlert() {
+  const text = document.getElementById('alertText').value.trim();
+  if (!text) { showMsg('alertsMsg', 'error', 'Enter a message first'); return; }
+  try {
+    const res = await fetch(WORKER + '/alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        password: HOSTS[currentHost].password,
+        alert: { text: text, id: Date.now().toString(), host: HOSTS[currentHost].name }
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showMsg('alertsMsg', 'success', 'Alert sent — visible on site within 30 seconds');
+      document.getElementById('alertText').value = '';
+    }
+  } catch(e) { showMsg('alertsMsg', 'error', 'Connection error'); }
+}
+
+async function clearAlert() {
+  try {
+    const res = await fetch(WORKER + '/alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: HOSTS[currentHost].password, alert: null })
+    });
+    const data = await res.json();
+    if (data.ok) showMsg('alertsMsg', 'success', 'Alert cleared');
+  } catch(e) { showMsg('alertsMsg', 'error', 'Connection error'); }
 }
 
 // ===== UTILS =====
