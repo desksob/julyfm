@@ -760,7 +760,8 @@ function renderSchedule() {
       '<select class="day-select" onchange="scheduleSlots[' + i + '].day=parseInt(this.value)">' +
         DAYS.map(function(d,j) { return '<option value="' + j + '"' + (slot.day===j?' selected':'') + '>' + d.slice(0,3) + '</option>'; }).join('') +
       '</select>' +
-      '<input type="time" value="' + (slot.start||'00:00') + '" onchange="scheduleSlots[' + i + '].start=this.value">' +
+      '<input type="time" value="' + (slot.start||'00:00') + '" onchange="scheduleSlots[' + i + '].start=this.value" title="Start">' +
+      '<input type="time" value="' + (slot.end||'02:00') + '" onchange="scheduleSlots[' + i + '].end=this.value" title="End">' +
       '<input type="text" class="show-name-input" value="' + (slot.name||'') + '" placeholder="Show name" onchange="scheduleSlots[' + i + '].name=this.value">' +
       '<button class="btn danger small" onclick="removeSlot(' + i + ')">✕</button>';
     list.appendChild(row);
