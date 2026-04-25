@@ -397,11 +397,33 @@
     .btn-row .btn { width: 100%; }
   }
 
+
+  .notif-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #ff3a3a;
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 200;
+    transform: translateY(-100%);
+    transition: transform 0.4s ease;
+  }
+
+  .notif-bar.visible { transform: translateY(0); }
+  .notif-close { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; }
+
 </style>
 </head>
 <body>
 
 <div id="adminBg"></div>
+<div class="notif-bar" id="notifBar"><span id="notifMsg">—</span><button class="notif-close" onclick="closeNotif()">✕</button></div>
 
 <!-- ===== PROFILE SELECT ===== -->
 <div id="profileSelect" class="active">
@@ -657,6 +679,7 @@ async function login() {
   await loadDashboard();
   document.getElementById('nowPlayingBar').classList.remove('hidden');
   startNowPlayingPoll();
+  requestNotifPermission();
 }
 
 function logout() {
@@ -754,8 +777,12 @@ function renderSchedule() {
   const list = document.getElementById('scheduleList');
   list.innerHTML = '';
   scheduleSlots.forEach(function(slot, i) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'border-bottom:1px solid #111;padding:8px 0;';
+
     const row = document.createElement('div');
     row.className = 'schedule-item';
+    row.style.borderBottom = 'none';
     row.innerHTML =
       '<select class="day-select" onchange="scheduleSlots[' + i + '].day=parseInt(this.value)">' +
         DAYS.map(function(d,j) { return '<option value="' + j + '"' + (slot.day===j?' selected':'') + '>' + d.slice(0,3) + '</option>'; }).join('') +
@@ -763,7 +790,28 @@ function renderSchedule() {
       '<input type="time" value="' + (slot.start||'00:00') + '" onchange="scheduleSlots[' + i + '].start=this.value" title="Start">' +
       '<input type="time" value="' + (slot.end||'02:00') + '" onchange="scheduleSlots[' + i + '].end=this.value" title="End">' +
       '<input type="text" class="show-name-input" value="' + (slot.name||'') + '" placeholder="Show name" onchange="scheduleSlots[' + i + '].name=this.value">' +
-      '<button class="btn danger small" onclick="removeSlot(' + i + ')">✕</button>';
+      '<div style="display:flex;gap:4px;">' +
+        '<button class="btn secondary small" onclick="toggleDesc(' + i + ')" title="Description">✎</button>' +
+        '<button class="btn danger small" onclick="removeSlot(' + i + ')">✕</button>' +
+      '</div>';
+
+    const descRow = document.createElement('div');
+    descRow.id = 'desc-row-' + i;
+    descRow.style.cssText = 'display:' + (slot.description ? 'block' : 'none') + ';padding:6px 0 4px;';
+    descRow.innerHTML = '<input type="text" id="desc-input-' + i + '" value="' + (slot.description||'') + '" placeholder="e.g. tonight we go deep into 90s ambient" style="font-size:11px;color:#888;" oninput="scheduleSlots[' + i + '].description=this.value">';
+
+    wrap.appendChild(row);
+    wrap.appendChild(descRow);
+    list.appendChild(wrap);
+  });
+}
+
+function toggleDesc(i) {
+  const el = document.getElementById('desc-row-' + i);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function _noop() {
     list.appendChild(row);
   });
 }
@@ -866,6 +914,15 @@ async function fetchNowPlaying() {
     const artistName = current.artist['#text'];
     const trackKey = trackName + artistName;
 
+    // Silence detection — if track hasn't changed in 10+ min show alert
+    if (trackKey !== lastNpTrack) {
+      lastNpTrack = trackKey;
+      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+      silenceTimer = setTimeout(function() {
+        showNotif('⚠ No playback detected — Spotify may have paused');
+      }, 10 * 60 * 1000);
+    }
+
     if (trackKey !== lastTrack) {
       lastTrack = trackKey;
       document.getElementById('npTitleMini').textContent = trackName;
@@ -912,6 +969,40 @@ function stopMonitor() {
 function closeNowPlaying() {
   document.getElementById('nowPlayingBar').classList.add('hidden');
   stopMonitor();
+}
+
+
+// ===== PUSH NOTIFICATIONS =====
+let lastNpTrack = '';
+let silenceTimer = null;
+let notifPermission = false;
+
+async function requestNotifPermission() {
+  if ('Notification' in window) {
+    const perm = await Notification.requestPermission();
+    notifPermission = perm === 'granted';
+  }
+}
+
+function showNotif(msg) {
+  // In-page bar
+  document.getElementById('notifMsg').textContent = msg;
+  document.getElementById('notifBar').classList.add('visible');
+  setTimeout(closeNotif, 8000);
+
+  // Browser notification
+  if (notifPermission) {
+    new Notification('July Radio', { body: msg, icon: 'july-logo.png' });
+  }
+}
+
+function closeNotif() {
+  document.getElementById('notifBar').classList.remove('visible');
+}
+
+function checkSilenceFromAdmin() {
+  // This runs every 5 min while admin is open
+  // If last.fm hasn't updated in 10+ min, show alert
 }
 
 // ===== UTILS =====
