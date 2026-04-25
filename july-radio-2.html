@@ -84,6 +84,40 @@
   .show-tag { font-size: 10px; padding: 3px 10px; border: 1px solid #2a2a2a; border-radius: 2px; color: #555; white-space: nowrap; letter-spacing: 0.08em; text-transform: uppercase; }
   .show-tag.on-air { border-color: #ff3a3a55; color: #ff3a3a; }
 
+  .alert-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(10,10,10,0.95);
+    border: 1px solid var(--accent, #c8a96e);
+    border-radius: 4px;
+    padding: 14px 20px;
+    font-size: 12px;
+    color: #e0d9cc;
+    letter-spacing: 0.05em;
+    z-index: 999;
+    transition: transform 0.4s ease;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .alert-banner.visible {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .alert-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #c8a96e; flex-shrink: 0;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+
 
   .dj-profile { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 20px; }
   .dj-profile-img { width: 100px; height: 100px; border-radius: 4px; border: 1px solid #2a2a2a; background: #111; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
@@ -611,8 +645,28 @@
     }
   }
 
+
+  // Alert banner polling
+  let lastAlertId = null;
+
+  async function checkAlert() {
+    try {
+      const res = await fetch('https://julyimages.sxrsq1.workers.dev/alert');
+      const data = await res.json();
+      if (data.alert && data.alert.text && data.alert.id !== lastAlertId) {
+        lastAlertId = data.alert.id;
+        document.getElementById('alertMsg').textContent = data.alert.text;
+        const banner = document.getElementById('alertBanner');
+        banner.classList.add('visible');
+        setTimeout(function() { banner.classList.remove('visible'); }, 8000);
+      }
+    } catch(e) {}
+  }
+
   fetchNowPlaying();
   setInterval(fetchNowPlaying, 15000);
+  checkAlert();
+  setInterval(checkAlert, 30000);
   loadHosts();
 
   // Dynamic schedule
@@ -688,7 +742,7 @@
 
         html += `<div class="${rowClass}" style="${rowOpacity}">
           <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${endHour}:00</div>
-          <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">C.</div></div></div>
+          <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">${show.host || 'C.'}</div>${show.description ? '<div style="font-size:10px;color:#444;margin-top:3px;font-style:italic;">' + show.description + '</div>' : ''}</div></div>
           <div class="${tagClass}">${tagText}</div>
         </div>`;
       });
