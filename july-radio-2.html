@@ -616,68 +616,46 @@
   loadHosts();
 
   // Dynamic schedule
-  const schedule = {
-    0: [ // Sunday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'Playlist',  start: 6,  end: 10, tag: 'CURATED' },
-      { name: 'Playlist',  start: 10, end: 14, tag: 'CURATED' },
-      { name: 'in:focus',  start: 14, end: 18, tag: '5 ARTISTS' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: 'Playlist',  start: 22, end: 24, tag: 'CURATED' },
-    ],
-    1: [ // Monday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
-      { name: 'Playlist',  start: 10, end: 14, tag: 'CURATED' },
-      { name: 'Blueprint', start: 14, end: 18, tag: 'INFLUENTIAL' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
-    ],
-    2: [ // Tuesday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
-      { name: 'in:focus',  start: 10, end: 14, tag: '5 ARTISTS' },
-      { name: 'Shuffle+',  start: 14, end: 18, tag: 'RANDOM' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
-    ],
-    3: [ // Wednesday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
-      { name: 'Blueprint', start: 10, end: 14, tag: 'INFLUENTIAL' },
-      { name: 'Playlist',  start: 14, end: 18, tag: 'CURATED' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: '135',       start: 22, end: 24, tag: '135 BPM' },
-    ],
-    4: [ // Thursday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
-      { name: '135',       start: 10, end: 14, tag: '135 BPM' },
-      { name: 'in:focus',  start: 14, end: 18, tag: '5 ARTISTS' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: 'Shuffle+',  start: 22, end: 24, tag: 'RANDOM' },
-    ],
-    5: [ // Friday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
-      { name: 'Shuffle+',  start: 10, end: 14, tag: 'RANDOM' },
-      { name: 'Blueprint', start: 14, end: 18, tag: 'INFLUENTIAL' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: 'Playlist',  start: 22, end: 24, tag: 'CURATED' },
-    ],
-    6: [ // Saturday
-      { name: 'Late',      start: 0,  end: 6,  tag: 'ATMOSPHERE' },
-      { name: 'di:scovery',start: 6,  end: 10, tag: 'NEW MUSIC' },
-      { name: 'in:focus',  start: 10, end: 14, tag: '5 ARTISTS' },
-      { name: '135',       start: 14, end: 18, tag: '135 BPM' },
-      { name: 'Open Air',  start: 18, end: 22, tag: 'UNINTERRUPTED' },
-      { name: 'Blueprint', start: 22, end: 24, tag: 'INFLUENTIAL' },
-    ],
-  };
+  let schedule = {};
 
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-  function renderSchedule() {
+
+  async function fetchSchedule() {
+    try {
+      const hosts = ['c', 'fziwe', 'fiscia'];
+      const allSlots = [];
+      for (const host of hosts) {
+        const res = await fetch('https://julyimages.sxrsq1.workers.dev/schedule?host=' + host);
+        const data = await res.json();
+        if (data.slots && data.slots.length) {
+          data.slots.forEach(function(slot) {
+            const startHour = parseInt((slot.start || '00:00').split(':')[0]);
+            const endHour = parseInt((slot.end || '02:00').split(':')[0]);
+            allSlots.push({
+              name: slot.name,
+              host: host,
+              start: startHour,
+              end: endHour,
+              day: parseInt(slot.day),
+              tag: slot.name ? slot.name.toUpperCase() : '—'
+            });
+          });
+        }
+      }
+      for (let d = 0; d < 7; d++) {
+        schedule[d] = allSlots
+          .filter(function(s) { return s.day === d; })
+          .sort(function(a, b) { return a.start - b.start; });
+      }
+      renderSchedule();
+      updateMiniWidget();
+    } catch(e) {
+      console.log('fetchSchedule error:', e);
+    }
+  }
+
+    function renderSchedule() {
     const now = new Date();
     const todayDay = now.getDay();
     const todayHour = now.getHours();
@@ -730,7 +708,7 @@
   updateMiniWidget();
   setInterval(updateMiniWidget, 60000);
   fetchSchedule();
-  setInterval(fetchSchedule, 300000);
+  setInterval(fetchSchedule, 30000);
 
 </script>
 </body>
