@@ -684,6 +684,11 @@
     const grid = document.getElementById('scheduleGrid');
     if (!grid) return;
 
+    if (!schedule[todayDay] || schedule[todayDay].length === 0) {
+      grid.innerHTML = '<div style="font-size:11px;color:#444;padding:20px 0;letter-spacing:0.1em;">No shows scheduled yet.</div>';
+      return;
+    }
+
     let html = '';
 
     // Show today + tomorrow
@@ -717,15 +722,15 @@
   function updateMiniWidget() {
     const now = new Date();
     const h = now.getHours();
-    const todayShows = schedule[now.getDay()];
-    const current = todayShows.find(s => h >= s.start && h < s.end);
+    const todayShows = schedule[now.getDay()] || [];
+    const current = todayShows.find(function(s) { return h >= s.start && h < s.end; });
     const mini = document.getElementById('miniShowName');
     if (mini) mini.textContent = current ? current.name : '—';
   }
   updateMiniWidget();
   setInterval(updateMiniWidget, 60000);
-  renderSchedule();
-  setInterval(renderSchedule, 60000);
+  fetchSchedule();
+  setInterval(fetchSchedule, 300000);
 
 </script>
 </body>
