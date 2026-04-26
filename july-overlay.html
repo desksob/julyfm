@@ -424,19 +424,25 @@ async function fetchSchedule() {
       const data = await res.json();
       if (data.slots && data.slots.length) {
         data.slots.forEach(function(slot) {
+          var sp = (slot.start || '00:00').split(':');
+          var ep = (slot.end || '02:00').split(':');
           allSlots.push({
             name: slot.name,
-            start: parseInt((slot.start || '00:00').split(':')[0]),
-            end: parseInt((slot.end || '02:00').split(':')[0]),
+            description: slot.description || '',
+            startMins: parseInt(sp[0]) * 60 + parseInt(sp[1] || 0),
+            endMins: parseInt(ep[0]) * 60 + parseInt(ep[1] || 0),
+            startStr: slot.start || '00:00',
+            endStr: slot.end || '02:00',
             day: parseInt(slot.day)
           });
         });
       }
     }
     for (let d = 0; d < 7; d++) {
-      schedule[d] = allSlots.filter(function(s) { return s.day === d; }).sort(function(a,b) { return a.start - b.start; });
+      schedule[d] = allSlots.filter(function(s) { return s.day === d; }).sort(function(a,b) { return a.startMins - b.startMins; });
     }
     updateShow();
+    updateShow(); // ensure show info updates immediately
   } catch(e) {}
 }
 
@@ -460,15 +466,19 @@ function updateClock() {
 
 function updateShow() {
   const now = new Date();
-  const h = now.getHours();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
   const todayShows = schedule[now.getDay()] || [];
-  const show = todayShows.find(function(s) { return h >= s.start && h < s.end; });
+  const show = todayShows.find(function(s) { return nowMins >= s.startMins && nowMins < s.endMins; });
   if (show) {
     document.getElementById('showName').textContent = show.name;
-    document.getElementById('showTime').textContent =
-      pad(show.start) + ':00 – ' + pad(show.end === 24 ? 0 : show.end) + ':00';
+    document.getElementById('showTime').textContent = show.startStr + ' – ' + show.endStr;
     const descEl = document.getElementById('showDesc');
     if (descEl) descEl.textContent = show.description || '';
+  } else {
+    document.getElementById('showName').textContent = '—';
+    document.getElementById('showTime').textContent = '';
+    const descEl = document.getElementById('showDesc');
+    if (descEl) descEl.textContent = '';
   }
 }
 
@@ -714,7 +724,15 @@ fetchTicker();
 fetchRecentTracks();
 
 setInterval(updateClock, 1000);
-setInterval(fetchSchedule, 60000);
+setInterval(fetchSchedule, 30000);
+
+// Instant schedule update via BroadcastChannel
+var bc = new BroadcastChannel('july');
+bc.onmessage = function(e) {
+  if (e.data && e.data.type === 'scheduleUpdate') {
+    fetchSchedule();
+  }
+};
 setInterval(fetchNowPlaying, 15000);
 setInterval(fetchTicker, 60000);
 setInterval(fetchRecentTracks, 20000);
