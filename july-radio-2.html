@@ -714,13 +714,16 @@
         const data = await res.json();
         if (data.slots && data.slots.length) {
           data.slots.forEach(function(slot) {
-            const startHour = parseInt((slot.start || '00:00').split(':')[0]);
-            const endHour = parseInt((slot.end || '02:00').split(':')[0]);
+            const sp = (slot.start || '00:00').split(':');
+            const ep = (slot.end || '02:00').split(':');
             allSlots.push({
               name: slot.name,
-              host: host,
-              start: startHour,
-              end: endHour,
+              host: slot.host || host,
+              description: slot.description || '',
+              startMins: parseInt(sp[0]) * 60 + parseInt(sp[1] || 0),
+              endMins: parseInt(ep[0]) * 60 + parseInt(ep[1] || 0),
+              startStr: slot.start || '00:00',
+              endStr: slot.end || '02:00',
               day: parseInt(slot.day),
               tag: slot.name ? slot.name.toUpperCase() : '—'
             });
@@ -730,7 +733,7 @@
       for (let d = 0; d < 7; d++) {
         schedule[d] = allSlots
           .filter(function(s) { return s.day === d; })
-          .sort(function(a, b) { return a.start - b.start; });
+          .sort(function(a, b) { return a.startMins - b.startMins; });
       }
       renderSchedule();
       updateMiniWidget();
@@ -742,7 +745,7 @@
     function renderSchedule() {
     const now = new Date();
     const todayDay = now.getDay();
-    const todayHour = now.getHours();
+    const todayMins = now.getHours() * 60 + now.getMinutes();
     const grid = document.getElementById('scheduleGrid');
     if (!grid) return;
 
@@ -761,17 +764,16 @@
       html += `<div class="day-label" style="${offset > 0 ? 'margin-top:16px;' : ''}">${dayLabel}</div>`;
 
       schedule[dayIdx].forEach(show => {
-        const isLive = isToday && todayHour >= show.start && todayHour < show.end;
-        const isPast = isToday && todayHour >= show.end;
+        const isLive = isToday && todayMins >= show.startMins && todayMins < show.endMins;
+        const isPast = isToday && todayMins >= show.endMins;
         const tagClass = isLive ? 'show-tag on-air' : 'show-tag';
         const tagText = isLive ? 'ON AIR NOW' : show.tag;
         const rowOpacity = isPast ? 'opacity:0.3;' : '';
         const rowClass = isLive ? 'show-row live-row' : 'show-row';
-        const endHour = show.end === 24 ? '00' : String(show.end).padStart(2,'0');
         const liveDot = isLive ? '<div class="live-dot-inline"></div>' : '';
 
         html += `<div class="${rowClass}" style="${rowOpacity}">
-          <div class="show-time">${String(show.start).padStart(2,'0')}:00 – ${endHour}:00</div>
+          <div class="show-time">${show.startStr} – ${show.endStr}</div>
           <div style="display:flex;align-items:center;">${liveDot}<div><div class="show-name">${show.name}</div><div class="show-dj">${show.host || 'C.'}</div>${show.description ? '<div style="font-size:10px;color:#444;margin-top:3px;font-style:italic;">' + show.description + '</div>' : ''}</div></div>
           <div class="${tagClass}">${tagText}</div>
         </div>`;
@@ -783,9 +785,9 @@
 
   function updateMiniWidget() {
     const now = new Date();
-    const h = now.getHours();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
     const todayShows = schedule[now.getDay()] || [];
-    const current = todayShows.find(function(s) { return h >= s.start && h < s.end; });
+    const current = todayShows.find(function(s) { return nowMins >= s.startMins && nowMins < s.endMins; });
     const mini = document.getElementById('miniShowName');
     if (mini) mini.textContent = current ? current.name : '—';
   }
@@ -793,6 +795,14 @@
   setInterval(updateMiniWidget, 60000);
   fetchSchedule();
   setInterval(fetchSchedule, 30000);
+
+  // Instant schedule update via BroadcastChannel
+  var bc = new BroadcastChannel('july');
+  bc.onmessage = function(e) {
+    if (e.data && e.data.type === 'scheduleUpdate') {
+      fetchSchedule();
+    }
+  };
 
 </script>
 </body>
