@@ -157,11 +157,11 @@
       <div class="ps-name">C.</div>
     </div>
     <div class="ps-card" onclick="selectHost('fziwe')">
-      <div class="ps-img" id="ps-wrap-fziwe"><div class="ps-placeholder">F</div></div>
+      <div class="ps-img" id="ps-wrap-fziwe"><img src="diogo.gif" alt="Fziwe" id="ps-img-fziwe" crossorigin="anonymous"></div>
       <div class="ps-name">Fziwe</div>
     </div>
     <div class="ps-card" onclick="selectHost('fiscia')">
-      <div class="ps-img" id="ps-wrap-fiscia"><div class="ps-placeholder">Fi</div></div>
+      <div class="ps-img" id="ps-wrap-fiscia"><img src="fiscia.jpeg" alt="Fiscia" id="ps-img-fiscia" crossorigin="anonymous"></div>
       <div class="ps-name">Fiscia</div>
     </div>
   </div>
@@ -201,7 +201,6 @@
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
     <div class="dash-nav-item" onclick="showPanel('alerts',this)">Alerts</div>
-    <div class="dash-nav-item" onclick="showPanel('ticker',this)">Ticker</div>
   </div>
 
   <div class="dash-content">
@@ -274,20 +273,7 @@
         <button class="btn" onclick="sendAlert()">Send Alert</button>
         <button class="btn secondary" onclick="clearAlert()">Clear Alert</button>
       </div>
-    </div>
-
-    <!-- TICKER -->
-    <div class="dash-panel" id="panel-ticker">
-      <div class="section-title">Ticker Messages</div>
-      <div class="msg" id="tickerMsg"></div>
-      <div style="font-size:11px;color:#444;margin-bottom:20px;letter-spacing:0.08em;">These messages scroll across the bottom of the Twitch overlay. Add up to 8 messages.</div>
-      <div id="tickerList"></div>
-      <button class="btn secondary" onclick="addTickerMsg()" style="margin-top:8px;">+ Add Message</button>
-      <div class="divider"></div>
-      <button class="btn" onclick="saveTicker()">Save Ticker</button>
-    </div>
-
-  </div>
+    </div></div>
 </div>
 
 <!-- NOW PLAYING BAR -->
@@ -317,8 +303,8 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 
 const HOSTS = {
   c:      { name: 'C.',     accent: '#c8a96e', password: 'julyat2025', photo: 'julyhost1.png' },
-  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', password: 'fziwe2025',  photo: null },
-  fiscia: { name: 'Fiscia', accent: '#c86e8a', password: 'fiscia2025', photo: null },
+  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', password: 'fziwe2025',  photo: 'diogo.gif' },
+  fiscia: { name: 'Fiscia', accent: '#c86e8a', password: 'fiscia2025', photo: 'fiscia.jpeg' },
 };
 
 let currentHost = null;
@@ -405,7 +391,6 @@ async function loadDashboard() {
   await loadBroadcastMode();
   await loadSchedule();
   await loadProfile();
-  await loadTicker();
 }
 
 // BROADCAST
