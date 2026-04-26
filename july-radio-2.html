@@ -366,7 +366,36 @@
     return null;
   }
 
+
+  async function checkMode() {
+    try {
+      const res = await fetch('https://julyimages.sxrsq1.workers.dev/mode');
+      const data = await res.json();
+      if (data.mode === 'djset' && data.djset) {
+        const dj = data.djset;
+        const titleEl = document.getElementById('trackTitle');
+        const artistEl = document.getElementById('trackArtist');
+        const albumEl = document.getElementById('trackAlbum');
+        const artEl = document.getElementById('albumArt');
+        const bg = document.getElementById('bgBlur');
+
+        if (titleEl) titleEl.textContent = dj.title || 'DJ Set';
+        if (artistEl) artistEl.textContent = dj.djName || 'C.';
+        if (albumEl) albumEl.textContent = 'Live Set';
+
+        if (dj.image) {
+          if (artEl) artEl.innerHTML = '<img src="' + dj.image + '" alt="set art">';
+          if (bg) bg.style.backgroundImage = 'url(' + dj.image + ')';
+        }
+        return true;
+      }
+    } catch(e) {}
+    return false;
+  }
+
   async function fetchNowPlaying() {
+    const isDjMode = await checkMode();
+    if (isDjMode) return;
     try {
       const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_KEY}&format=json&limit=10`;
       const res = await fetch(url);
