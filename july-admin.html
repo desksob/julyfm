@@ -58,7 +58,9 @@
   /* FORMS */
   .field { margin-bottom: 20px; }
   .field-label { font-size: 10px; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; display: block; }
-  input[type=text], input[type=password], input[type=url], input[type=time], textarea, select { width: 100%; background: #111; border: 1px solid #1a1a1a; border-radius: 2px; color: #e0d9cc; font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
+  input[type=text], input[type=password], input[type=url], input[type=time], input[type=file], textarea, select { width: 100%; background: #111; border: 1px solid #1a1a1a; border-radius: 2px; color: #e0d9cc; font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
+  input[type=time]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; }
+  input[type=time] { color-scheme: dark; }
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 80px; }
   .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; padding: 10px 20px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
@@ -112,6 +114,9 @@
   .notif-bar.visible { transform: translateY(0); }
   .notif-close { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; }
 
+  /* TICKER */
+  #tickerList input[type=text] { color: #e0d9cc; background: #111; }
+  
   /* MOBILE */
   @media (max-width: 600px) {
     .ps-cards { gap: 16px; }
@@ -742,9 +747,20 @@ function renderTicker() {
   tickerMessages.forEach(function(msg, i) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
-    row.innerHTML =
-      '<input type="text" value="' + msg.replace(/"/g, '&quot;') + '" style="flex:1;" oninput="tickerMessages[' + i + ']=this.value">' +
-      '<button class="btn danger small" onclick="removeTicker(' + i + ')">✕</button>';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = msg;
+    input.style.flex = '1';
+    input.dataset.index = i;
+    input.addEventListener('input', function() {
+      tickerMessages[parseInt(this.dataset.index)] = this.value;
+    });
+    var btn = document.createElement('button');
+    btn.className = 'btn danger small';
+    btn.textContent = '✕';
+    btn.addEventListener('click', function() { removeTicker(i); });
+    row.appendChild(input);
+    row.appendChild(btn);
     list.appendChild(row);
   });
 }
@@ -766,6 +782,12 @@ function removeTicker(i) {
 }
 
 async function saveTicker() {
+  // Read current values from DOM inputs
+  var inputs = document.getElementById('tickerList').querySelectorAll('input[type=text]');
+  inputs.forEach(function(inp) {
+    var idx = parseInt(inp.dataset.index);
+    if (!isNaN(idx)) tickerMessages[idx] = inp.value;
+  });
   var clean = tickerMessages.filter(function(m) { return m.trim() !== ''; });
   try {
     var res = await fetch(WORKER + '/ticker', {
