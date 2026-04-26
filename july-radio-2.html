@@ -394,8 +394,6 @@
   }
 
   async function fetchNowPlaying() {
-    const isDjMode = await checkMode();
-    if (isDjMode) return;
     try {
       const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_KEY}&format=json&limit=10`;
       const res = await fetch(url);
@@ -626,8 +624,8 @@
 
       const defaults = {
         c:      { name: 'C.',     shows: 'Playlist · Open Air · di:scovery · Shuffle+ · in:focus', tagline: 'taste over everything.', photo: 'julyhost1.png', accent: '#c8a96e' },
-        fziwe:  { name: 'Fziwe',  shows: 'Coming soon', tagline: '—', photo: null, accent: '#6e8ac8' },
-        fiscia: { name: 'Fiscia', shows: 'Coming soon', tagline: '—', photo: null, accent: '#c86e8a' },
+        fziwe:  { name: 'Fziwe',  shows: 'Coming soon', tagline: '—', photo: 'diogo.gif', accent: '#6e8ac8' },
+        fiscia: { name: 'Fiscia', shows: 'Coming soon', tagline: '—', photo: 'fiscia.jpeg', accent: '#c86e8a' },
       };
 
       const hosts = ['c', 'fziwe', 'fiscia'];
@@ -692,11 +690,14 @@
     } catch(e) {}
   }
 
+  checkMode();
   fetchNowPlaying();
+  setInterval(checkMode, 15000);
   setInterval(fetchNowPlaying, 15000);
   checkAlert();
   setInterval(checkAlert, 30000);
   loadHosts();
+  setInterval(loadHosts, 60000);
 
   // Dynamic schedule
   let schedule = {};
