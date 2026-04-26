@@ -661,7 +661,7 @@ function toggleDesc(i) {
 }
 
 function addShowSlot() {
-  scheduleSlots.push({ day: 1, start: '18:00', end: '20:00', name: '', description: '' });
+  scheduleSlots.push({ day: new Date().getDay(), start: '18:00', end: '20:00', name: '', description: '' });
   renderSchedule();
 }
 
@@ -946,7 +946,10 @@ async function saveTicker() {
       body: JSON.stringify({ password: HOSTS[currentHost].password, messages: clean })
     });
     var data = await res.json();
-    if (data.ok) showMsg('tickerMsg', 'success', 'Ticker updated — live on overlay within 30 seconds');
+    if (data.ok) {
+      showMsg('tickerMsg', 'success', 'Ticker updated — live on overlay within 30 seconds');
+      new BroadcastChannel('july').postMessage({ type: 'tickerUpdate' });
+    }
     else showMsg('tickerMsg', 'error', 'Failed to save');
   } catch(e) { showMsg('tickerMsg', 'error', 'Connection error'); }
 }
