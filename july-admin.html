@@ -59,8 +59,10 @@
   .field { margin-bottom: 20px; }
   .field-label { font-size: 10px; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; display: block; }
   input[type=text], input[type=password], input[type=url], input[type=time], input[type=file], textarea, select { width: 100%; background: #111; border: 1px solid #1a1a1a; border-radius: 2px; color: #e0d9cc; font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
-  input[type=time]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; }
-  input[type=time] { color-scheme: dark; }
+  input[type=time] { color-scheme: dark; color: #e0d9cc !important; }
+  input[type=time]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
+  input[type=time]::-webkit-datetime-edit { color: #e0d9cc; }
+  input[type=time]::-webkit-datetime-edit-hour-field, input[type=time]::-webkit-datetime-edit-minute-field, input[type=time]::-webkit-datetime-edit-ampm-field { color: #e0d9cc; background: transparent; }
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 80px; }
   .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; padding: 10px 20px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
@@ -86,7 +88,11 @@
   .mode-btn.active { background: #111; color: #e0d9cc; }
 
   /* SCHEDULE */
-  .schedule-item { display: grid; grid-template-columns: 100px 80px 80px 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: none; }
+  .schedule-item { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; border-bottom: none; }
+  .schedule-item select { width: auto; }
+  .schedule-item input[type=text] { flex: 1; min-width: 120px; }
+  .time-group { display: flex; gap: 4px; align-items: center; }
+  .time-label { font-size: 9px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
   .schedule-slot-wrap { border-bottom: 1px solid #111; }
 
   /* NOW PLAYING BAR */
@@ -128,7 +134,7 @@
     .dash-nav-item { padding: 12px 12px; font-size: 9px; }
     .dash-content { padding: 20px; }
     .grid-2 { grid-template-columns: 1fr; }
-    .schedule-item { grid-template-columns: 80px 70px 70px 1fr auto; gap: 4px; }
+    .schedule-item { flex-wrap: wrap; gap: 6px; }
     #nowPlayingBar { padding: 10px 16px; gap: 10px; }
     .np-prev, .np-clocks { display: none; }
     .btn-row { flex-direction: column; }
@@ -480,37 +486,172 @@ async function loadSchedule() {
   renderSchedule();
 }
 
+
+function getAmPm(val) {
+  return parseInt((val || '00:00').split(':')[0]) >= 12 ? 'PM' : 'AM';
+}
+
+function to24(h, m, ampm) {
+  h = parseInt(h); m = parseInt(m);
+  if (ampm === 'AM' && h === 12) h = 0;
+  if (ampm === 'PM' && h !== 12) h += 12;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
+function updateSlotTime(i, field) {
+  var hEl = document.getElementById('sh-' + field + '-h-' + i);
+  var mEl = document.getElementById('sh-' + field + '-m-' + i);
+  var aEl = document.getElementById('sh-' + field + '-a-' + i);
+  if (hEl && mEl && aEl) {
+    scheduleSlots[i][field] = to24(hEl.value, mEl.value, aEl.value);
+  }
+}
+
+function makeSelect(id, options, selected, onchangeFn) {
+  var sel = document.createElement('select');
+  sel.id = id;
+  sel.style.width = 'auto';
+  options.forEach(function(opt) {
+    var o = document.createElement('option');
+    o.value = opt.value;
+    o.textContent = opt.label;
+    if (opt.value == selected) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', onchangeFn);
+  return sel;
+}
+
 function renderSchedule() {
   var list = document.getElementById('scheduleList');
   list.innerHTML = '';
+
+  if (scheduleSlots.length === 0) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'font-size:11px;color:#444;padding:12px 0;letter-spacing:0.08em;';
+    empty.textContent = 'No shows yet. Click + Add Show to start.';
+    list.appendChild(empty);
+    return;
+  }
+
   scheduleSlots.forEach(function(slot, i) {
     var wrap = document.createElement('div');
-    wrap.className = 'schedule-slot-wrap';
+    wrap.style.cssText = 'border:1px solid #1a1a1a;border-radius:3px;padding:14px;margin-bottom:10px;';
 
+    var startH12 = parseInt((slot.start || '00:00').split(':')[0]) % 12 || 12;
+    var startM = parseInt((slot.start || '00:00').split(':')[1]) || 0;
+    var startAP = getAmPm(slot.start);
+    var endH12 = parseInt((slot.end || '02:00').split(':')[0]) % 12 || 12;
+    var endM = parseInt((slot.end || '02:00').split(':')[1]) || 0;
+    var endAP = getAmPm(slot.end);
+
+    var hourOpts = [];
+    for (var h = 1; h <= 12; h++) hourOpts.push({ value: h, label: String(h).padStart(2,'0') });
+    var minOpts = [0,15,30,45].map(function(m) { return { value: m, label: String(m).padStart(2,'0') }; });
+    var apOpts = [{value:'AM',label:'AM'},{value:'PM',label:'PM'}];
+    var dayOpts = DAYS.map(function(d,j) { return { value: j, label: d }; });
+
+    // ROW 1: Day + times + name + buttons
     var row = document.createElement('div');
-    row.className = 'schedule-item';
-    row.innerHTML =
-      '<select onchange="scheduleSlots[' + i + '].day=parseInt(this.value)">' +
-        DAYS.map(function(d, j) { return '<option value="' + j + '"' + (slot.day === j ? ' selected' : '') + '>' + d.slice(0,3) + '</option>'; }).join('') +
-      '</select>' +
-      '<input type="time" value="' + (slot.start || '00:00') + '" onchange="scheduleSlots[' + i + '].start=this.value" title="Start">' +
-      '<input type="time" value="' + (slot.end || '02:00') + '" onchange="scheduleSlots[' + i + '].end=this.value" title="End">' +
-      '<input type="text" value="' + (slot.name || '') + '" placeholder="Show name" onchange="scheduleSlots[' + i + '].name=this.value">' +
-      '<div style="display:flex;gap:4px;">' +
-        '<button class="btn secondary small" onclick="toggleDesc(' + i + ')" title="Description">✎</button>' +
-        '<button class="btn danger small" onclick="removeSlot(' + i + ')">✕</button>' +
-      '</div>';
+    row.style.cssText = 'display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;';
 
-    var descRow = document.createElement('div');
-    descRow.id = 'desc-row-' + i;
-    descRow.style.cssText = 'display:' + (slot.description ? 'block' : 'none') + ';padding:4px 0 8px;';
-    descRow.innerHTML = '<input type="text" value="' + (slot.description || '') + '" placeholder="Show description e.g. tonight we go deep into 90s ambient" style="font-size:11px;" oninput="scheduleSlots[' + i + '].description=this.value">';
+    // Day
+    var dayWrap = document.createElement('div');
+    var dayLbl = document.createElement('div');
+    dayLbl.className = 'time-label';
+    dayLbl.style.marginBottom = '4px';
+    dayLbl.textContent = 'Day';
+    var daySelect = makeSelect('sh-day-'+i, dayOpts, slot.day, function() {
+      scheduleSlots[i].day = parseInt(this.value);
+    });
+    dayWrap.appendChild(dayLbl);
+    dayWrap.appendChild(daySelect);
+    row.appendChild(dayWrap);
+
+    // Start time
+    var startWrap = document.createElement('div');
+    var startLbl = document.createElement('div');
+    startLbl.className = 'time-label';
+    startLbl.style.marginBottom = '4px';
+    startLbl.textContent = 'Start';
+    var startRow = document.createElement('div');
+    startRow.style.cssText = 'display:flex;gap:4px;';
+    startRow.appendChild(makeSelect('sh-start-h-'+i, hourOpts, startH12, function() { updateSlotTime(i,'start'); }));
+    startRow.appendChild(makeSelect('sh-start-m-'+i, minOpts, startM, function() { updateSlotTime(i,'start'); }));
+    startRow.appendChild(makeSelect('sh-start-a-'+i, apOpts, startAP, function() { updateSlotTime(i,'start'); }));
+    startWrap.appendChild(startLbl);
+    startWrap.appendChild(startRow);
+    row.appendChild(startWrap);
+
+    // End time
+    var endWrap = document.createElement('div');
+    var endLbl = document.createElement('div');
+    endLbl.className = 'time-label';
+    endLbl.style.marginBottom = '4px';
+    endLbl.textContent = 'End';
+    var endRow = document.createElement('div');
+    endRow.style.cssText = 'display:flex;gap:4px;';
+    endRow.appendChild(makeSelect('sh-end-h-'+i, hourOpts, endH12, function() { updateSlotTime(i,'end'); }));
+    endRow.appendChild(makeSelect('sh-end-m-'+i, minOpts, endM, function() { updateSlotTime(i,'end'); }));
+    endRow.appendChild(makeSelect('sh-end-a-'+i, apOpts, endAP, function() { updateSlotTime(i,'end'); }));
+    endWrap.appendChild(endLbl);
+    endWrap.appendChild(endRow);
+    row.appendChild(endWrap);
+
+    // Show name
+    var nameWrap = document.createElement('div');
+    nameWrap.style.cssText = 'flex:1;min-width:120px;';
+    var nameLbl = document.createElement('div');
+    nameLbl.className = 'time-label';
+    nameLbl.style.marginBottom = '4px';
+    nameLbl.textContent = 'Show Name';
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = slot.name || '';
+    nameInput.placeholder = 'Show name';
+    nameInput.addEventListener('input', function() { scheduleSlots[i].name = this.value; });
+    nameWrap.appendChild(nameLbl);
+    nameWrap.appendChild(nameInput);
+    row.appendChild(nameWrap);
+
+    // Buttons
+    var btnWrap = document.createElement('div');
+    btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+    var descBtn = document.createElement('button');
+    descBtn.className = 'btn secondary small';
+    descBtn.textContent = '✎ desc';
+    descBtn.addEventListener('click', function() { toggleDesc(i); });
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'btn danger small';
+    removeBtn.textContent = '✕ remove';
+    removeBtn.addEventListener('click', function() { removeSlot(i); });
+    btnWrap.appendChild(descBtn);
+    btnWrap.appendChild(removeBtn);
+    row.appendChild(btnWrap);
 
     wrap.appendChild(row);
+
+    // Description row
+    var descRow = document.createElement('div');
+    descRow.id = 'desc-row-' + i;
+    descRow.style.display = slot.description ? 'block' : 'none';
+    var descLbl = document.createElement('div');
+    descLbl.className = 'time-label';
+    descLbl.style.marginBottom = '4px';
+    descLbl.textContent = 'Description';
+    var descInput = document.createElement('input');
+    descInput.type = 'text';
+    descInput.value = slot.description || '';
+    descInput.placeholder = 'e.g. tonight we go deep into 90s ambient';
+    descInput.addEventListener('input', function() { scheduleSlots[i].description = this.value; });
+    descRow.appendChild(descLbl);
+    descRow.appendChild(descInput);
     wrap.appendChild(descRow);
+
     list.appendChild(wrap);
   });
 }
+
 
 function toggleDesc(i) {
   var el = document.getElementById('desc-row-' + i);
@@ -722,9 +863,10 @@ var tickerMessages = [];
 
 async function loadTicker() {
   try {
-    var res = await fetch(WORKER + '/ticker');
+    var res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
-    tickerMessages = data.messages || [
+    tickerMessages = Array.isArray(data.messages) && data.messages.length ? data.messages : [
       'Welcome to July Radio',
       'Live 24/7',
       'Full website coming soon at julyfm.com',
@@ -735,7 +877,7 @@ async function loadTicker() {
     tickerMessages = [
       'Welcome to July Radio',
       'Live 24/7',
-      'Full website coming soon at julyfm.com'
+      'Full website coming soon'
     ];
   }
   renderTicker();
@@ -790,7 +932,7 @@ async function saveTicker() {
   });
   var clean = tickerMessages.filter(function(m) { return m.trim() !== ''; });
   try {
-    var res = await fetch(WORKER + '/ticker', {
+    var res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: HOSTS[currentHost].password, messages: clean })
