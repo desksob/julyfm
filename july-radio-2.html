@@ -716,12 +716,14 @@
           data.slots.forEach(function(slot) {
             const sp = (slot.start || '00:00').split(':');
             const ep = (slot.end || '02:00').split(':');
+            let endMins = parseInt(ep[0]) * 60 + parseInt(ep[1] || 0);
+            if (endMins === 0) endMins = 1440; // 00:00 end means midnight = end of day
             allSlots.push({
               name: slot.name,
               host: slot.host || host,
               description: slot.description || '',
               startMins: parseInt(sp[0]) * 60 + parseInt(sp[1] || 0),
-              endMins: parseInt(ep[0]) * 60 + parseInt(ep[1] || 0),
+              endMins: endMins,
               startStr: slot.start || '00:00',
               endStr: slot.end || '02:00',
               day: parseInt(slot.day),
@@ -732,7 +734,7 @@
       }
       for (let d = 0; d < 7; d++) {
         schedule[d] = allSlots
-          .filter(function(s) { return s.day === d; })
+          .filter(function(s) { return parseInt(s.day) === d; })
           .sort(function(a, b) { return a.startMins - b.startMins; });
       }
       renderSchedule();
