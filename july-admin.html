@@ -201,6 +201,7 @@
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
     <div class="dash-nav-item" onclick="showPanel('alerts',this)">Alerts</div>
+    <div class="dash-nav-item" onclick="showPanel('ticker',this)">Ticker</div>
   </div>
 
   <div class="dash-content">
@@ -273,7 +274,22 @@
         <button class="btn" onclick="sendAlert()">Send Alert</button>
         <button class="btn secondary" onclick="clearAlert()">Clear Alert</button>
       </div>
-    </div></div>
+    </div>
+
+    <!-- TICKER -->
+    <div class="dash-panel" id="panel-ticker">
+      <div class="section-title">Ticker Messages</div>
+      <div class="msg" id="tickerMsg"></div>
+      <div id="tickerList"></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn secondary" onclick="addTickerMsg()">+ Add Message</button>
+      </div>
+      <div class="divider"></div>
+      <button class="btn" onclick="saveTicker()">Save Ticker</button>
+    </div>
+
+  </div>
+
 </div>
 
 <!-- NOW PLAYING BAR -->
@@ -391,6 +407,7 @@ async function loadDashboard() {
   await loadBroadcastMode();
   await loadSchedule();
   await loadProfile();
+  await loadTicker();
 }
 
 // BROADCAST
@@ -658,7 +675,10 @@ async function saveSchedule() {
   try {
     var res = await fetch(WORKER + '/schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, slots: scheduleSlots }) });
     var data = await res.json();
-    if (data.ok) showMsg('scheduleMsg', 'success', 'Schedule saved');
+    if (data.ok) {
+      showMsg('scheduleMsg', 'success', 'Schedule saved');
+      new BroadcastChannel('july').postMessage({ type: 'scheduleUpdate' });
+    }
     else showMsg('scheduleMsg', 'error', 'Failed to save');
   } catch(e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
 }
