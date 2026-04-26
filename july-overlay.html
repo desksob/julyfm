@@ -315,18 +315,15 @@
     flex: 1;
     overflow: hidden;
     position: relative;
+    height: 100%;
   }
 
   #tickerInner {
-    display: inline-flex;
-    gap: 80px;
-    animation: ticker 30s linear infinite;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     white-space: nowrap;
-  }
-
-  @keyframes ticker {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    will-change: transform;
   }
 
   .ticker-msg {
@@ -408,8 +405,7 @@
     <div id="tickerLabel">July Radio</div>
     <div id="tickerTrack">
       <div id="tickerInner">
-        <span id="tickerInnerText" class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Now streaming</span>
-        <span id="tickerInnerText2" class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Now streaming</span>
+        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Now streaming</span>
       </div>
     </div>
   </div>
@@ -712,20 +708,48 @@ async function fetchArtistInfo(artist) {
 }
 
 
+// Ticker — JS RAF scroll, auto-sizes to content
+var tickerX = 0;
+var tickerSpeed = 0.5;
+var tickerRAF = null;
+var tickerSingleWidth = 0;
+var tickerSep = '     ·     ';
+
+function setTickerText(messages) {
+  var inner = document.getElementById('tickerInner');
+  if (!inner) return;
+  var text = messages.join(tickerSep);
+  inner.innerHTML =
+    '<span class="ticker-msg">' + text + tickerSep + '</span>' +
+    '<span class="ticker-msg">' + text + tickerSep + '</span>';
+  tickerX = 0;
+  inner.style.transform = 'translateY(-50%) translateX(0px)';
+  requestAnimationFrame(function() {
+    var spans = inner.querySelectorAll('.ticker-msg');
+    tickerSingleWidth = spans[0] ? spans[0].offsetWidth : 0;
+    if (tickerRAF) cancelAnimationFrame(tickerRAF);
+    tickerLoop();
+  });
+}
+
+function tickerLoop() {
+  var inner = document.getElementById('tickerInner');
+  if (!inner || tickerSingleWidth === 0) return;
+  tickerX -= tickerSpeed;
+  if (tickerX <= -tickerSingleWidth) tickerX += tickerSingleWidth;
+  inner.style.transform = 'translateY(-50%) translateX(' + tickerX + 'px)';
+  tickerRAF = requestAnimationFrame(tickerLoop);
+}
+
 async function fetchTicker() {
   try {
     const res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker');
     const data = await res.json();
     if (data.messages && data.messages.length) {
-      const text = data.messages.join('  ·  ');
-      const t1 = document.getElementById('tickerInnerText');
-      const t2 = document.getElementById('tickerInnerText2');
-      if (t1) t1.innerHTML = text;
-      if (t2) t2.innerHTML = text;
+      setTickerText(data.messages);
     }
   } catch(e) {}
 }
-
 updateClock();
 fetchSchedule();
 fetchNowPlaying();
@@ -735,12 +759,11 @@ fetchRecentTracks();
 setInterval(updateClock, 1000);
 setInterval(fetchSchedule, 30000);
 
-// Instant schedule update via BroadcastChannel
+// Instant updates via BroadcastChannel
 var bc = new BroadcastChannel('july');
 bc.onmessage = function(e) {
-  if (e.data && e.data.type === 'scheduleUpdate') {
-    fetchSchedule();
-  }
+  if (e.data && e.data.type === 'scheduleUpdate') fetchSchedule();
+  if (e.data && e.data.type === 'tickerUpdate') fetchTicker();
 };
 setInterval(fetchNowPlaying, 15000);
 setInterval(fetchTicker, 60000);
