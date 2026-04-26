@@ -222,7 +222,7 @@
         <div class="field">
           <label class="field-label">Set Image</label>
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <input type="file" id="djImageFile" accept="image/*" style="font-size:11px;color:#555;flex:1;" onchange="uploadDjImage()">
+            <input type="file" id="djImageFile" accept="image/*,.gif" style="font-size:11px;color:#555;flex:1;" onchange="uploadDjImage()">
             <span style="font-size:10px;color:#333;">or</span>
             <input type="url" id="djImage" placeholder="Paste image URL" oninput="previewDjImg()" style="flex:2;">
           </div>
@@ -253,7 +253,7 @@
       </div>
       <div class="field"><label class="field-label">Tagline</label><input type="text" id="profileTagline" placeholder="e.g. taste over everything."></div>
       <div class="field"><label class="field-label">Bio</label><textarea id="profileBio" placeholder="A short bio..."></textarea></div>
-      <div class="field"><label class="field-label">Photo URL</label><input type="url" id="profilePhoto" placeholder="https://..." oninput="previewProfileImg()"><img id="profileImgPreview" class="preview-img" alt="preview"></div>
+      <div class="field"><label class="field-label">Photo URL</label><input type="url" id="profilePhoto" placeholder="https://... (PNG, JPG or GIF supported)" oninput="previewProfileImg()"><img id="profileImgPreview" class="preview-img" alt="preview"></div>
       <div class="grid-2">
         <div class="field"><label class="field-label">Instagram</label><input type="text" id="profileInstagram" placeholder="@handle"></div>
         <div class="field"><label class="field-label">SoundCloud</label><input type="text" id="profileSoundcloud" placeholder="soundcloud.com/yourname"></div>
@@ -893,14 +893,17 @@ function renderTicker() {
     input.type = 'text';
     input.value = msg;
     input.style.flex = '1';
-    input.dataset.index = i;
+    input.dataset.index = String(i);
     input.addEventListener('input', function() {
-      tickerMessages[parseInt(this.dataset.index)] = this.value;
+      var idx = parseInt(this.dataset.index);
+      tickerMessages[idx] = this.value;
     });
     var btn = document.createElement('button');
     btn.className = 'btn danger small';
     btn.textContent = '✕';
-    btn.addEventListener('click', function() { removeTicker(i); });
+    (function(idx) {
+      btn.addEventListener('click', function() { removeTicker(idx); });
+    })(i);
     row.appendChild(input);
     row.appendChild(btn);
     list.appendChild(row);
@@ -925,12 +928,12 @@ function removeTicker(i) {
 
 async function saveTicker() {
   // Read current values from DOM inputs
+  // Read values directly from DOM in order
   var inputs = document.getElementById('tickerList').querySelectorAll('input[type=text]');
+  var clean = [];
   inputs.forEach(function(inp) {
-    var idx = parseInt(inp.dataset.index);
-    if (!isNaN(idx)) tickerMessages[idx] = inp.value;
+    if (inp.value.trim()) clean.push(inp.value.trim());
   });
-  var clean = tickerMessages.filter(function(m) { return m.trim() !== ''; });
   try {
     var res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker', {
       method: 'POST',
