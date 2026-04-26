@@ -47,6 +47,25 @@
     width: auto;
   }
 
+
+  #timezones {
+    position: absolute;
+    top: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .tz-item {
+    text-align: center;
+  }
+
+  .tz-label { font-size: 9px; color: #333; letter-spacing: 0.15em; text-transform: uppercase; }
+  .tz-time { font-size: 13px; color: #555; letter-spacing: 0.1em; margin-top: 2px; }
+  .tz-sep { color: #222; font-size: 16px; }
+
   /* TOP RIGHT — live + listeners stacked */
   #topRight {
     position: absolute;
@@ -331,6 +350,14 @@
 <div id="ui">
   <img src="july-logo.png" alt="July Radio" id="logo">
 
+  <div id="timezones">
+    <div class="tz-item"><div class="tz-label">EAT</div><div class="tz-time" id="tzNairobi">—</div></div>
+    <div class="tz-sep">·</div>
+    <div class="tz-item"><div class="tz-label">BST</div><div class="tz-time" id="tzLondon">—</div></div>
+    <div class="tz-sep">·</div>
+    <div class="tz-item"><div class="tz-label">EST</div><div class="tz-time" id="tzNY">—</div></div>
+  </div>
+
   <div id="topRight">
     <div id="livePill"><div class="dot"></div>LIVE</div>
     
@@ -374,8 +401,8 @@
     <div id="tickerLabel">July Radio</div>
     <div id="tickerTrack">
       <div id="tickerInner">
-        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Full website coming soon &nbsp;·&nbsp; UPDATE - ALL SHOWS ARE BEING REWORKED AND STATION IS ON AUTOPLAY, MAJOR REWORK UNDERWAY &nbsp;·&nbsp; Now streaming — tune in</span>
-        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Full website coming soon &nbsp;·&nbsp; UPDATE - ALL SHOWS ARE BEING REWORKED AND STATION IS ON AUTOPLAY, MAJOR REWORK UNDERWAY &nbsp;·&nbsp; Now streaming — tune in</span>
+        <span id="tickerInnerText">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Now streaming</span>
+        <span id="tickerInnerText2">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Now streaming</span>
       </div>
     </div>
   </div>
@@ -419,6 +446,16 @@ function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent =
     pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()) + ' EAT';
+
+  const fmt = function(tz) {
+    return now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+  };
+  const n = document.getElementById('tzNairobi');
+  const l = document.getElementById('tzLondon');
+  const ny = document.getElementById('tzNY');
+  if (n) n.textContent = fmt('Africa/Nairobi');
+  if (l) l.textContent = fmt('Europe/London');
+  if (ny) ny.textContent = fmt('America/New_York');
 }
 
 function updateShow() {
@@ -655,14 +692,31 @@ async function fetchArtistInfo(artist) {
   }
 }
 
+
+async function fetchTicker() {
+  try {
+    const res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker');
+    const data = await res.json();
+    if (data.messages && data.messages.length) {
+      const text = data.messages.join('  ·  ');
+      const t1 = document.getElementById('tickerInnerText');
+      const t2 = document.getElementById('tickerInnerText2');
+      if (t1) t1.innerHTML = text;
+      if (t2) t2.innerHTML = text;
+    }
+  } catch(e) {}
+}
+
 updateClock();
 fetchSchedule();
 fetchNowPlaying();
+fetchTicker();
 fetchRecentTracks();
 
 setInterval(updateClock, 1000);
 setInterval(fetchSchedule, 60000);
 setInterval(fetchNowPlaying, 15000);
+setInterval(fetchTicker, 60000);
 setInterval(fetchRecentTracks, 20000);
 </script>
 </body>
