@@ -56,15 +56,33 @@
     display: flex;
     gap: 24px;
     align-items: center;
+    perspective: 600px;
   }
 
   .tz-item {
     text-align: center;
+    width: 72px;
+    height: 36px;
+    position: relative;
   }
 
+  .tz-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease;
+  }
+
+  .tz-face.flip-out { transform: rotateX(90deg); opacity: 0; pointer-events: none; }
+  .tz-face.flip-in  { transform: rotateX(-90deg); opacity: 0; pointer-events: none; }
+  .tz-face.active   { transform: rotateX(0deg); opacity: 1; }
+
   .tz-label { font-size: 9px; color: #333; letter-spacing: 0.15em; text-transform: uppercase; }
-  .tz-time { font-size: 13px; color: #555; letter-spacing: 0.1em; margin-top: 2px; }
-  .tz-sep { color: #222; font-size: 16px; }
+  .tz-time  { font-size: 13px; color: #555; letter-spacing: 0.1em; margin-top: 2px; }
+  .tz-sep   { color: #222; font-size: 16px; }
 
   /* TOP RIGHT — live + listeners stacked */
   #topRight {
@@ -355,11 +373,11 @@
   <img src="july-logo.png" alt="July Radio" id="logo">
 
   <div id="timezones">
-    <div class="tz-item"><div class="tz-label">EAT</div><div class="tz-time" id="tzNairobi">—</div></div>
+    <div class="tz-item" id="tzSlot0"><div class="tz-face active"><div class="tz-label">—</div><div class="tz-time">—</div></div></div>
     <div class="tz-sep">·</div>
-    <div class="tz-item"><div class="tz-label">BST</div><div class="tz-time" id="tzLondon">—</div></div>
+    <div class="tz-item" id="tzSlot1"><div class="tz-face active"><div class="tz-label">—</div><div class="tz-time">—</div></div></div>
     <div class="tz-sep">·</div>
-    <div class="tz-item"><div class="tz-label">EST</div><div class="tz-time" id="tzNY">—</div></div>
+    <div class="tz-item" id="tzSlot2"><div class="tz-face active"><div class="tz-label">—</div><div class="tz-time">—</div></div></div>
   </div>
 
   <div id="topRight">
@@ -453,21 +471,88 @@ async function fetchSchedule() {
 
 function pad(n) { return String(n).padStart(2,'0'); }
 
+// All timezones — 3 slots rotate every 6s
+var TZ_LIST = [
+  { label: 'EAT',  tz: 'Africa/Nairobi' },
+  { label: 'WAT',  tz: 'Africa/Lagos' },
+  { label: 'SAST', tz: 'Africa/Johannesburg' },
+  { label: 'GMT',  tz: 'Europe/London' },
+  { label: 'WET',  tz: 'Europe/Lisbon' },
+  { label: 'CET',  tz: 'Europe/Paris' },
+  { label: 'CET',  tz: 'Europe/Rome' },
+  { label: 'IST',  tz: 'Asia/Kolkata' },
+  { label: 'JST',  tz: 'Asia/Tokyo' },
+  { label: 'AEST', tz: 'Australia/Sydney' },
+  { label: 'EST',  tz: 'America/New_York' },
+  { label: 'PST',  tz: 'America/Los_Angeles' },
+  { label: 'BRT',  tz: 'America/Sao_Paulo' }
+];
+var tzOffset = 0; // which group of 3 is showing
+
+function fmtTz(tz) {
+  return new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
+}
+
+function flipSlot(slotEl, label, time) {
+  var oldFace = slotEl.querySelector('.tz-face.active');
+  var newFace = document.createElement('div');
+  newFace.className = 'tz-face flip-in';
+  newFace.innerHTML = '<div class="tz-label">' + label + '</div><div class="tz-time">' + time + '</div>';
+  slotEl.appendChild(newFace);
+
+  if (oldFace) {
+    oldFace.classList.remove('active');
+    oldFace.classList.add('flip-out');
+  }
+
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      newFace.classList.remove('flip-in');
+      newFace.classList.add('active');
+      setTimeout(function() {
+        if (oldFace && oldFace.parentNode) oldFace.parentNode.removeChild(oldFace);
+      }, 600);
+    });
+  });
+}
+
+function updateTzSlots(flip) {
+  var slots = [
+    document.getElementById('tzSlot0'),
+    document.getElementById('tzSlot1'),
+    document.getElementById('tzSlot2')
+  ];
+  for (var i = 0; i < 3; i++) {
+    var entry = TZ_LIST[(tzOffset + i) % TZ_LIST.length];
+    var time = fmtTz(entry.tz);
+    if (flip) {
+      flipSlot(slots[i], entry.label, time);
+    } else {
+      // Just update time text on the active face, no flip
+      var face = slots[i] ? slots[i].querySelector('.tz-face.active') : null;
+      if (face) {
+        var timeEl = face.querySelector('.tz-time');
+        if (timeEl) timeEl.textContent = time;
+      }
+    }
+  }
+}
+
+function rotateTz() {
+  tzOffset = (tzOffset + 3) % TZ_LIST.length;
+  updateTzSlots(true);
+}
+
 function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent =
     pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()) + ' EAT';
-
-  const fmt = function(tz) {
-    return now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
-  };
-  const n = document.getElementById('tzNairobi');
-  const l = document.getElementById('tzLondon');
-  const ny = document.getElementById('tzNY');
-  if (n) n.textContent = fmt('Africa/Nairobi');
-  if (l) l.textContent = fmt('Europe/London');
-  if (ny) ny.textContent = fmt('America/New_York');
+  updateTzSlots(false);
 }
+
+// Init slots immediately, then rotate every 6s
+updateTzSlots(true);
+setInterval(rotateTz, 6000);
 
 function updateShow() {
   const now = new Date();
