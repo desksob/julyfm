@@ -134,7 +134,7 @@ nav a.active { color: var(--text); border-bottom-color: var(--gold); }
   -webkit-backdrop-filter: blur(24px) saturate(0.6) brightness(0.7);
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 4px;
-  padding: 28px 28px 24px;
+  padding: 20px 24px;
   margin-bottom: 20px;
 }
 
@@ -146,14 +146,13 @@ nav a.active { color: var(--text); border-bottom-color: var(--gold); }
 
 .np-row {
   display: grid;
-  grid-template-columns: 140px 1fr auto;
+  grid-template-columns: 100px 1fr auto auto;
   gap: 20px;
   align-items: center;
-  margin-bottom: 24px;
 }
 
 .album-art {
-  width: 140px; height: 140px;
+  width: 100px; height: 100px;
   border: 1px solid #1a1a1a; border-radius: 3px;
   background: #111; flex-shrink: 0; overflow: hidden;
   transition: opacity 0.6s;
@@ -174,10 +173,7 @@ nav a.active { color: var(--text); border-bottom-color: var(--gold); }
 .album-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .art-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#2a2a2a;letter-spacing:0.1em; }
 
-.np-controls-col {
-  display: flex; flex-direction: column; gap: 14px;
-  justify-content: center; align-items: flex-end;
-}
+.np-controls-col { display: contents; }
 
 .track-title {
   font-family: 'DM Mono', monospace;
@@ -224,7 +220,7 @@ nav a.active { color: var(--text); border-bottom-color: var(--gold); }
 }
 .play-btn.playing:hover { border-left-color: var(--text); border-right-color: var(--text); }
 
-.vol-wrap { display: flex; align-items: center; gap: 10px; flex: 1; }
+.vol-wrap { display: flex; align-items: center; gap: 0; width: 100%; min-width: 0; }
 .vol-label { font-size: 9px; color: #333; letter-spacing: 0.12em; text-transform: uppercase; }
 
 input[type=range] {
@@ -709,12 +705,7 @@ nav {
 }
 #gcFlagOnAir.visible { opacity: 1; }
 
-/* Vol slider vertical */
-.vol-wrap input[type=range][style*="vertical"] {
-  writing-mode: vertical-lr;
-  direction: rtl;
-  -webkit-appearance: slider-vertical;
-}
+
 </style>
 </head>
 <body>
@@ -746,25 +737,22 @@ nav {
       <div>
         <!-- Now playing -->
         <div class="now-playing-card">
-          <div class="card-label">Now Playing</div>
+          <div class="card-label" style="margin-bottom:12px;">Now Playing</div>
           <div class="np-row">
             <div class="album-art" id="albumArt" onclick="openLastfm()">
               <div class="art-placeholder" id="artPlaceholder">art</div>
             </div>
-            <div style="flex:1; min-width:0;">
+            <div style="min-width:0;">
               <div class="track-title" id="trackTitle">July Radio</div>
               <div class="track-artist" id="trackArtist">—</div>
               <div class="track-album" id="trackAlbum">syncing...</div>
-              <div class="status-line" id="statusMsg" style="margin-top:12px;">— PRESS PLAY TO TUNE IN</div>
             </div>
-            <div class="np-controls-col">
-              <button class="play-btn" id="playBtn" onclick="togglePlay()"></button>
-              <div class="vol-wrap" style="flex-direction:column;align-items:flex-end;gap:6px;">
-                <span class="vol-label">Vol</span>
-                <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)" style="writing-mode:vertical-lr;direction:rtl;width:3px;height:60px;-webkit-appearance:slider-vertical;">
-              </div>
+            <div class="vol-wrap">
+              <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
             </div>
+            <button class="play-btn" id="playBtn" onclick="togglePlay()"></button>
           </div>
+          <div class="status-line" id="statusMsg" style="margin-top:10px;">— PRESS PLAY TO TUNE IN</div>
         </div>
 
         <!-- On Air -->
@@ -783,7 +771,7 @@ nav {
 
       <!-- Right column: timezones -->
       <div>
-        <div class="artist-card" id="artistCard" style="display:none;">
+        <div class="artist-card" id="artistCard" style="display:none;cursor:pointer;" onclick="openLastfmArtist()">
           <div id="artistCardImg"><div class="artist-card-img-placeholder">loading artist</div></div>
           <div class="artist-card-body">
             <div class="artist-card-label">Now Playing</div>
@@ -879,6 +867,11 @@ let playing = false, audio = null, lastTrack = '', lastfmTrackUrl = '';
 // ── LASTFM LINK ──
 function openLastfm() {
   if (lastfmTrackUrl) window.open(lastfmTrackUrl, '_blank');
+}
+
+function openLastfmArtist() {
+  const name = document.getElementById('artistCardName').textContent;
+  if (name && name !== '—') window.open('https://www.last.fm/music/' + encodeURIComponent(name), '_blank');
 }
 
 // ── GLOBAL CONNECT FLAG DETECTION ──
@@ -1606,7 +1599,7 @@ var SITE_TICKER_MESSAGES = [
   'Welcome to July Radio',
   'Live 24/7',
   'Website beta now available',
-'Global Connect drops Friday · 8PM Nairobi · 5PM London · 6PM Lagos · 12PM New York · 1AM Tokyo'
+'ALL NEW SERIES - Global Connect : Mondays, Wednesdays & Fridays · 8PM Nairobi · 5PM London · 6PM Lagos · 12PM New York · 1AM Tokyo'
 ];
 
 (function() {
