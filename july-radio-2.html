@@ -695,12 +695,17 @@ nav {
 /* Global Connect flag on on-air card */
 .on-air-card { position: relative; overflow: hidden; }
 #gcFlagOnAir {
-  position: absolute; right: 0; top: 0; bottom: 0;
-  width: 100px; pointer-events: none;
-  background-size: cover; background-position: center;
+  position: absolute; right: -20px; top: -20px; bottom: -20px;
+  width: 160px; pointer-events: none;
   opacity: 0; transition: opacity 1.4s ease;
-  mask-image: linear-gradient(to left, rgba(0,0,0,0.22) 0%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.22) 0%, transparent 100%);
+  transform: rotate(-8deg) scale(1.1);
+  overflow: hidden;
+}
+#gcFlagOnAir canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  mask-image: linear-gradient(to left, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.14) 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.14) 55%, transparent 100%);
 }
 #gcFlagOnAir.visible { opacity: 1; }
 
@@ -764,7 +769,7 @@ nav {
 
         <!-- On Air -->
         <div class="on-air-card" id="miniOnAir" onclick="show('schedule', document.querySelector('nav a:nth-child(2)'))">
-          <div id="gcFlagOnAir"></div>
+          <div id="gcFlagOnAir"><canvas id="gcFlagCanvas"></canvas></div>
           <div class="on-air-label"><div class="live-dot"></div>On Air Now</div>
           <div id="miniShowName">—</div>
           <div id="miniShowTime"></div>
@@ -878,28 +883,89 @@ function openLastfm() {
 
 // ── GLOBAL CONNECT FLAG DETECTION ──
 const COUNTRY_FLAGS = {
-  'kenya':        'https://flagcdn.com/w160/ke.webp',
-  'nigeria':      'https://flagcdn.com/w160/ng.webp',
-  'ghana':        'https://flagcdn.com/w160/gh.webp',
-  'south africa': 'https://flagcdn.com/w160/za.webp',
-  'ethiopia':     'https://flagcdn.com/w160/et.webp',
-  'tanzania':     'https://flagcdn.com/w160/tz.webp',
-  'senegal':      'https://flagcdn.com/w160/sn.webp',
-  'egypt':        'https://flagcdn.com/w160/eg.webp',
-  'morocco':      'https://flagcdn.com/w160/ma.webp',
-  'usa':          'https://flagcdn.com/w160/us.webp',
-  'uk':           'https://flagcdn.com/w160/gb.webp',
-  'france':       'https://flagcdn.com/w160/fr.webp',
-  'germany':      'https://flagcdn.com/w160/de.webp',
-  'brazil':       'https://flagcdn.com/w160/br.webp',
-  'japan':        'https://flagcdn.com/w160/jp.webp',
-  'india':        'https://flagcdn.com/w160/in.webp',
-  'portugal':     'https://flagcdn.com/w160/pt.webp',
-  'italy':        'https://flagcdn.com/w160/it.webp',
-  'colombia':     'https://flagcdn.com/w160/co.webp',
-  'jamaica':      'https://flagcdn.com/w160/jm.webp',
-  'cuba':         'https://flagcdn.com/w160/cu.webp',
-  'australia':    'https://flagcdn.com/w160/au.webp',
+  // Africa
+  'kenya':'https://flagcdn.com/w160/ke.webp','nigeria':'https://flagcdn.com/w160/ng.webp',
+  'ghana':'https://flagcdn.com/w160/gh.webp','south africa':'https://flagcdn.com/w160/za.webp',
+  'ethiopia':'https://flagcdn.com/w160/et.webp','tanzania':'https://flagcdn.com/w160/tz.webp',
+  'senegal':'https://flagcdn.com/w160/sn.webp','egypt':'https://flagcdn.com/w160/eg.webp',
+  'morocco':'https://flagcdn.com/w160/ma.webp','uganda':'https://flagcdn.com/w160/ug.webp',
+  'cameroon':'https://flagcdn.com/w160/cm.webp','ivory coast':'https://flagcdn.com/w160/ci.webp',
+  'mali':'https://flagcdn.com/w160/ml.webp','zimbabwe':'https://flagcdn.com/w160/zw.webp',
+  'zambia':'https://flagcdn.com/w160/zm.webp','mozambique':'https://flagcdn.com/w160/mz.webp',
+  'angola':'https://flagcdn.com/w160/ao.webp','rwanda':'https://flagcdn.com/w160/rw.webp',
+  'somalia':'https://flagcdn.com/w160/so.webp','sudan':'https://flagcdn.com/w160/sd.webp',
+  'algeria':'https://flagcdn.com/w160/dz.webp','tunisia':'https://flagcdn.com/w160/tn.webp',
+  'libya':'https://flagcdn.com/w160/ly.webp','congo':'https://flagcdn.com/w160/cd.webp',
+  'botswana':'https://flagcdn.com/w160/bw.webp','namibia':'https://flagcdn.com/w160/na.webp',
+  'malawi':'https://flagcdn.com/w160/mw.webp','madagascar':'https://flagcdn.com/w160/mg.webp',
+  'guinea':'https://flagcdn.com/w160/gn.webp','sierra leone':'https://flagcdn.com/w160/sl.webp',
+  'liberia':'https://flagcdn.com/w160/lr.webp','togo':'https://flagcdn.com/w160/tg.webp',
+  'benin':'https://flagcdn.com/w160/bj.webp','burkina faso':'https://flagcdn.com/w160/bf.webp',
+  'niger':'https://flagcdn.com/w160/ne.webp','chad':'https://flagcdn.com/w160/td.webp',
+  'eritrea':'https://flagcdn.com/w160/er.webp','djibouti':'https://flagcdn.com/w160/dj.webp',
+  'cape verde':'https://flagcdn.com/w160/cv.webp','mauritius':'https://flagcdn.com/w160/mu.webp',
+  'seychelles':'https://flagcdn.com/w160/sc.webp','eswatini':'https://flagcdn.com/w160/sz.webp',
+  'lesotho':'https://flagcdn.com/w160/ls.webp','gabon':'https://flagcdn.com/w160/ga.webp',
+  // Americas
+  'usa':'https://flagcdn.com/w160/us.webp','brazil':'https://flagcdn.com/w160/br.webp',
+  'canada':'https://flagcdn.com/w160/ca.webp','mexico':'https://flagcdn.com/w160/mx.webp',
+  'colombia':'https://flagcdn.com/w160/co.webp','argentina':'https://flagcdn.com/w160/ar.webp',
+  'chile':'https://flagcdn.com/w160/cl.webp','peru':'https://flagcdn.com/w160/pe.webp',
+  'venezuela':'https://flagcdn.com/w160/ve.webp','ecuador':'https://flagcdn.com/w160/ec.webp',
+  'bolivia':'https://flagcdn.com/w160/bo.webp','paraguay':'https://flagcdn.com/w160/py.webp',
+  'uruguay':'https://flagcdn.com/w160/uy.webp','jamaica':'https://flagcdn.com/w160/jm.webp',
+  'cuba':'https://flagcdn.com/w160/cu.webp','haiti':'https://flagcdn.com/w160/ht.webp',
+  'dominican republic':'https://flagcdn.com/w160/do.webp','puerto rico':'https://flagcdn.com/w160/pr.webp',
+  'trinidad':'https://flagcdn.com/w160/tt.webp','barbados':'https://flagcdn.com/w160/bb.webp',
+  'panama':'https://flagcdn.com/w160/pa.webp','costa rica':'https://flagcdn.com/w160/cr.webp',
+  'guatemala':'https://flagcdn.com/w160/gt.webp','honduras':'https://flagcdn.com/w160/hn.webp',
+  'el salvador':'https://flagcdn.com/w160/sv.webp','nicaragua':'https://flagcdn.com/w160/ni.webp',
+  'guyana':'https://flagcdn.com/w160/gy.webp','suriname':'https://flagcdn.com/w160/sr.webp',
+  // Europe
+  'uk':'https://flagcdn.com/w160/gb.webp','france':'https://flagcdn.com/w160/fr.webp',
+  'germany':'https://flagcdn.com/w160/de.webp','italy':'https://flagcdn.com/w160/it.webp',
+  'portugal':'https://flagcdn.com/w160/pt.webp','spain':'https://flagcdn.com/w160/es.webp',
+  'netherlands':'https://flagcdn.com/w160/nl.webp','belgium':'https://flagcdn.com/w160/be.webp',
+  'sweden':'https://flagcdn.com/w160/se.webp','norway':'https://flagcdn.com/w160/no.webp',
+  'denmark':'https://flagcdn.com/w160/dk.webp','finland':'https://flagcdn.com/w160/fi.webp',
+  'switzerland':'https://flagcdn.com/w160/ch.webp','austria':'https://flagcdn.com/w160/at.webp',
+  'poland':'https://flagcdn.com/w160/pl.webp','czechia':'https://flagcdn.com/w160/cz.webp',
+  'hungary':'https://flagcdn.com/w160/hu.webp','romania':'https://flagcdn.com/w160/ro.webp',
+  'greece':'https://flagcdn.com/w160/gr.webp','turkey':'https://flagcdn.com/w160/tr.webp',
+  'ukraine':'https://flagcdn.com/w160/ua.webp','ireland':'https://flagcdn.com/w160/ie.webp',
+  'scotland':'https://flagcdn.com/w160/gb-sct.webp','wales':'https://flagcdn.com/w160/gb-wls.webp',
+  'iceland':'https://flagcdn.com/w160/is.webp','luxembourg':'https://flagcdn.com/w160/lu.webp',
+  'croatia':'https://flagcdn.com/w160/hr.webp','serbia':'https://flagcdn.com/w160/rs.webp',
+  'slovakia':'https://flagcdn.com/w160/sk.webp','bulgaria':'https://flagcdn.com/w160/bg.webp',
+  'albania':'https://flagcdn.com/w160/al.webp','latvia':'https://flagcdn.com/w160/lv.webp',
+  'lithuania':'https://flagcdn.com/w160/lt.webp','estonia':'https://flagcdn.com/w160/ee.webp',
+  'slovenia':'https://flagcdn.com/w160/si.webp','north macedonia':'https://flagcdn.com/w160/mk.webp',
+  'malta':'https://flagcdn.com/w160/mt.webp','cyprus':'https://flagcdn.com/w160/cy.webp',
+  // Asia & Middle East
+  'japan':'https://flagcdn.com/w160/jp.webp','india':'https://flagcdn.com/w160/in.webp',
+  'china':'https://flagcdn.com/w160/cn.webp','south korea':'https://flagcdn.com/w160/kr.webp',
+  'indonesia':'https://flagcdn.com/w160/id.webp','philippines':'https://flagcdn.com/w160/ph.webp',
+  'thailand':'https://flagcdn.com/w160/th.webp','vietnam':'https://flagcdn.com/w160/vn.webp',
+  'malaysia':'https://flagcdn.com/w160/my.webp','singapore':'https://flagcdn.com/w160/sg.webp',
+  'pakistan':'https://flagcdn.com/w160/pk.webp','bangladesh':'https://flagcdn.com/w160/bd.webp',
+  'sri lanka':'https://flagcdn.com/w160/lk.webp','nepal':'https://flagcdn.com/w160/np.webp',
+  'myanmar':'https://flagcdn.com/w160/mm.webp','cambodia':'https://flagcdn.com/w160/kh.webp',
+  'laos':'https://flagcdn.com/w160/la.webp','mongolia':'https://flagcdn.com/w160/mn.webp',
+  'afghanistan':'https://flagcdn.com/w160/af.webp','iran':'https://flagcdn.com/w160/ir.webp',
+  'iraq':'https://flagcdn.com/w160/iq.webp','saudi arabia':'https://flagcdn.com/w160/sa.webp',
+  'uae':'https://flagcdn.com/w160/ae.webp','qatar':'https://flagcdn.com/w160/qa.webp',
+  'kuwait':'https://flagcdn.com/w160/kw.webp','bahrain':'https://flagcdn.com/w160/bh.webp',
+  'oman':'https://flagcdn.com/w160/om.webp','jordan':'https://flagcdn.com/w160/jo.webp',
+  'lebanon':'https://flagcdn.com/w160/lb.webp','syria':'https://flagcdn.com/w160/sy.webp',
+  'yemen':'https://flagcdn.com/w160/ye.webp','azerbaijan':'https://flagcdn.com/w160/az.webp',
+  'georgia':'https://flagcdn.com/w160/ge.webp','armenia':'https://flagcdn.com/w160/am.webp',
+  'kazakhstan':'https://flagcdn.com/w160/kz.webp','uzbekistan':'https://flagcdn.com/w160/uz.webp',
+  'taiwan':'https://flagcdn.com/w160/tw.webp','hong kong':'https://flagcdn.com/w160/hk.webp',
+  'palestine':'https://flagcdn.com/w160/ps.webp',
+  // Oceania
+  'australia':'https://flagcdn.com/w160/au.webp','new zealand':'https://flagcdn.com/w160/nz.webp',
+  'fiji':'https://flagcdn.com/w160/fj.webp','papua new guinea':'https://flagcdn.com/w160/pg.webp',
+  'samoa':'https://flagcdn.com/w160/ws.webp','tonga':'https://flagcdn.com/w160/to.webp',
 };
 
 function getGlobalConnectFlag(showName) {
@@ -912,35 +978,66 @@ function getGlobalConnectFlag(showName) {
   return null;
 }
 
-function updateGlobalConnectFlag(showName) {
-  let el = document.getElementById('gcFlag');
-  const flagUrl = getGlobalConnectFlag(showName);
-  if (flagUrl) {
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'gcFlag';
-      el.style.cssText = 'position:fixed;right:0;top:50%;transform:translateY(-50%);width:180px;height:120px;overflow:hidden;z-index:50;pointer-events:none;opacity:0;transition:opacity 1.2s ease;border-radius:4px 0 0 4px;';
-      document.body.appendChild(el);
+let wavingRAF = null;
+let wavingImg = null;
+
+function waveFlag(canvas, img) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cols = 60, rows = 40;
+  const cellW = W / cols, cellH = H / rows;
+  let t = 0;
+  if (wavingRAF) cancelAnimationFrame(wavingRAF);
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < rows; row++) {
+        const srcX = (col / cols) * img.naturalWidth;
+        const srcY = (row / rows) * img.naturalHeight;
+        const srcW = img.naturalWidth / cols;
+        const srcH = img.naturalHeight / rows;
+
+        // Wave: amplitude increases left to right, sinusoidal vertically
+        const wave = Math.sin((col / cols) * Math.PI * 2.5 + t) * (col / cols) * 10;
+        const dx = col * cellW;
+        const dy = row * cellH + wave;
+
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, cellW + 0.5, cellH + 0.5);
+      }
     }
-    el.innerHTML = '<img src="'+flagUrl+'" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">';
-    el.style.opacity = '0';
-    setTimeout(() => { el.style.opacity = '0.18'; }, 100);
-    // Slow left-to-right shimmer via mask
-    el.style.maskImage = 'linear-gradient(to right, transparent 0%, black 30%, black 70%, transparent 100%)';
-    el.style.webkitMaskImage = el.style.maskImage;
-  } else {
-    if (el) { el.style.opacity = '0'; setTimeout(() => { if(el.parentNode) el.parentNode.removeChild(el); }, 1200); }
+    t += 0.02;
+    wavingRAF = requestAnimationFrame(draw);
   }
-  // Also update on-air card flag
+  draw();
+}
+
+function updateGlobalConnectFlag(showName) {
+  const flagUrl = getGlobalConnectFlag(showName);
   const onAirFlag = document.getElementById('gcFlagOnAir');
-  if (onAirFlag) {
-    if (flagUrl) {
+  const canvas = document.getElementById('gcFlagCanvas');
+  if (!onAirFlag || !canvas) return;
+
+  if (flagUrl) {
+    if (wavingRAF) cancelAnimationFrame(wavingRAF);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      const parent = onAirFlag;
+      canvas.width = parent.offsetWidth || 160;
+      canvas.height = parent.offsetHeight || 120;
+      waveFlag(canvas, img);
+    };
+    img.onerror = function() {
+      // fallback: static bg
       onAirFlag.style.backgroundImage = 'url('+flagUrl+')';
-      onAirFlag.classList.add('visible');
-    } else {
-      onAirFlag.classList.remove('visible');
-      onAirFlag.style.backgroundImage = '';
-    }
+    };
+    img.src = flagUrl;
+    onAirFlag.classList.add('visible');
+  } else {
+    if (wavingRAF) { cancelAnimationFrame(wavingRAF); wavingRAF = null; }
+    onAirFlag.classList.remove('visible');
+    onAirFlag.style.backgroundImage = '';
   }
 }
 
