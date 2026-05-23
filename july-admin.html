@@ -201,7 +201,7 @@
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
     <div class="dash-nav-item" onclick="showPanel('alerts',this)">Alerts</div>
-    <div class="dash-nav-item" onclick="showPanel('ticker',this)">Ticker</div>
+
   </div>
 
   <div class="dash-content">
@@ -276,17 +276,7 @@
       </div>
     </div>
 
-    <!-- TICKER -->
-    <div class="dash-panel" id="panel-ticker">
-      <div class="section-title">Ticker Messages</div>
-      <div class="msg" id="tickerMsg"></div>
-      <div id="tickerList"></div>
-      <div class="btn-row" style="margin-top:12px;">
-        <button class="btn secondary" onclick="addTickerMsg()">+ Add Message</button>
-      </div>
-      <div class="divider"></div>
-      <button class="btn" onclick="saveTicker()">Save Ticker</button>
-    </div>
+
 
   </div>
 
@@ -407,7 +397,6 @@ async function loadDashboard() {
   await loadBroadcastMode();
   await loadSchedule();
   await loadProfile();
-  await loadTicker();
 }
 
 // BROADCAST
@@ -793,7 +782,7 @@ async function fetchNowPlaying() {
 }
 
 function toggleMonitor() {
-  var streamUrl = 'https://s48.myradiostream.com:14791/listen.mp3';
+  var streamUrl = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
   if (!monitorPlaying) {
     monitorAudio = new Audio(streamUrl);
     monitorAudio.volume = 0.7;
@@ -868,7 +857,7 @@ var tickerMessages = [];
 
 async function loadTicker() {
   try {
-    var res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker');
+    var res = await fetch(WORKER + '/ticker');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
     tickerMessages = Array.isArray(data.messages) && data.messages.length ? data.messages : [
@@ -939,19 +928,21 @@ async function saveTicker() {
   inputs.forEach(function(inp) {
     if (inp.value.trim()) clean.push(inp.value.trim());
   });
+  // Broadcast to overlay immediately (works even if worker is down)
+  tickerMessages = clean;
+  new BroadcastChannel('july').postMessage({ type: 'tickerUpdate', messages: clean });
+  showMsg('tickerMsg', 'success', 'Ticker updated ✓');
+
+  // Also try to persist to worker (best effort)
   try {
-    var res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker', {
+    var res = await fetch(WORKER + '/ticker', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: HOSTS[currentHost].password, messages: clean })
+      body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, messages: clean })
     });
     var data = await res.json();
-    if (data.ok) {
-      showMsg('tickerMsg', 'success', 'Ticker updated — live on overlay within 30 seconds');
-      new BroadcastChannel('july').postMessage({ type: 'tickerUpdate' });
-    }
-    else showMsg('tickerMsg', 'error', 'Failed to save');
-  } catch(e) { showMsg('tickerMsg', 'error', 'Connection error'); }
+    if (!data.ok) console.warn('Ticker worker save failed:', data.error);
+  } catch(e) { console.warn('Ticker worker unreachable, using BroadcastChannel only'); }
 }
 
 setupHovers();
