@@ -514,16 +514,81 @@ canvas#vizCanvas {
 
 /* MOBILE */
 @media (max-width:640px) {
-  .site { padding:0 16px 80px; }
-  header { padding:24px 0 20px; }
-  header { padding:24px 0 20px; }
-  header img { height:40px; }
-  .listen-grid { grid-template-columns:1fr; }
-  .dj-grid { grid-template-columns:1fr; }
-  .dj-photo { height:220px; border-right:none; border-bottom:1px solid #1a1a1a; }
-  .show-row { grid-template-columns:90px 1fr auto; gap:10px; }
-  nav a { padding:16px 14px 14px; }
-  .about-title { font-size:32px; }
+  .site { padding: 0 16px 80px; }
+
+  /* Header */
+  header { padding: 20px 0 16px; gap: 12px; }
+  header img { height: 34px; }
+  .live-pill { font-size: 9px; padding: 5px 12px; }
+
+  /* Nav — scrollable horizontal */
+  nav { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; flex-wrap: nowrap; }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { padding: 14px 16px 12px; font-size: 9px; display: inline-block; }
+
+  /* Listen grid — stack vertically */
+  .listen-grid { grid-template-columns: 1fr; gap: 16px; }
+
+  /* Player — art smaller, info below */
+  .np-row { grid-template-columns: 72px 1fr auto; gap: 12px; }
+  .album-art { width: 72px; height: 72px; }
+  .album-art::after { display: none; }
+  .track-title { font-size: 15px; }
+  .track-artist { font-size: 11px; }
+  .track-album { font-size: 10px; }
+  .now-playing-card { padding: 16px; }
+  .status-line { font-size: 8px; }
+
+  /* On air card */
+  .on-air-card { padding: 14px 16px; }
+  #miniShowName { font-size: 14px; }
+
+  /* Artist card */
+  .artist-card-img { height: 140px; }
+  .artist-card-body { padding: 14px 16px; }
+  .artist-card-name { font-size: 14px; }
+
+  /* Timezone card */
+  .tz-card { padding: 16px; }
+  .tz-row { padding: 6px 0; }
+  .tz-name { font-size: 8px; }
+  .tz-time { font-size: 11px; }
+
+  /* Schedule */
+  .show-row { grid-template-columns: 80px 1fr auto; gap: 8px; padding: 12px 0; }
+  .show-time { font-size: 9px; }
+  .show-name { font-size: 12px; }
+  .show-dj { font-size: 9px; }
+  .show-tag { font-size: 8px; padding: 2px 7px; }
+  .show-row.live-row { padding: 12px 10px; }
+  .day-label { font-size: 8px; padding: 18px 0 8px; }
+
+  /* DJs */
+  .dj-grid { grid-template-columns: 1fr; }
+  .dj-photo { height: 180px; border-right: none; border-bottom: 1px solid #1a1a1a; }
+  .dj-info { padding: 16px; }
+  .dj-name { font-size: 18px; }
+  .dj-block { margin-bottom: 28px; }
+
+  /* Visualizer */
+  canvas#vizCanvas { height: 180px; }
+
+  /* About */
+  .about-title { font-size: 28px; }
+  .about-body { font-size: 12px; }
+
+  /* Ticker */
+  #siteTickerLabel { padding: 0 12px; font-size: 8px; }
+  .site-ticker-msg { font-size: 9px; }
+
+  /* Section rule */
+  .section-rule { font-size: 8px; padding: 20px 0 10px; }
+
+  /* History */
+  .hi-title { font-size: 11px; }
+  .hi-artist { font-size: 9px; }
+  .hi-time { font-size: 9px; }
+  .hi-art { width: 30px; height: 30px; }
 }
 
 /* Staggered entrance for child elements */
@@ -860,7 +925,7 @@ nav {
 const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
 const LASTFM_USER = 'injeton';
 const WORKER = 'https://julyimages.sxrsq1.workers.dev';
-const streamUrl = 'https://s48.myradiostream.com:14791/listen.mp3';
+const streamUrl = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
 
 let playing = false, audio = null, lastTrack = '', lastfmTrackUrl = '';
 
@@ -1598,8 +1663,9 @@ async function fetchArtistInfo(artistName) {
 var SITE_TICKER_MESSAGES = [
   'Welcome to July Radio',
   'Live 24/7',
-  'Website beta now available',
-'ALL NEW SERIES - Global Connect : Mondays, Wednesdays & Fridays · 8PM Nairobi · 5PM London · 6PM Lagos · 12PM New York · 1AM Tokyo'
+  'New music every morning on di:scovery',
+  'Five artists a day on in:focus',
+  'Full website coming soon at julyfm.com'
 ];
 
 (function() {
