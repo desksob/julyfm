@@ -58,11 +58,7 @@
   /* FORMS */
   .field { margin-bottom: 20px; }
   .field-label { font-size: 10px; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; display: block; }
-  input[type=text], input[type=password], input[type=url], input[type=time], input[type=file], textarea, select { width: 100%; background: #111; border: 1px solid #1a1a1a; border-radius: 2px; color: #e0d9cc; font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
-  input[type=time] { color-scheme: dark; color: #e0d9cc !important; }
-  input[type=time]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
-  input[type=time]::-webkit-datetime-edit { color: #e0d9cc; }
-  input[type=time]::-webkit-datetime-edit-hour-field, input[type=time]::-webkit-datetime-edit-minute-field, input[type=time]::-webkit-datetime-edit-ampm-field { color: #e0d9cc; background: transparent; }
+  input[type=text], input[type=password], input[type=url], input[type=time], textarea, select { width: 100%; background: #111; border: 1px solid #1a1a1a; border-radius: 2px; color: #e0d9cc; font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea { resize: vertical; min-height: 80px; }
   .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; padding: 10px 20px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
@@ -88,16 +84,25 @@
   .mode-btn.active { background: #111; color: #e0d9cc; }
 
   /* SCHEDULE */
-  .schedule-item { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; border-bottom: none; }
-  .schedule-item select { width: auto; }
-  .schedule-item input[type=text] { flex: 1; min-width: 120px; }
-  .time-group { display: flex; gap: 4px; align-items: center; }
-  .time-label { font-size: 9px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
-  .schedule-slot-wrap { border-bottom: 1px solid #111; }
+  .schedule-slot { border: 1px solid #1a1a1a; border-radius: 3px; padding: 14px; margin-bottom: 10px; }
+  .slot-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px; }
+  .slot-field { display: flex; flex-direction: column; gap: 4px; }
+  .slot-field select { width: auto; }
+  .time-group { display: flex; gap: 4px; }
+  .time-label { font-size: 9px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; }
+  .slot-name { flex: 1; min-width: 140px; }
+  .slot-name input { width: 100%; }
+  .slot-btns { display: flex; flex-direction: column; gap: 4px; align-self: flex-end; }
+  .desc-row { display: none; margin-top: 8px; }
+  .desc-row.open { display: block; }
+
+  /* TICKER */
+  .ticker-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .ticker-row input { flex: 1; }
 
   /* NOW PLAYING BAR */
-  #nowPlayingBar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); border-top: 1px solid #1a1a1a; padding: 12px 32px; display: flex; align-items: center; gap: 16px; transform: translateY(0); transition: transform 0.4s ease; z-index: 100; backdrop-filter: blur(8px); }
-  #nowPlayingBar.hidden { transform: translateY(100%); }
+  #nowPlayingBar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); border-top: 1px solid #1a1a1a; padding: 12px 32px; display: flex; align-items: center; gap: 16px; transform: translateY(100%); transition: transform 0.4s ease; z-index: 100; backdrop-filter: blur(8px); }
+  #nowPlayingBar.visible { transform: translateY(0); }
   .np-art-mini { width: 44px; height: 44px; border-radius: 2px; border: 1px solid #1a1a1a; background: #111; flex-shrink: 0; overflow: hidden; }
   .np-art-mini img { width: 100%; height: 100%; object-fit: cover; display: none; }
   .np-info { flex: 1; min-width: 0; }
@@ -120,9 +125,6 @@
   .notif-bar.visible { transform: translateY(0); }
   .notif-close { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; }
 
-  /* TICKER */
-  #tickerList input[type=text] { color: #e0d9cc; background: #111; }
-  
   /* MOBILE */
   @media (max-width: 600px) {
     .ps-cards { gap: 16px; }
@@ -134,7 +136,6 @@
     .dash-nav-item { padding: 12px 12px; font-size: 9px; }
     .dash-content { padding: 20px; }
     .grid-2 { grid-template-columns: 1fr; }
-    .schedule-item { flex-wrap: wrap; gap: 6px; }
     #nowPlayingBar { padding: 10px 16px; gap: 10px; }
     .np-prev, .np-clocks { display: none; }
     .btn-row { flex-direction: column; }
@@ -153,15 +154,15 @@
   <div class="ps-prompt">Welcome — choose your profile</div>
   <div class="ps-cards">
     <div class="ps-card" onclick="selectHost('c')">
-      <div class="ps-img" id="ps-wrap-c"><img src="julyhost1.png" alt="C." id="ps-img-c" crossorigin="anonymous"></div>
+      <div class="ps-img" id="ps-wrap-c"><img src="julyhost1.png" alt="C." id="ps-img-c"></div>
       <div class="ps-name">C.</div>
     </div>
     <div class="ps-card" onclick="selectHost('fziwe')">
-      <div class="ps-img" id="ps-wrap-fziwe"><img src="diogo.gif" alt="Fziwe" id="ps-img-fziwe" crossorigin="anonymous"></div>
+      <div class="ps-img" id="ps-wrap-fziwe"><img src="diogo.gif" alt="Fziwe" id="ps-img-fziwe"></div>
       <div class="ps-name">Fziwe</div>
     </div>
     <div class="ps-card" onclick="selectHost('fiscia')">
-      <div class="ps-img" id="ps-wrap-fiscia"><img src="fiscia.jpeg" alt="Fiscia" id="ps-img-fiscia" crossorigin="anonymous"></div>
+      <div class="ps-img" id="ps-wrap-fiscia"><img src="fiscia.jpeg" alt="Fiscia" id="ps-img-fiscia"></div>
       <div class="ps-name">Fiscia</div>
     </div>
   </div>
@@ -175,7 +176,10 @@
       <div><div class="login-name" id="loginName">—</div><div class="login-sub">July Radio Admin</div></div>
     </div>
     <div class="login-body">
-      <div class="field"><label class="field-label">Password</label><input type="password" id="passwordInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"></div>
+      <div class="field">
+        <label class="field-label">Password</label>
+        <input type="password" id="passwordInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()">
+      </div>
       <div class="msg" id="loginMsg"></div>
       <div class="btn-row">
         <button class="btn full" onclick="login()">Enter</button>
@@ -200,8 +204,8 @@
     <div class="dash-nav-item active" onclick="showPanel('broadcast',this)">Broadcast</div>
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
+    <div class="dash-nav-item" onclick="showPanel('ticker',this)">Ticker</div>
     <div class="dash-nav-item" onclick="showPanel('alerts',this)">Alerts</div>
-
   </div>
 
   <div class="dash-content">
@@ -220,14 +224,9 @@
           <div class="field"><label class="field-label">Your Name</label><input type="text" id="djName" placeholder="e.g. C."></div>
         </div>
         <div class="field">
-          <label class="field-label">Set Image</label>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <input type="file" id="djImageFile" accept="image/*,.gif" style="font-size:11px;color:#555;flex:1;" onchange="uploadDjImage()">
-            <span style="font-size:10px;color:#333;">or</span>
-            <input type="url" id="djImage" placeholder="Paste image URL" oninput="previewDjImg()" style="flex:2;">
-          </div>
+          <label class="field-label">Set Image URL</label>
+          <input type="url" id="djImage" placeholder="https://..." oninput="previewDjImg()">
           <img id="djImgPreview" class="preview-img" alt="preview">
-          <div id="uploadStatus" style="font-size:11px;color:#555;margin-top:6px;display:none;"></div>
         </div>
       </div>
       <button class="btn" onclick="saveBroadcast()">Apply</button>
@@ -238,9 +237,10 @@
       <div class="section-title">Your Shows</div>
       <div class="msg" id="scheduleMsg"></div>
       <div id="scheduleList"></div>
-      <button class="btn secondary" onclick="addShowSlot()">+ Add Show</button>
-      <div class="divider"></div>
-      <button class="btn" onclick="saveSchedule()">Save Schedule</button>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn secondary" onclick="addShowSlot()">+ Add Show</button>
+        <button class="btn" onclick="saveSchedule()">Save Schedule</button>
+      </div>
     </div>
 
     <!-- PROFILE -->
@@ -253,12 +253,28 @@
       </div>
       <div class="field"><label class="field-label">Tagline</label><input type="text" id="profileTagline" placeholder="e.g. taste over everything."></div>
       <div class="field"><label class="field-label">Bio</label><textarea id="profileBio" placeholder="A short bio..."></textarea></div>
-      <div class="field"><label class="field-label">Photo URL</label><input type="url" id="profilePhoto" placeholder="https://... (PNG, JPG or GIF supported)" oninput="previewProfileImg()"><img id="profileImgPreview" class="preview-img" alt="preview"></div>
+      <div class="field">
+        <label class="field-label">Photo URL</label>
+        <input type="url" id="profilePhoto" placeholder="https://... (PNG, JPG or GIF)" oninput="previewProfileImg()">
+        <img id="profileImgPreview" class="preview-img" alt="preview">
+      </div>
       <div class="grid-2">
         <div class="field"><label class="field-label">Instagram</label><input type="text" id="profileInstagram" placeholder="@handle"></div>
         <div class="field"><label class="field-label">SoundCloud</label><input type="text" id="profileSoundcloud" placeholder="soundcloud.com/yourname"></div>
       </div>
       <button class="btn" onclick="saveProfile()">Save Profile</button>
+    </div>
+
+    <!-- TICKER -->
+    <div class="dash-panel" id="panel-ticker">
+      <div class="section-title">Ticker Messages</div>
+      <div class="msg" id="tickerMsg"></div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Messages scroll in the bottom bar on the site and overlay. Max 8. Drag to reorder.</div>
+      <div id="tickerList"></div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn secondary" onclick="addTickerMsg()">+ Add Message</button>
+        <button class="btn" onclick="saveTicker()">Save Ticker</button>
+      </div>
     </div>
 
     <!-- ALERTS -->
@@ -276,14 +292,11 @@
       </div>
     </div>
 
-
-
   </div>
-
 </div>
 
 <!-- NOW PLAYING BAR -->
-<div id="nowPlayingBar" class="hidden">
+<div id="nowPlayingBar">
   <div class="np-art-mini"><img id="npImgMini" src="" alt=""></div>
   <div class="np-info">
     <div class="np-title-mini" id="npTitleMini">—</div>
@@ -292,7 +305,7 @@
   <div class="np-prev" id="npPrev"></div>
   <div class="np-clocks">
     <div class="np-clock-row"><b>EAT</b> <span id="npClockNairobi">—</span></div>
-    <div class="np-clock-row"><b>BST</b> <span id="npClockLondon">—</span></div>
+    <div class="np-clock-row"><b>GMT</b> <span id="npClockLondon">—</span></div>
     <div class="np-clock-row"><b>EST</b> <span id="npClockNY">—</span></div>
   </div>
   <div class="np-controls">
@@ -305,26 +318,28 @@
 const WORKER = 'https://julyimages.sxrsq1.workers.dev';
 const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
 const LASTFM_USER = 'injeton';
+const STREAM_URL = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+// Host display info only — NO passwords in client
 const HOSTS = {
-  c:      { name: 'C.',     accent: '#c8a96e', password: 'julyat2025', photo: 'julyhost1.png' },
-  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', password: 'fziwe2025',  photo: 'diogo.gif' },
-  fiscia: { name: 'Fiscia', accent: '#c86e8a', password: 'fiscia2025', photo: 'fiscia.jpeg' },
+  c:      { name: 'C.',     accent: '#c8a96e', photo: 'julyhost1.png' },
+  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', photo: 'diogo.gif' },
+  fiscia: { name: 'Fiscia', accent: '#c86e8a', photo: 'fiscia.jpeg' },
 };
 
 let currentHost = null;
+let currentPassword = null; // stored only in memory after server validates
 let selectedMode = 'lastfm';
 let monitorAudio = null;
 let monitorPlaying = false;
 let lastTrack = '';
-let lastNpTrack = '';
 let silenceTimer = null;
-let notifPermission = false;
 let scheduleSlots = [];
+let tickerMessages = [];
 
-// PROFILE SELECT
-function setupHovers() {
+// ── PROFILE SELECT ────────────────────────────────────────────────────────────
+(function setupHovers() {
   Object.keys(HOSTS).forEach(function(id) {
     var wrap = document.getElementById('ps-wrap-' + id);
     var host = HOSTS[id];
@@ -338,20 +353,19 @@ function setupHovers() {
       wrap.style.boxShadow = 'none';
     });
   });
-}
+})();
 
 function selectHost(id) {
   currentHost = id;
   var host = HOSTS[id];
   document.documentElement.style.setProperty('--accent', host.accent);
-
   var avatar = document.getElementById('loginAvatar');
-  if (host.photo) {
-    avatar.innerHTML = '<img src="' + host.photo + '" alt="' + host.name + '">';
-  } else {
-    avatar.innerHTML = '<div class="login-avatar-ph">' + host.name[0] + '</div>';
-  }
+  avatar.innerHTML = host.photo
+    ? '<img src="' + host.photo + '" alt="' + host.name + '">'
+    : '<div class="login-avatar-ph">' + host.name[0] + '</div>';
   document.getElementById('loginName').textContent = host.name;
+  document.getElementById('loginMsg').className = 'msg';
+  document.getElementById('passwordInput').value = '';
   document.getElementById('profileSelect').classList.remove('active');
   document.getElementById('loginView').classList.add('active');
   setTimeout(function() { document.getElementById('passwordInput').focus(); }, 100);
@@ -359,33 +373,69 @@ function selectHost(id) {
 
 function backToProfiles() {
   document.getElementById('loginView').classList.remove('active');
-  document.getElementById('passwordInput').value = '';
   document.getElementById('profileSelect').classList.add('active');
+  currentHost = null;
 }
 
-// LOGIN
+// ── LOGIN — server-validated ──────────────────────────────────────────────────
 async function login() {
   var pw = document.getElementById('passwordInput').value;
-  var host = HOSTS[currentHost];
-  if (pw !== host.password) { showMsg('loginMsg', 'error', 'Wrong password'); return; }
-  document.getElementById('loginView').classList.remove('active');
-  document.getElementById('dashView').classList.add('active');
-  document.getElementById('dashHostName').textContent = host.name;
-  await loadDashboard();
-  document.getElementById('nowPlayingBar').classList.remove('hidden');
-  startNowPlayingPoll();
-  requestNotifPermission();
+  if (!pw) return;
+
+  var btn = document.querySelector('#loginView .btn.full');
+  btn.textContent = 'Checking...';
+  btn.disabled = true;
+
+  try {
+    // Validate against server by attempting a schedule fetch with auth
+    // We verify by POSTing a no-op schedule read; if worker accepts password it's valid
+    var res = await fetch(WORKER + '/schedule?host=' + currentHost);
+    // Server doesn't auth GET — so we do a lightweight auth check via profile POST
+    // We send current profile back as-is to validate the password
+    var profileRes = await fetch(WORKER + '/profile?host=' + currentHost);
+    var profileData = await profileRes.json();
+    var existingProfile = profileData.profile || {};
+
+    var authRes = await fetch(WORKER + '/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw, host: currentHost, profile: existingProfile })
+    });
+    var authData = await authRes.json();
+
+    if (authRes.status === 401 || authData.error) {
+      showMsg('loginMsg', 'error', 'Wrong password');
+      btn.textContent = 'Enter'; btn.disabled = false;
+      return;
+    }
+
+    // Auth passed
+    currentPassword = pw;
+    document.getElementById('loginView').classList.remove('active');
+    document.getElementById('dashView').classList.add('active');
+    document.getElementById('dashHostName').textContent = HOSTS[currentHost].name;
+    btn.textContent = 'Enter'; btn.disabled = false;
+
+    await loadDashboard();
+    document.getElementById('nowPlayingBar').classList.add('visible');
+    startNowPlayingPoll();
+    requestNotifPermission();
+
+  } catch(e) {
+    showMsg('loginMsg', 'error', 'Connection error — check network');
+    btn.textContent = 'Enter'; btn.disabled = false;
+  }
 }
 
 function logout() {
   document.getElementById('dashView').classList.remove('active');
   document.getElementById('profileSelect').classList.add('active');
-  document.getElementById('passwordInput').value = '';
-  document.getElementById('nowPlayingBar').classList.add('hidden');
+  document.getElementById('nowPlayingBar').classList.remove('visible');
+  currentHost = null; currentPassword = null;
   stopMonitor();
 }
 
-// DASHBOARD
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function showPanel(id, el) {
   document.querySelectorAll('.dash-panel').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.dash-nav-item').forEach(function(n) { n.classList.remove('active'); });
@@ -394,12 +444,15 @@ function showPanel(id, el) {
 }
 
 async function loadDashboard() {
-  await loadBroadcastMode();
-  await loadSchedule();
-  await loadProfile();
+  await Promise.all([
+    loadBroadcastMode(),
+    loadSchedule(),
+    loadProfile(),
+    loadTicker(),
+  ]);
 }
 
-// BROADCAST
+// ── BROADCAST ─────────────────────────────────────────────────────────────────
 async function loadBroadcastMode() {
   try {
     var res = await fetch(WORKER + '/mode');
@@ -427,17 +480,25 @@ function updateModeUI() {
 }
 
 async function saveBroadcast() {
-  var body = { password: HOSTS[currentHost].password, mode: selectedMode };
+  var body = { password: currentPassword, mode: selectedMode };
   if (selectedMode === 'djset') {
-    var title = document.getElementById('djTitle').value;
+    var title = document.getElementById('djTitle').value.trim();
     if (!title) { showMsg('broadcastMsg', 'error', 'Please enter a mix title'); return; }
-    body.djset = { title: title, djName: document.getElementById('djName').value || HOSTS[currentHost].name, image: document.getElementById('djImage').value };
+    body.djset = {
+      title: title,
+      djName: document.getElementById('djName').value.trim() || HOSTS[currentHost].name,
+      image: document.getElementById('djImage').value.trim()
+    };
   }
   try {
-    var res = await fetch(WORKER + '/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var res = await fetch(WORKER + '/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
     var data = await res.json();
     if (data.ok) showMsg('broadcastMsg', 'success', 'Mode updated — live within 15 seconds');
-    else showMsg('broadcastMsg', 'error', 'Failed to update');
+    else showMsg('broadcastMsg', 'error', data.error || 'Failed to update');
   } catch(e) { showMsg('broadcastMsg', 'error', 'Connection error'); }
 }
 
@@ -447,69 +508,67 @@ function previewDjImg() {
   img.src = url; img.style.display = url ? 'block' : 'none';
 }
 
-async function uploadDjImage() {
-  var file = document.getElementById('djImageFile').files[0];
-  if (!file) return;
-  var status = document.getElementById('uploadStatus');
-  status.style.display = 'block';
-  status.textContent = 'Uploading...';
-  try {
-    var formData = new FormData();
-    formData.append('image', file);
-    var res = await fetch('https://api.imgbb.com/1/upload?key=YOUR_IMGBB_KEY', { method: 'POST', body: formData });
-    var data = await res.json();
-    if (data.success) {
-      document.getElementById('djImage').value = data.data.url;
-      previewDjImg();
-      status.textContent = 'Uploaded';
-      setTimeout(function() { status.style.display = 'none'; }, 3000);
-    } else { status.textContent = 'Upload failed — paste URL instead'; }
-  } catch(e) { status.textContent = 'Upload failed — paste URL instead'; }
-}
-
-// SCHEDULE
+// ── SCHEDULE ──────────────────────────────────────────────────────────────────
 async function loadSchedule() {
   try {
     var res = await fetch(WORKER + '/schedule?host=' + currentHost);
     var data = await res.json();
-    scheduleSlots = data.slots || [];
+    scheduleSlots = (data.slots || []).map(function(s) {
+      return {
+        day: parseInt(s.day) || 0,
+        start: s.start || '00:00',
+        end: s.end || '02:00',
+        name: s.name || '',
+        description: s.description || ''
+      };
+    });
   } catch(e) { scheduleSlots = []; }
   renderSchedule();
 }
 
+function pad(n) { return String(n).padStart(2, '0'); }
 
-function getAmPm(val) {
-  return parseInt((val || '00:00').split(':')[0]) >= 12 ? 'PM' : 'AM';
+// Convert 24h string to display parts
+function parseTime(t) {
+  var parts = (t || '00:00').split(':');
+  var h24 = parseInt(parts[0]) || 0;
+  var m = parseInt(parts[1]) || 0;
+  var ampm = h24 >= 12 ? 'PM' : 'AM';
+  var h12 = h24 % 12 || 12;
+  return { h12: h12, m: m, ampm: ampm };
 }
 
-function to24(h, m, ampm) {
-  h = parseInt(h); m = parseInt(m);
+// Convert display parts back to 24h string
+function partsTo24(h12, m, ampm) {
+  var h = parseInt(h12);
+  m = parseInt(m);
   if (ampm === 'AM' && h === 12) h = 0;
   if (ampm === 'PM' && h !== 12) h += 12;
-  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  return pad(h) + ':' + pad(m);
 }
 
-function updateSlotTime(i, field) {
-  var hEl = document.getElementById('sh-' + field + '-h-' + i);
-  var mEl = document.getElementById('sh-' + field + '-m-' + i);
-  var aEl = document.getElementById('sh-' + field + '-a-' + i);
-  if (hEl && mEl && aEl) {
-    scheduleSlots[i][field] = to24(hEl.value, mEl.value, aEl.value);
-  }
+function readSlotTimes(i) {
+  var sh = parseInt(document.getElementById('sh-start-h-' + i).value);
+  var sm = parseInt(document.getElementById('sh-start-m-' + i).value);
+  var sa = document.getElementById('sh-start-a-' + i).value;
+  var eh = parseInt(document.getElementById('sh-end-h-' + i).value);
+  var em = parseInt(document.getElementById('sh-end-m-' + i).value);
+  var ea = document.getElementById('sh-end-a-' + i).value;
+  scheduleSlots[i].start = partsTo24(sh, sm, sa);
+  scheduleSlots[i].end   = partsTo24(eh, em, ea);
 }
 
-function makeSelect(id, options, selected, onchangeFn) {
+function makeSelect(id, options, selected, onChange) {
   var sel = document.createElement('select');
   sel.id = id;
-  sel.style.width = 'auto';
   options.forEach(function(opt) {
     var o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    if (opt.value == selected) o.selected = true;
+    o.value = opt.value !== undefined ? opt.value : opt;
+    o.textContent = opt.label !== undefined ? opt.label : opt;
+    if (String(o.value) === String(selected)) o.selected = true;
     sel.appendChild(o);
   });
-  sel.addEventListener('change', onchangeFn);
+  sel.addEventListener('change', onChange);
   return sel;
 }
 
@@ -517,119 +576,107 @@ function renderSchedule() {
   var list = document.getElementById('scheduleList');
   list.innerHTML = '';
 
-  if (scheduleSlots.length === 0) {
-    var empty = document.createElement('div');
-    empty.style.cssText = 'font-size:11px;color:#444;padding:12px 0;letter-spacing:0.08em;';
-    empty.textContent = 'No shows yet. Click + Add Show to start.';
-    list.appendChild(empty);
+  if (!scheduleSlots.length) {
+    list.innerHTML = '<div style="font-size:11px;color:#444;padding:12px 0;letter-spacing:0.08em;">No shows yet. Click + Add Show to start.</div>';
     return;
   }
 
+  var hourOpts = [];
+  for (var h = 1; h <= 12; h++) hourOpts.push({ value: h, label: pad(h) });
+  var minOpts = [0,15,30,45].map(function(m) { return { value: m, label: pad(m) }; });
+  var apOpts  = [{ value:'AM', label:'AM' }, { value:'PM', label:'PM' }];
+  var dayOpts = DAYS.map(function(d, j) { return { value: j, label: d }; });
+
   scheduleSlots.forEach(function(slot, i) {
+    var sp = parseTime(slot.start);
+    var ep = parseTime(slot.end);
+
     var wrap = document.createElement('div');
-    wrap.style.cssText = 'border:1px solid #1a1a1a;border-radius:3px;padding:14px;margin-bottom:10px;';
+    wrap.className = 'schedule-slot';
 
-    var startH12 = parseInt((slot.start || '00:00').split(':')[0]) % 12 || 12;
-    var startM = parseInt((slot.start || '00:00').split(':')[1]) || 0;
-    var startAP = getAmPm(slot.start);
-    var endH12 = parseInt((slot.end || '02:00').split(':')[0]) % 12 || 12;
-    var endM = parseInt((slot.end || '02:00').split(':')[1]) || 0;
-    var endAP = getAmPm(slot.end);
-
-    var hourOpts = [];
-    for (var h = 1; h <= 12; h++) hourOpts.push({ value: h, label: String(h).padStart(2,'0') });
-    var minOpts = [0,15,30,45].map(function(m) { return { value: m, label: String(m).padStart(2,'0') }; });
-    var apOpts = [{value:'AM',label:'AM'},{value:'PM',label:'PM'}];
-    var dayOpts = DAYS.map(function(d,j) { return { value: j, label: d }; });
-
-    // ROW 1: Day + times + name + buttons
+    // ── Row: day + start + end + name + buttons ──
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;';
+    row.className = 'slot-row';
 
     // Day
-    var dayWrap = document.createElement('div');
-    var dayLbl = document.createElement('div');
-    dayLbl.className = 'time-label';
-    dayLbl.style.marginBottom = '4px';
-    dayLbl.textContent = 'Day';
-    var daySelect = makeSelect('sh-day-'+i, dayOpts, slot.day, function() {
+    var dayField = document.createElement('div');
+    dayField.className = 'slot-field';
+    dayField.innerHTML = '<div class="time-label">Day</div>';
+    dayField.appendChild(makeSelect('sh-day-' + i, dayOpts, slot.day, function() {
       scheduleSlots[i].day = parseInt(this.value);
-    });
-    dayWrap.appendChild(dayLbl);
-    dayWrap.appendChild(daySelect);
-    row.appendChild(dayWrap);
+    }));
+    row.appendChild(dayField);
 
-    // Start time
-    var startWrap = document.createElement('div');
-    var startLbl = document.createElement('div');
-    startLbl.className = 'time-label';
-    startLbl.style.marginBottom = '4px';
-    startLbl.textContent = 'Start';
-    var startRow = document.createElement('div');
-    startRow.style.cssText = 'display:flex;gap:4px;';
-    startRow.appendChild(makeSelect('sh-start-h-'+i, hourOpts, startH12, function() { updateSlotTime(i,'start'); }));
-    startRow.appendChild(makeSelect('sh-start-m-'+i, minOpts, startM, function() { updateSlotTime(i,'start'); }));
-    startRow.appendChild(makeSelect('sh-start-a-'+i, apOpts, startAP, function() { updateSlotTime(i,'start'); }));
-    startWrap.appendChild(startLbl);
-    startWrap.appendChild(startRow);
-    row.appendChild(startWrap);
+    // Start
+    var startField = document.createElement('div');
+    startField.className = 'slot-field';
+    startField.innerHTML = '<div class="time-label">Start</div>';
+    var startGroup = document.createElement('div');
+    startGroup.className = 'time-group';
+    startGroup.appendChild(makeSelect('sh-start-h-' + i, hourOpts, sp.h12, function() { readSlotTimes(i); }));
+    startGroup.appendChild(makeSelect('sh-start-m-' + i, minOpts, sp.m,   function() { readSlotTimes(i); }));
+    startGroup.appendChild(makeSelect('sh-start-a-' + i, apOpts,  sp.ampm, function() { readSlotTimes(i); }));
+    startField.appendChild(startGroup);
+    row.appendChild(startField);
 
-    // End time
-    var endWrap = document.createElement('div');
-    var endLbl = document.createElement('div');
-    endLbl.className = 'time-label';
-    endLbl.style.marginBottom = '4px';
-    endLbl.textContent = 'End';
-    var endRow = document.createElement('div');
-    endRow.style.cssText = 'display:flex;gap:4px;';
-    endRow.appendChild(makeSelect('sh-end-h-'+i, hourOpts, endH12, function() { updateSlotTime(i,'end'); }));
-    endRow.appendChild(makeSelect('sh-end-m-'+i, minOpts, endM, function() { updateSlotTime(i,'end'); }));
-    endRow.appendChild(makeSelect('sh-end-a-'+i, apOpts, endAP, function() { updateSlotTime(i,'end'); }));
-    endWrap.appendChild(endLbl);
-    endWrap.appendChild(endRow);
-    row.appendChild(endWrap);
+    // End
+    var endField = document.createElement('div');
+    endField.className = 'slot-field';
+    endField.innerHTML = '<div class="time-label">End</div>';
+    var endGroup = document.createElement('div');
+    endGroup.className = 'time-group';
+    endGroup.appendChild(makeSelect('sh-end-h-' + i, hourOpts, ep.h12, function() { readSlotTimes(i); }));
+    endGroup.appendChild(makeSelect('sh-end-m-' + i, minOpts,  ep.m,   function() { readSlotTimes(i); }));
+    endGroup.appendChild(makeSelect('sh-end-a-' + i, apOpts,   ep.ampm, function() { readSlotTimes(i); }));
+    endField.appendChild(endGroup);
+    row.appendChild(endField);
 
-    // Show name
-    var nameWrap = document.createElement('div');
-    nameWrap.style.cssText = 'flex:1;min-width:120px;';
-    var nameLbl = document.createElement('div');
-    nameLbl.className = 'time-label';
-    nameLbl.style.marginBottom = '4px';
-    nameLbl.textContent = 'Show Name';
+    // Name
+    var nameField = document.createElement('div');
+    nameField.className = 'slot-field slot-name';
+    nameField.innerHTML = '<div class="time-label">Show Name</div>';
     var nameInput = document.createElement('input');
     nameInput.type = 'text';
-    nameInput.value = slot.name || '';
+    nameInput.value = slot.name;
     nameInput.placeholder = 'Show name';
     nameInput.addEventListener('input', function() { scheduleSlots[i].name = this.value; });
-    nameWrap.appendChild(nameLbl);
-    nameWrap.appendChild(nameInput);
-    row.appendChild(nameWrap);
+    nameField.appendChild(nameInput);
+    row.appendChild(nameField);
 
     // Buttons
-    var btnWrap = document.createElement('div');
-    btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+    var btns = document.createElement('div');
+    btns.className = 'slot-btns';
+
     var descBtn = document.createElement('button');
     descBtn.className = 'btn secondary small';
     descBtn.textContent = '✎ desc';
-    descBtn.addEventListener('click', function() { toggleDesc(i); });
+    descBtn.addEventListener('click', (function(idx) {
+      return function() {
+        var dr = document.getElementById('desc-row-' + idx);
+        if (dr) dr.classList.toggle('open');
+      };
+    })(i));
+
     var removeBtn = document.createElement('button');
     removeBtn.className = 'btn danger small';
-    removeBtn.textContent = '✕ remove';
-    removeBtn.addEventListener('click', function() { removeSlot(i); });
-    btnWrap.appendChild(descBtn);
-    btnWrap.appendChild(removeBtn);
-    row.appendChild(btnWrap);
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', (function(idx) {
+      return function() { removeSlot(idx); };
+    })(i));
 
+    btns.appendChild(descBtn);
+    btns.appendChild(removeBtn);
+    row.appendChild(btns);
     wrap.appendChild(row);
 
     // Description row
     var descRow = document.createElement('div');
     descRow.id = 'desc-row-' + i;
-    descRow.style.display = slot.description ? 'block' : 'none';
+    descRow.className = 'desc-row' + (slot.description ? ' open' : '');
     var descLbl = document.createElement('div');
     descLbl.className = 'time-label';
     descLbl.style.marginBottom = '4px';
-    descLbl.textContent = 'Description';
+    descLbl.textContent = 'Description (optional)';
     var descInput = document.createElement('input');
     descInput.type = 'text';
     descInput.value = slot.description || '';
@@ -643,15 +690,12 @@ function renderSchedule() {
   });
 }
 
-
-function toggleDesc(i) {
-  var el = document.getElementById('desc-row-' + i);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
 function addShowSlot() {
   scheduleSlots.push({ day: new Date().getDay(), start: '18:00', end: '20:00', name: '', description: '' });
   renderSchedule();
+  // Scroll to new slot
+  var list = document.getElementById('scheduleList');
+  if (list.lastChild) list.lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function removeSlot(i) {
@@ -660,32 +704,49 @@ function removeSlot(i) {
 }
 
 async function saveSchedule() {
-  scheduleSlots.forEach(function(s) { s.host = currentHost; });
+  // Read any final state from DOM before saving
+  scheduleSlots.forEach(function(s, i) {
+    s.host = currentHost;
+    // Read name from DOM in case it wasn't triggered by input event
+    var nameEl = document.querySelector('#scheduleList .schedule-slot:nth-child(' + (i+1) + ') input[type=text]');
+    if (nameEl) s.name = nameEl.value;
+  });
+
+  if (!scheduleSlots.length) {
+    showMsg('scheduleMsg', 'error', 'No shows to save — add at least one');
+    return;
+  }
+
   try {
-    var res = await fetch(WORKER + '/schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, slots: scheduleSlots }) });
+    var res = await fetch(WORKER + '/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: currentPassword, host: currentHost, slots: scheduleSlots })
+    });
     var data = await res.json();
     if (data.ok) {
-      showMsg('scheduleMsg', 'success', 'Schedule saved');
+      showMsg('scheduleMsg', 'success', 'Schedule saved — live within 30 seconds');
       new BroadcastChannel('july').postMessage({ type: 'scheduleUpdate' });
+    } else {
+      showMsg('scheduleMsg', 'error', data.error || 'Failed to save');
     }
-    else showMsg('scheduleMsg', 'error', 'Failed to save');
   } catch(e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
 }
 
-// PROFILE
+// ── PROFILE ───────────────────────────────────────────────────────────────────
 async function loadProfile() {
   try {
     var res = await fetch(WORKER + '/profile?host=' + currentHost);
     var data = await res.json();
     if (data.profile) {
       var p = data.profile;
-      document.getElementById('profileName').value = p.name || HOSTS[currentHost].name;
-      document.getElementById('profileShows').value = p.shows || '';
-      document.getElementById('profileTagline').value = p.tagline || '';
-      document.getElementById('profileBio').value = p.bio || '';
-      document.getElementById('profilePhoto').value = p.photo || '';
-      document.getElementById('profileInstagram').value = p.instagram || '';
-      document.getElementById('profileSoundcloud').value = p.soundcloud || '';
+      document.getElementById('profileName').value      = p.name       || HOSTS[currentHost].name;
+      document.getElementById('profileShows').value     = p.shows      || '';
+      document.getElementById('profileTagline').value   = p.tagline    || '';
+      document.getElementById('profileBio').value       = p.bio        || '';
+      document.getElementById('profilePhoto').value     = p.photo      || '';
+      document.getElementById('profileInstagram').value = p.instagram  || '';
+      document.getElementById('profileSoundcloud').value= p.soundcloud || '';
       previewProfileImg();
     }
   } catch(e) {}
@@ -693,19 +754,23 @@ async function loadProfile() {
 
 async function saveProfile() {
   var profile = {
-    name: document.getElementById('profileName').value,
-    shows: document.getElementById('profileShows').value,
-    tagline: document.getElementById('profileTagline').value,
-    bio: document.getElementById('profileBio').value,
-    photo: document.getElementById('profilePhoto').value,
-    instagram: document.getElementById('profileInstagram').value,
+    name:       document.getElementById('profileName').value,
+    shows:      document.getElementById('profileShows').value,
+    tagline:    document.getElementById('profileTagline').value,
+    bio:        document.getElementById('profileBio').value,
+    photo:      document.getElementById('profilePhoto').value,
+    instagram:  document.getElementById('profileInstagram').value,
     soundcloud: document.getElementById('profileSoundcloud').value,
   };
   try {
-    var res = await fetch(WORKER + '/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, profile: profile }) });
+    var res = await fetch(WORKER + '/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: currentPassword, host: currentHost, profile: profile })
+    });
     var data = await res.json();
     if (data.ok) showMsg('profileMsg', 'success', 'Profile saved');
-    else showMsg('profileMsg', 'error', 'Failed to save');
+    else showMsg('profileMsg', 'error', data.error || 'Failed to save');
   } catch(e) { showMsg('profileMsg', 'error', 'Connection error'); }
 }
 
@@ -715,27 +780,118 @@ function previewProfileImg() {
   img.src = url; img.style.display = url ? 'block' : 'none';
 }
 
-// ALERTS
+// ── TICKER ────────────────────────────────────────────────────────────────────
+async function loadTicker() {
+  try {
+    var res = await fetch(WORKER + '/ticker');
+    var data = await res.json();
+    tickerMessages = (data.messages && data.messages.length) ? data.messages : [
+      'Welcome to July Radio',
+      'Live 24/7',
+      'Full website coming soon at julyfm.com',
+      'New music every morning on di:scovery',
+      'Five artists a day on in:focus'
+    ];
+  } catch(e) {
+    tickerMessages = ['Welcome to July Radio', 'Live 24/7'];
+  }
+  renderTicker();
+}
+
+function renderTicker() {
+  var list = document.getElementById('tickerList');
+  list.innerHTML = '';
+  tickerMessages.forEach(function(msg, i) {
+    var row = document.createElement('div');
+    row.className = 'ticker-row';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = msg;
+    input.placeholder = 'Ticker message...';
+    input.dataset.index = String(i);
+    input.addEventListener('input', function() {
+      tickerMessages[parseInt(this.dataset.index)] = this.value;
+    });
+    var btn = document.createElement('button');
+    btn.className = 'btn danger small';
+    btn.textContent = '✕';
+    btn.addEventListener('click', (function(idx) {
+      return function() { tickerMessages.splice(idx, 1); renderTicker(); };
+    })(i));
+    row.appendChild(input);
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+
+function addTickerMsg() {
+  if (tickerMessages.length >= 8) { showMsg('tickerMsg', 'error', 'Max 8 messages'); return; }
+  tickerMessages.push('');
+  renderTicker();
+  setTimeout(function() {
+    var inputs = document.querySelectorAll('#tickerList input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
+}
+
+async function saveTicker() {
+  // Read final values from DOM
+  var inputs = document.querySelectorAll('#tickerList input[type=text]');
+  var clean = [];
+  inputs.forEach(function(inp) { if (inp.value.trim()) clean.push(inp.value.trim()); });
+  if (!clean.length) { showMsg('tickerMsg', 'error', 'Add at least one message'); return; }
+  tickerMessages = clean;
+
+  // Broadcast to overlay in same browser instantly
+  new BroadcastChannel('july').postMessage({ type: 'tickerUpdate', messages: clean });
+
+  try {
+    var res = await fetch(WORKER + '/ticker', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: currentPassword, messages: clean })
+    });
+    var data = await res.json();
+    if (data.ok) showMsg('tickerMsg', 'success', 'Ticker saved — live within 60 seconds');
+    else showMsg('tickerMsg', 'error', data.error || 'Failed to save');
+  } catch(e) { showMsg('tickerMsg', 'error', 'Connection error'); }
+}
+
+// ── ALERTS ────────────────────────────────────────────────────────────────────
 async function sendAlert() {
   var text = document.getElementById('alertText').value.trim();
   if (!text) { showMsg('alertsMsg', 'error', 'Enter a message first'); return; }
   try {
-    var res = await fetch(WORKER + '/alert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: HOSTS[currentHost].password, alert: { text: text, id: Date.now().toString(), host: HOSTS[currentHost].name } }) });
+    var res = await fetch(WORKER + '/alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        password: currentPassword,
+        alert: { text: text, id: Date.now().toString(), host: HOSTS[currentHost].name }
+      })
+    });
     var data = await res.json();
-    if (data.ok) { showMsg('alertsMsg', 'success', 'Alert sent — visible within 30 seconds'); document.getElementById('alertText').value = ''; }
-    else showMsg('alertsMsg', 'error', 'Failed to send');
+    if (data.ok) {
+      showMsg('alertsMsg', 'success', 'Alert sent — visible within 30 seconds');
+      document.getElementById('alertText').value = '';
+    } else showMsg('alertsMsg', 'error', data.error || 'Failed to send');
   } catch(e) { showMsg('alertsMsg', 'error', 'Connection error'); }
 }
 
 async function clearAlert() {
   try {
-    var res = await fetch(WORKER + '/alert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: HOSTS[currentHost].password, alert: null }) });
+    var res = await fetch(WORKER + '/alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: currentPassword, alert: null })
+    });
     var data = await res.json();
     if (data.ok) showMsg('alertsMsg', 'success', 'Alert cleared');
+    else showMsg('alertsMsg', 'error', data.error || 'Failed');
   } catch(e) { showMsg('alertsMsg', 'error', 'Connection error'); }
 }
 
-// NOW PLAYING BAR
+// ── NOW PLAYING BAR ───────────────────────────────────────────────────────────
 function startNowPlayingPoll() {
   fetchNowPlaying();
   setInterval(fetchNowPlaying, 15000);
@@ -743,48 +899,41 @@ function startNowPlayingPoll() {
 
 async function fetchNowPlaying() {
   try {
-    var url = 'https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=' + LASTFM_USER + '&api_key=' + LASTFM_KEY + '&format=json&limit=5';
-    var res = await fetch(url);
+    var res = await fetch('https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=' + LASTFM_USER + '&api_key=' + LASTFM_KEY + '&format=json&limit=5');
     var data = await res.json();
     var tracks = data.recenttracks.track;
     if (!tracks || !tracks.length) return;
 
     var current = Array.isArray(tracks) ? tracks[0] : tracks;
-    var trackName = current.name;
-    var artistName = current.artist['#text'];
-    var trackKey = trackName + artistName;
-
-    // Silence detection
-    if (trackKey !== lastNpTrack) {
-      lastNpTrack = trackKey;
-      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-      silenceTimer = setTimeout(function() {
-        showNotif('No playback detected — Spotify may have paused');
-      }, 10 * 60 * 1000);
-    }
+    var trackKey = current.name + current.artist['#text'];
 
     if (trackKey !== lastTrack) {
       lastTrack = trackKey;
-      document.getElementById('npTitleMini').textContent = trackName;
-      document.getElementById('npArtistMini').textContent = artistName;
-      var images = current.image || [];
-      var art = images.find(function(i) { return i.size === 'extralarge'; });
-      var img = document.getElementById('npImgMini');
-      if (art && art['#text']) { img.src = art['#text']; img.style.display = 'block'; updateAdminBg(art['#text']); }
+      document.getElementById('npTitleMini').textContent = current.name;
+      document.getElementById('npArtistMini').textContent = current.artist['#text'];
+      var art = (current.image || []).find(function(i) { return i.size === 'extralarge'; });
+      if (art && art['#text']) {
+        var img = document.getElementById('npImgMini');
+        img.src = art['#text']; img.style.display = 'block';
+        updateAdminBg(art['#text']);
+      }
+      // Reset silence timer
+      if (silenceTimer) clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(function() {
+        showNotif('⚠ No track change in 10 min — check playback');
+      }, 10 * 60 * 1000);
     }
 
     var history = Array.isArray(tracks) ? tracks.slice(1, 4) : [];
-    var prev = document.getElementById('npPrev');
-    prev.innerHTML = history.map(function(t) {
+    document.getElementById('npPrev').innerHTML = history.map(function(t) {
       return '<div class="np-prev-item"><span>' + t.artist['#text'] + '</span> — ' + t.name + '</div>';
     }).join('');
   } catch(e) {}
 }
 
 function toggleMonitor() {
-  var streamUrl = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
   if (!monitorPlaying) {
-    monitorAudio = new Audio(streamUrl);
+    monitorAudio = new Audio(STREAM_URL);
     monitorAudio.volume = 0.7;
     monitorAudio.play().then(function() {
       monitorPlaying = true;
@@ -802,17 +951,18 @@ function stopMonitor() {
 }
 
 function closeNowPlaying() {
-  document.getElementById('nowPlayingBar').classList.add('hidden');
+  document.getElementById('nowPlayingBar').classList.remove('visible');
   stopMonitor();
 }
 
-// BACKGROUND
+// ── BACKGROUND ────────────────────────────────────────────────────────────────
 function updateAdminBg(imgUrl) {
   var bg = document.getElementById('adminBg');
-  if (imgUrl) { bg.style.backgroundImage = 'url(' + imgUrl + ')'; bg.classList.add('visible'); }
+  bg.style.backgroundImage = 'url(' + imgUrl + ')';
+  bg.classList.add('visible');
 }
 
-// CLOCKS
+// ── CLOCKS ────────────────────────────────────────────────────────────────────
 function updateAdminClock() {
   var now = new Date();
   var fmt = function(tz) { return now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit' }); };
@@ -824,128 +974,31 @@ function updateAdminClock() {
   if (ny) ny.textContent = fmt('America/New_York');
 }
 
-// NOTIFICATIONS
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 async function requestNotifPermission() {
-  if ('Notification' in window) {
-    var perm = await Notification.requestPermission();
-    notifPermission = perm === 'granted';
-  }
+  if ('Notification' in window) await Notification.requestPermission();
 }
 
 function showNotif(msg) {
   document.getElementById('notifMsg').textContent = msg;
   document.getElementById('notifBar').classList.add('visible');
   setTimeout(closeNotif, 8000);
-  if (notifPermission) new Notification('July Radio', { body: msg, icon: 'july-logo.png' });
+  if (Notification.permission === 'granted') new Notification('July Radio', { body: msg, icon: 'july-logo.png' });
 }
 
 function closeNotif() {
   document.getElementById('notifBar').classList.remove('visible');
 }
 
-// UTILS
+// ── UTILS ─────────────────────────────────────────────────────────────────────
 function showMsg(id, type, text) {
   var el = document.getElementById(id);
+  if (!el) return;
   el.className = 'msg ' + type;
   el.textContent = text;
-  setTimeout(function() { el.className = 'msg'; }, 4000);
+  setTimeout(function() { el.className = 'msg'; }, 5000);
 }
 
-
-// TICKER
-var tickerMessages = [];
-
-async function loadTicker() {
-  try {
-    var res = await fetch(WORKER + '/ticker');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
-    tickerMessages = Array.isArray(data.messages) && data.messages.length ? data.messages : [
-      'Welcome to July Radio',
-      'Live 24/7',
-      'Full website coming soon at julyfm.com',
-      'New music every morning on di:scovery',
-      'Five artists a day on in:focus'
-    ];
-  } catch(e) {
-    tickerMessages = [
-      'Welcome to July Radio',
-      'Live 24/7',
-      'Full website coming soon'
-    ];
-  }
-  renderTicker();
-}
-
-function renderTicker() {
-  var list = document.getElementById('tickerList');
-  list.innerHTML = '';
-  tickerMessages.forEach(function(msg, i) {
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
-    var input = document.createElement('input');
-    input.type = 'text';
-    input.value = msg;
-    input.style.flex = '1';
-    input.dataset.index = String(i);
-    input.addEventListener('input', function() {
-      var idx = parseInt(this.dataset.index);
-      tickerMessages[idx] = this.value;
-    });
-    var btn = document.createElement('button');
-    btn.className = 'btn danger small';
-    btn.textContent = '✕';
-    (function(idx) {
-      btn.addEventListener('click', function() { removeTicker(idx); });
-    })(i);
-    row.appendChild(input);
-    row.appendChild(btn);
-    list.appendChild(row);
-  });
-}
-
-function addTickerMsg() {
-  if (tickerMessages.length >= 8) { showMsg('tickerMsg', 'error', 'Max 8 messages'); return; }
-  tickerMessages.push('');
-  renderTicker();
-  // Focus new input
-  setTimeout(function() {
-    var inputs = document.getElementById('tickerList').querySelectorAll('input');
-    if (inputs.length) inputs[inputs.length - 1].focus();
-  }, 50);
-}
-
-function removeTicker(i) {
-  tickerMessages.splice(i, 1);
-  renderTicker();
-}
-
-async function saveTicker() {
-  // Read current values from DOM inputs
-  // Read values directly from DOM in order
-  var inputs = document.getElementById('tickerList').querySelectorAll('input[type=text]');
-  var clean = [];
-  inputs.forEach(function(inp) {
-    if (inp.value.trim()) clean.push(inp.value.trim());
-  });
-  // Broadcast to overlay immediately (works even if worker is down)
-  tickerMessages = clean;
-  new BroadcastChannel('july').postMessage({ type: 'tickerUpdate', messages: clean });
-  showMsg('tickerMsg', 'success', 'Ticker updated ✓');
-
-  // Also try to persist to worker (best effort)
-  try {
-    var res = await fetch(WORKER + '/ticker', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: HOSTS[currentHost].password, host: currentHost, messages: clean })
-    });
-    var data = await res.json();
-    if (!data.ok) console.warn('Ticker worker save failed:', data.error);
-  } catch(e) { console.warn('Ticker worker unreachable, using BroadcastChannel only'); }
-}
-
-setupHovers();
 setInterval(updateAdminClock, 1000);
 updateAdminClock();
 </script>
