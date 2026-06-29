@@ -321,11 +321,10 @@ const LASTFM_USER = 'injeton';
 const STREAM_URL = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-// Host display info only — NO passwords in client
 const HOSTS = {
-  c:      { name: 'C.',     accent: '#c8a96e', photo: 'julyhost1.png' },
-  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', photo: 'diogo.gif' },
-  fiscia: { name: 'Fiscia', accent: '#c86e8a', photo: 'fiscia.jpeg' },
+  c:      { name: 'C.',     accent: '#c8a96e', photo: 'julyhost1.png', password: 'julyat2025' },
+  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', photo: 'diogo.gif',     password: 'fziwe2025'  },
+  fiscia: { name: 'Fiscia', accent: '#c86e8a', photo: 'fiscia.jpeg',   password: 'fiscia2025' },
 };
 
 let currentHost = null;
@@ -382,49 +381,20 @@ async function login() {
   var pw = document.getElementById('passwordInput').value;
   if (!pw) return;
 
-  var btn = document.querySelector('#loginView .btn.full');
-  btn.textContent = 'Checking...';
-  btn.disabled = true;
-
-  try {
-    // Validate against server by attempting a schedule fetch with auth
-    // We verify by POSTing a no-op schedule read; if worker accepts password it's valid
-    var res = await fetch(WORKER + '/schedule?host=' + currentHost);
-    // Server doesn't auth GET — so we do a lightweight auth check via profile POST
-    // We send current profile back as-is to validate the password
-    var profileRes = await fetch(WORKER + '/profile?host=' + currentHost);
-    var profileData = await profileRes.json();
-    var existingProfile = profileData.profile || {};
-
-    var authRes = await fetch(WORKER + '/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw, host: currentHost, profile: existingProfile })
-    });
-    var authData = await authRes.json();
-
-    if (authRes.status === 401 || authData.error) {
-      showMsg('loginMsg', 'error', 'Wrong password');
-      btn.textContent = 'Enter'; btn.disabled = false;
-      return;
-    }
-
-    // Auth passed
-    currentPassword = pw;
-    document.getElementById('loginView').classList.remove('active');
-    document.getElementById('dashView').classList.add('active');
-    document.getElementById('dashHostName').textContent = HOSTS[currentHost].name;
-    btn.textContent = 'Enter'; btn.disabled = false;
-
-    await loadDashboard();
-    document.getElementById('nowPlayingBar').classList.add('visible');
-    startNowPlayingPoll();
-    requestNotifPermission();
-
-  } catch(e) {
-    showMsg('loginMsg', 'error', 'Connection error — check network');
-    btn.textContent = 'Enter'; btn.disabled = false;
+  if (pw !== HOSTS[currentHost].password) {
+    showMsg('loginMsg', 'error', 'Wrong password');
+    return;
   }
+
+  currentPassword = pw;
+  document.getElementById('loginView').classList.remove('active');
+  document.getElementById('dashView').classList.add('active');
+  document.getElementById('dashHostName').textContent = HOSTS[currentHost].name;
+
+  await loadDashboard();
+  document.getElementById('nowPlayingBar').classList.add('visible');
+  startNowPlayingPoll();
+  requestNotifPermission();
 }
 
 function logout() {
