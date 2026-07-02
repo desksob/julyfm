@@ -47,6 +47,77 @@
     width: auto;
   }
 
+  /* TOP LEFT (below logo) — July+ launch countdown */
+  #launchCountdown {
+    position: absolute;
+    top: 116px;
+    left: 60px;
+    width: 210px;
+    height: 92px;
+    background: #000;
+    border: 2px solid #fff;
+    overflow: hidden;
+    z-index: 3;
+  }
+
+  #launchCountdown .lc-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    padding: 8px;
+  }
+
+  #launchCountdown .lc-card.active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  #launchCountdown .lc-eyebrow {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 900;
+    transform: scaleX(0.82);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: #ffe600;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  #launchCountdown .lc-main {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 900;
+    transform: scaleX(0.82);
+    font-size: 24px;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  #launchCountdown .lc-sub {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 700;
+    transform: scaleX(0.85);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: #999;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  #launchCountdown .lc-timer {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    color: #ffe600;
+  }
 
   #timezones {
     position: absolute;
@@ -372,6 +443,18 @@
 <div id="ui">
   <img src="july-logo.png" alt="July Radio" id="logo">
 
+  <div id="launchCountdown">
+    <div class="lc-card active" id="lcCard0">
+      <div class="lc-eyebrow">Launching</div>
+      <div class="lc-timer" id="lcTimer">00:00:00:00</div>
+      <div class="lc-sub">Until July+</div>
+    </div>
+    <div class="lc-card" id="lcCard1">
+      <div class="lc-main">JULY+</div>
+      <div class="lc-sub">24/7 Music Television</div>
+    </div>
+  </div>
+
   <div id="timezones">
     <div class="tz-item" id="tzSlot0"><div class="tz-face active"><div class="tz-label">—</div><div class="tz-time">—</div></div></div>
     <div class="tz-sep">·</div>
@@ -465,7 +548,6 @@ async function fetchSchedule() {
       schedule[d] = allSlots.filter(function(s) { return parseInt(s.day) === d; }).sort(function(a,b) { return a.startMins - b.startMins; });
     }
     updateShow();
-    updateShow(); // ensure show info updates immediately
   } catch(e) {}
 }
 
@@ -528,7 +610,6 @@ function updateTzSlots(flip) {
     if (flip) {
       flipSlot(slots[i], entry.label, time);
     } else {
-      // Just update time text on the active face, no flip
       var face = slots[i] ? slots[i].querySelector('.tz-face.active') : null;
       if (face) {
         var timeEl = face.querySelector('.tz-time');
@@ -611,7 +692,6 @@ async function checkMode() {
         document.getElementById('npImg').style.display = 'block';
         document.getElementById('bgBlur').style.backgroundImage = 'url(' + dj.image + ')';
       }
-      // Clear artist card in DJ mode
       document.getElementById('artistCard').classList.remove('visible');
       return true;
     }
@@ -645,14 +725,12 @@ async function fetchNowPlaying() {
         document.getElementById('npTitle').textContent = trackName;
         document.getElementById('npArtist').textContent = artistName;
 
-        // Set Last.fm art immediately
         const lfmImages = current.image;
         const lfmArt = lfmImages && lfmImages.find(function(i) { return i.size === 'extralarge'; });
         if (lfmArt && lfmArt['#text']) {
           setArt(lfmArt['#text']);
         }
 
-        // Try upgrade to iTunes high res
         const itunesArt = await getItunesArt(artistName, trackName);
         if (itunesArt) setArt(itunesArt);
         fetchArtistInfo(artistName);
@@ -696,7 +774,6 @@ async function fetchRecentTracks() {
     const tracks = data.recenttracks.track;
     if (!tracks || !tracks.length) return;
 
-    // Filter out currently playing track
     const history = tracks.filter(function(t) {
       return !(t['@attr'] && t['@attr']['nowplaying'] === 'true');
     }).slice(0, 4);
@@ -756,22 +833,18 @@ async function fetchArtistInfo(artist) {
     setTimeout(function() {
       document.getElementById('artistName').textContent = a.name || artist;
 
-      // Tags
       const tags = a.tags && a.tags.tag ? a.tags.tag.slice(0, 3) : [];
       document.getElementById('artistTags').innerHTML = tags.map(function(t) {
         return '<div class="artist-tag">' + t.name + '</div>';
       }).join('');
 
-      // Bio — strip HTML tags
       const bioRaw = a.bio && a.bio.summary ? a.bio.summary : '';
       const bioClean = bioRaw.replace(/<a[^>]*>.*?<\/a>/g, '').replace(/<[^>]+>/g, '').trim();
       document.getElementById('artistBio').textContent = bioClean || '—';
 
-      // Listeners
       const listeners = a.stats && a.stats.listeners ? parseInt(a.stats.listeners).toLocaleString() : '—';
       document.getElementById('artistListeners').innerHTML = '<span>' + listeners + '</span> monthly listeners';
 
-      // Artist image via Cloudflare Worker proxy
       const imgWrap = document.getElementById('artistImgWrap');
       imgWrap.innerHTML = '<div id="artistImgPlaceholder">' + (a.name || artist) + '</div>';
 
@@ -835,6 +908,45 @@ async function fetchTicker() {
     }
   } catch(e) {}
 }
+
+// July+ Launch Countdown
+var LAUNCH_TARGET = new Date('2026-07-03T03:33:00+03:00'); // Fri 3 Jul 2026, 03:33 EAT
+var lcCardIndex = 0;
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function updateLaunchCountdown() {
+  var now = new Date();
+  var diff = LAUNCH_TARGET - now;
+  var timerEl = document.getElementById('lcTimer');
+  if (!timerEl) return;
+
+  if (diff <= 0) {
+    timerEl.textContent = "IT'S LIVE";
+    return;
+  }
+
+  var totalSeconds = Math.floor(diff / 1000);
+  var days = Math.floor(totalSeconds / 86400);
+  var hours = Math.floor((totalSeconds % 86400) / 3600);
+  var mins = Math.floor((totalSeconds % 3600) / 60);
+  var secs = totalSeconds % 60;
+
+  timerEl.textContent = pad2(days) + ':' + pad2(hours) + ':' + pad2(mins) + ':' + pad2(secs);
+}
+
+function rotateLaunchCard() {
+  var cards = document.querySelectorAll('#launchCountdown .lc-card');
+  if (!cards.length) return;
+  cards[lcCardIndex].classList.remove('active');
+  lcCardIndex = (lcCardIndex + 1) % cards.length;
+  cards[lcCardIndex].classList.add('active');
+}
+
+updateLaunchCountdown();
+setInterval(updateLaunchCountdown, 1000);
+setInterval(rotateLaunchCard, 3000);
+
 updateClock();
 fetchSchedule();
 fetchNowPlaying();
