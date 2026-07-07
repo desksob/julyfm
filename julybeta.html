@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>July Radio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Days+One&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  /* ── STRICT B&W SYSTEM ── */
+  --black: #000000;
+  --white: #ffffff;
+  --silver: #c0c0c0;
+  --gray: #808080;
+  --dgray: #333333;
+  --bg: #000000;
+  --surface: #000000;
+  --border: #ffffff;
+  --text: #ffffff;
+  --muted: #999999;
+  --dim: #444444;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── DISPLAY TYPE: condensed black, Adult-Swim / MTV-bumper style ── */
+.display-black {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 900;
+  transform: scaleX(0.84);
+  transform-origin: left;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* ── UTILITY LABEL TYPE: Verdana, the 2000s web workhorse ── */
+.label-face, .card-label, nav a, .live-pill, .show-tag, .tag, .dj-shows,
+.artist-card-label, .artist-card-tag, .tz-name, .status-line, .hi-time,
+.on-air-label, .day-label, .about-shows li strong, .about-footer,
+.viz-btn, .dj-socials a, #siteTickerLabel, .site-ticker-msg,
+.alert-banner, .artist-card-listeners, .tz-card .card-label {
+  font-family: Verdana, Geneva, sans-serif;
+}
+
+/* BG BLUR — desaturated for strict monochrome */
+#bgBlur {
+  position: fixed;
+  inset: -60px;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(80px) grayscale(1) contrast(1.3) brightness(0.18);
+  transition: background-image 2s ease;
+  pointer-events: none;
+}
+
+#bgDark {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+
+/* CRT / broadcast scanline + grain overlay — the signature texture */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.035) 0px,
+    rgba(255,255,255,0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+#scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  opacity: 0.12;
+}
+
+/* LAYOUT — vertical sidebar + main content */
+.site {
+  position: relative; z-index: 1;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 22px 30px;
+  border-right: 3px solid var(--white);
+  box-shadow: 10px 0 0 rgba(255,255,255,0.06);
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 40px 48px 80px;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 0 28px;
+  gap: 16px;
+}
+
+header img { height: 44px; width: auto; object-fit: contain; filter: grayscale(1) contrast(1.2) brightness(1.1); }
+
+.live-pill {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 11px; letter-spacing: 0.16em;
+  color: var(--black); text-transform: uppercase;
+  font-weight: bold;
+  background: var(--white);
+  border: 2px solid var(--white);
+  box-shadow: 4px 4px 0 var(--white);
+  padding: 7px 18px;
+}
+
+@keyframes livePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  50% { box-shadow: 0 0 14px rgba(255,255,255,0.3); }
+}
+
+.dot {
+  width: 8px; height: 8px; border-radius: 0;
+  background: var(--black);
+  animation: pulse 1.4s steps(2,jump-none) infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50% { opacity:0.15; }
+}
+
+/* NAV — vertical stack of chunky 3D pressed-buttons */
+nav {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 0;
+}
+
+nav a {
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--white); text-decoration: none; cursor: pointer;
+  font-weight: bold;
+  padding: 16px 18px 14px;
+  border: 2px solid var(--white);
+  background: var(--black);
+  box-shadow: 5px 5px 0 var(--white);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.15s, color 0.15s;
+}
+
+nav a:hover { background: var(--dgray); transform: translate(-1px,-1px); box-shadow: 6px 6px 0 var(--white); }
+nav a.active {
+  color: var(--black); background: var(--white);
+  transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--white);
+}
+nav a.active::after { display: none; }
+nav a:active { transform: translate(5px,5px); box-shadow: 0 0 0 var(--white); }
+
+/* SECTIONS */
+.section { display: none; }
+.section.active {
+  display: block;
+  animation: sectionIn 0.35s steps(6,end) both;
+}
+@keyframes sectionIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════ LISTEN ═══════════════ */
+#listen { padding: 40px 0; }
+
+.listen-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* Now playing card */
+.now-playing-card {
+  background: var(--black);
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  padding: 0 0 20px;
+  margin-bottom: 24px;
+}
+
+.card-label {
+  font-size: 10px; color: var(--black);
+  background: var(--white);
+  letter-spacing: 0.18em; text-transform: uppercase;
+  font-weight: bold;
+  padding: 6px 14px;
+  margin-bottom: 18px;
+  display: block;
+}
+.now-playing-card > .card-label { margin: 0 0 18px; }
+.now-playing-card .np-row,
+.now-playing-card .status-line { padding-left: 24px; padding-right: 24px; }
+
+.np-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto auto;
+  gap: 20px;
+  align-items: center;
+}
+
+.album-art {
+  width: 100px; height: 100px;
+  border: 3px solid var(--white);
+  box-shadow: 5px 5px 0 var(--white);
+  background: #111; flex-shrink: 0; overflow: hidden;
+  transition: opacity 0.6s, transform 0.1s, box-shadow 0.1s;
+  cursor: pointer;
+  position: relative;
+}
+.album-art:hover { transform: translate(-1px,-1px); box-shadow: 6px 6px 0 var(--white); }
+.album-art:active { transform: translate(4px,4px); box-shadow: 1px 1px 0 var(--white); }
+.album-art::after {
+  content: '↗';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--white);
+  background: rgba(0,0,0,0.65);
+  opacity: 0; transition: opacity 0.2s;
+}
+.album-art:hover::after { opacity: 1; }
+
+.album-art.fading { opacity: 0; }
+.album-art img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1) contrast(1.15); }
+.art-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--gray);letter-spacing:0.1em;font-family:Verdana,sans-serif; }
+
+.np-controls-col { display: contents; }
+
+.track-title {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 900;
+  transform: scaleX(0.88);
+  transform-origin: left;
+  font-size: 24px; color: var(--white);
+  text-transform: uppercase; letter-spacing: 0;
+  line-height: 1.15; transition: opacity 0.6s;
+}
+.track-title.fading { opacity: 0; }
+
+.track-artist {
+  font-family: Verdana, sans-serif;
+  font-size: 11px; color: var(--silver);
+  margin-top: 7px; letter-spacing: 0.1em;
+  text-transform: uppercase; transition: opacity 0.6s;
+}
+.track-artist.fading { opacity: 0; }
+
+.track-album { font-family: Verdana, sans-serif; font-size: 10px; color: var(--gray); margin-top: 5px; letter-spacing: 0.05em; }
+
+/* Controls */
+.controls { display: flex; align-items: center; gap: 18px; }
+
+.play-btn {
+  width: 0; height: 0;
+  border: none; background: none;
+  border-top: 11px solid transparent;
+  border-bottom: 11px solid transparent;
+  border-left: 19px solid var(--white);
+  cursor: pointer; flex-shrink: 0;
+  transition: transform 0.15s;
+  padding: 0;
+}
+.play-btn:hover { transform: scale(1.15); }
+.play-btn.playing {
+  width: 18px; height: 18px;
+  border: none;
+  background: none;
+  border-left: 6px solid var(--white);
+  border-right: 6px solid var(--white);
+  box-sizing: border-box;
+  border-top: 0; border-bottom: 0;
+  border-top-color: transparent; border-bottom-color: transparent;
+  transform: none;
+}
+
+.vol-wrap { display: flex; align-items: center; gap: 0; width: 100%; min-width: 0; }
+.vol-label { font-size: 9px; color: var(--gray); letter-spacing: 0.12em; text-transform: uppercase; }
+
+input[type=range] {
+  -webkit-appearance: none; flex: 1; height: 2px;
+  background: var(--dgray); border-radius: 0; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 13px; height: 13px;
+  border-radius: 0; background: var(--white); cursor: pointer;
+  border: 1px solid var(--black);
+}
+
+.status-line { font-family: Verdana, sans-serif; font-size: 9px; color: var(--gray); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 14px; }
+.status-line.live { color: var(--white); font-weight: bold; }
+
+/* On air card */
+.on-air-card {
+  background: var(--black);
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  padding: 18px 22px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.on-air-card:hover { background: #0a0a0a; transform: translate(-2px,-2px); box-shadow: 10px 10px 0 var(--white); }
+.on-air-card:active { transform: translate(6px,6px); box-shadow: 2px 2px 0 var(--white); }
+
+.on-air-label {
+  font-size: 9px; color: var(--black);
+  background: var(--white);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  font-weight: bold;
+  margin: -18px -22px 14px;
+  padding: 6px 22px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.live-dot {
+  width: 7px; height: 7px; border-radius: 0;
+  background: var(--black);
+  animation: pulse 1.4s steps(2,jump-none) infinite;
+  flex-shrink: 0;
+}
+
+#miniShowName {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 900; transform: scaleX(0.88); transform-origin:left;
+  font-size: 18px; color: var(--white); letter-spacing: 0; text-transform: uppercase;
+}
+#miniShowTime { font-family: Verdana, sans-serif; font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: 0.08em; }
+.on-air-hint { font-family: Verdana, sans-serif; font-size: 9px; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 12px; }
+
+/* History */
+.section-rule {
+  font-family: Verdana, sans-serif;
+  font-size: 9px; color: var(--black);
+  background: var(--white);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  font-weight: bold;
+  padding: 7px 14px;
+  margin: 28px 0 0;
+  display: flex; align-items: center; gap: 14px;
+}
+
+.history-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 0; border-bottom: 1px solid var(--dgray);
+  opacity: 0.6; transition: opacity 0.2s;
+}
+.history-item:hover { opacity: 1; }
+
+.hi-art {
+  width: 36px; height: 36px;
+  border: 1px solid var(--gray);
+  background: #111; flex-shrink: 0; overflow: hidden;
+}
+.hi-art img { width:100%; height:100%; object-fit:cover; display:block; filter: grayscale(1) contrast(1.15); }
+.hi-title { font-size: 12px; color: var(--white); }
+.hi-artist { font-family: Verdana, sans-serif; font-size: 10px; color: var(--muted); margin-top: 2px; }
+.hi-time { font-size: 9px; color: var(--dim); letter-spacing: 0.05em; flex-shrink: 0; margin-left: auto; }
+
+/* Artist card */
+.artist-card {
+  background: var(--black);
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  overflow: hidden;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: opacity 0.4s ease, transform 0.1s, box-shadow 0.1s;
+}
+.artist-card:hover { transform: translate(-2px,-2px); box-shadow: 10px 10px 0 var(--white); }
+.artist-card:active { transform: translate(6px,6px); box-shadow: 2px 2px 0 var(--white); }
+.artist-card.fading { opacity: 0; }
+
+.artist-card-img {
+  width: 100%; height: 200px;
+  object-fit: cover; object-position: top;
+  display: block; background: #111;
+  filter: grayscale(1) contrast(1.15);
+}
+
+.artist-card-img-placeholder {
+  width: 100%; height: 200px;
+  background: #0d0d0d;
+  display: flex; align-items: center; justify-content: center;
+  font-family: Verdana, sans-serif;
+  font-size: 9px; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase;
+}
+
+.artist-card-body { padding: 18px 20px; }
+.artist-card-label {
+  font-size: 9px; color: var(--black); background: var(--white);
+  letter-spacing: 0.2em; text-transform: uppercase; font-weight: bold;
+  margin: -18px -20px 14px; padding: 6px 20px;
+}
+.artist-card-name {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 900; transform: scaleX(0.88); transform-origin:left;
+  font-size: 17px; color: var(--white); text-transform: uppercase; letter-spacing: 0; margin-bottom: 10px;
+}
+.artist-card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.artist-card-tag { font-size: 8px; color: var(--white); border: 1px solid var(--white); padding: 2px 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+.artist-card-bio { font-family: Verdana, sans-serif; font-size: 10px; color: var(--muted); line-height: 1.8; letter-spacing: 0.02em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.artist-card-listeners { font-size: 9px; color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 10px; }
+.artist-card-listeners span { color: var(--white); font-weight: bold; }
+
+.tz-card {
+  background: var(--black);
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  padding: 0 0 4px;
+  margin-bottom: 24px;
+}
+.tz-card > .card-label { margin: 0 0 6px; }
+.tz-card .tz-row { padding-left: 20px; padding-right: 20px; }
+
+.tz-row {
+  display: flex; justify-content: space-between;
+  align-items: center; padding: 8px 0;
+  border-bottom: 1px solid var(--dgray);
+}
+.tz-row:last-child { border-bottom: none; }
+.tz-name { font-size: 9px; color: var(--muted); letter-spacing: 0.13em; text-transform: uppercase; }
+.tz-time { font-size: 12px; color: var(--white); letter-spacing: 0.1em; }
+.tz-row.current .tz-name { color: var(--white); font-weight: bold; }
+.tz-row.current .tz-time { color: var(--white); }
+.tz-row.local-tz { background: rgba(255,255,255,0.08); margin: 0 -8px; padding: 6px 8px; }
+.tz-row.local-tz .tz-name { color: var(--white); font-weight: bold; }
+.tz-row.local-tz .tz-time { color: var(--white); font-size: 14px; }
+
+/* ═══════════════ WATCH (IPTV) ═══════════════ */
+.watch-card {
+  background: var(--black);
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  padding: 20px 22px 22px;
+}
+
+.tv-video {
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: block;
+  background: #000;
+  border: 3px solid var(--white);
+  box-shadow: 6px 6px 0 var(--white);
+  filter: grayscale(1) contrast(1.15);
+  margin-right: 6px;
+}
+
+/* ═══════════════ SCHEDULE ═══════════════ */
+#schedule { padding: 40px 0; }
+
+.day-label {
+  font-size: 9px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--black);
+  background: var(--white);
+  font-weight: bold;
+  padding: 7px 14px;
+  margin: 24px 0 10px;
+}
+
+.show-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--dgray);
+  gap: 16px;
+}
+
+.show-time { font-family: Verdana, sans-serif; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
+.show-name { font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 700; font-size: 14px; color: var(--white); text-transform: uppercase; letter-spacing: 0.01em; }
+.show-dj { font-family: Verdana, sans-serif; font-size: 10px; color: var(--dim); margin-top: 3px; }
+.show-desc { font-family: Verdana, sans-serif; font-size: 10px; color: var(--dim); font-style: italic; margin-top: 3px; }
+
+.show-tag {
+  font-size: 9px; padding: 3px 10px;
+  border: 1px solid var(--white);
+  color: var(--white); letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.show-tag.on-air { background: var(--white); color: var(--black); font-weight: bold; }
+
+.show-row.live-row {
+  border: 3px solid var(--white);
+  box-shadow: 6px 6px 0 var(--white);
+  padding: 16px 14px; margin: 4px 4px 12px 0;
+  background: rgba(255,255,255,0.04);
+}
+.show-row.live-row .show-name { color: var(--white); }
+
+.live-dot-inline {
+  width: 6px; height: 6px; border-radius: 0;
+  background: var(--white); display: inline-block;
+  margin-right: 7px; animation: pulse 1.4s steps(2,jump-none) infinite;
+  flex-shrink: 0;
+}
+
+/* ═══════════════ DJS ═══════════════ */
+#djs { padding: 40px 0; }
+
+.dj-block { margin-bottom: 48px; }
+
+.dj-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  background: #0a0a0a;
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  overflow: hidden;
+  margin: 0 4px 4px 0;
+}
+
+.dj-photo {
+  height: 200px; overflow: hidden;
+  border-right: 2px solid var(--white);
+}
+.dj-photo img { width:100%; height:100%; object-fit:cover; object-position:top; display:block; filter: grayscale(1) contrast(1.15); }
+.dj-photo-placeholder {
+  width:100%; height:100%; display:flex;
+  align-items:center; justify-content:center;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 64px; color: var(--dgray);
+}
+
+.dj-info { padding: 20px 24px; display:flex; flex-direction:column; justify-content:space-between; }
+.dj-name { font-family:'Helvetica Neue', Arial, sans-serif; font-weight:900; transform:scaleX(0.88); transform-origin:left; font-size:24px; text-transform:uppercase; color:var(--white); margin-bottom:6px; }
+.dj-shows { font-size:10px; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:16px; }
+.dj-bio { font-family: Verdana, sans-serif; font-size:11px; color:var(--muted); line-height:1.9; flex:1; }
+.dj-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:16px; }
+.tag { font-size:9px; letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--white); padding:3px 9px; color:var(--white); }
+.dj-socials { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+.dj-socials a { font-size:9px;color:var(--white);letter-spacing:0.1em;text-decoration:none;border:1px solid var(--white);padding:4px 12px;text-transform:uppercase; transition:background 0.15s, color 0.15s; }
+.dj-socials a:hover { background:var(--white); color:var(--black); }
+
+/* ═══════════════ VISUALIZER ═══════════════ */
+#visualizer { padding: 40px 0; }
+
+canvas#vizCanvas {
+  width: 100%; height: 280px; display: block;
+  background: #000;
+  border: 3px solid var(--white);
+  box-shadow: 8px 8px 0 var(--white);
+  filter: grayscale(1) contrast(1.2);
+  margin-right: 4px;
+}
+
+.viz-controls { display:flex; gap:14px; margin-top:20px; flex-wrap:wrap; }
+
+.viz-btn {
+  font-size: 9px;
+  letter-spacing:0.15em; border:2px solid var(--white);
+  background:transparent; color:var(--white);
+  box-shadow: 4px 4px 0 var(--white);
+  padding:6px 14px; cursor:pointer;
+  transition:transform 0.1s, box-shadow 0.1s, background 0.15s, color 0.15s;
+  text-transform:uppercase;
+}
+.viz-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--white); }
+.viz-btn.active { background:var(--white); color:var(--black); transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--white); }
+.viz-btn:active { transform: translate(4px,4px); box-shadow: 0 0 0 var(--white); }
+
+/* ═══════════════ ABOUT ═══════════════ */
+#about { padding: 60px 0; max-width: 560px; }
+
+.about-title {
+  font-family:'Helvetica Neue', Arial, sans-serif;
+  font-weight: 900; transform: scaleX(0.88); transform-origin: left;
+  font-size:48px; color:var(--white);
+  letter-spacing:0; margin-bottom:24px;
+  line-height:1.05; text-transform: uppercase;
+}
+.about-title em { font-style: normal; }
+
+.about-body { font-family: Verdana, sans-serif; font-size:12px; color:var(--muted); line-height:2.1; margin-bottom:40px; }
+
+.about-shows { list-style:none; }
+.about-shows li {
+  font-family: Verdana, sans-serif;
+  font-size:11px; color:var(--dim); padding:10px 0;
+  border-bottom:1px solid var(--dgray);
+  display:flex; gap:16px; align-items:baseline;
+}
+.about-shows li strong { color:var(--white); font-weight:bold; min-width:120px; text-transform: uppercase; letter-spacing: 0.04em; }
+.about-footer { font-family: Verdana, sans-serif; font-size:11px; color:var(--dim); font-style:italic; margin-top:48px; }
+
+/* ═══════════════ TICKER ═══════════════ */
+#siteTicker {
+  position: fixed; bottom:0; left:0; right:0; height:34px;
+  background: var(--black);
+  border-top: 3px solid var(--white);
+  display: flex; align-items: center;
+  z-index: 100; overflow: hidden;
+}
+
+#siteTickerLabel {
+  font-size:9px; color:var(--black);
+  background: var(--white);
+  font-weight: bold;
+  letter-spacing:0.2em; text-transform:uppercase;
+  padding:0 20px; white-space:nowrap;
+  height: 100%; display:flex; align-items:center;
+  flex-shrink:0;
+}
+
+#siteTickerTrack { flex:1; overflow:hidden; position:relative; height:100%; }
+#siteTickerInner { position:absolute; top:50%; white-space:nowrap; will-change:transform; }
+.site-ticker-msg { font-size:10px; color:var(--white); letter-spacing:0.15em; text-transform:uppercase; }
+
+/* ALERT BANNER */
+.alert-banner {
+  position:fixed; bottom:50px; left:50%; z-index:200;
+  transform: translateX(-50%) translateY(120px);
+  background:var(--black);
+  border:3px solid var(--white);
+  box-shadow: 6px 6px 0 var(--white);
+  padding:14px 22px; font-size:11px; color:var(--white);
+  letter-spacing:0.05em;
+  max-width:420px; width:90%; text-align:center;
+  display:flex; align-items:center; gap:12px;
+  transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.alert-banner.visible { transform:translateX(-50%) translateY(0); }
+.alert-dot { width:6px;height:6px;border-radius:0;background:var(--white);flex-shrink:0;animation:pulse 1.4s steps(2,jump-none) infinite; }
+
+/* MOBILE */
+@media (max-width:640px) {
+  .site { flex-direction: column; padding: 0; }
+
+  .sidebar {
+    width: 100%; height: auto; position: relative;
+    flex-direction: row; align-items: center; flex-wrap: wrap;
+    padding: 16px; gap: 14px;
+    border-right: none; border-bottom: 3px solid var(--white);
+    box-shadow: 0 10px 0 rgba(255,255,255,0.06);
+  }
+
+  .main-content { padding: 0 16px 80px; }
+
+  header { padding: 0; gap: 12px; flex-direction: row; align-items: center; flex-shrink: 0; }
+  header img { height: 34px; }
+  .live-pill { font-size: 9px; padding: 5px 12px; box-shadow: 3px 3px 0 var(--white); }
+
+  nav {
+    flex-direction: row; gap: 8px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; flex-wrap: nowrap;
+    width: 100%;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { padding: 14px 16px 12px; font-size: 9px; display: inline-block; box-shadow: 3px 3px 0 var(--white); }
+  nav a:hover { box-shadow: 4px 4px 0 var(--white); }
+  nav a.active { box-shadow: 1px 1px 0 var(--white); }
+
+  .listen-grid { grid-template-columns: 1fr; gap: 16px; }
+
+  .np-row { grid-template-columns: 72px 1fr auto; gap: 12px; }
+  .album-art { width: 72px; height: 72px; }
+  .album-art::after { display: none; }
+  .track-title { font-size: 17px; }
+  .track-artist { font-size: 11px; }
+  .track-album { font-size: 10px; }
+  .now-playing-card .np-row, .now-playing-card .status-line { padding-left: 16px; padding-right: 16px; }
+  .status-line { font-size: 8px; }
+
+  .on-air-card { padding: 14px 16px; }
+  .on-air-label { margin: -14px -16px 12px; padding: 6px 16px; }
+  #miniShowName { font-size: 15px; }
+
+  .artist-card-img { height: 140px; }
+  .artist-card-body { padding: 14px 16px; }
+  .artist-card-label { margin: -14px -16px 12px; padding: 6px 16px; }
+  .artist-card-name { font-size: 14px; }
+
+  .tz-card .tz-row { padding-left: 16px; padding-right: 16px; }
+  .tz-row { padding: 6px 0; }
+  .tz-name { font-size: 8px; }
+  .tz-time { font-size: 11px; }
+
+  .show-row { grid-template-columns: 80px 1fr auto; gap: 8px; padding: 12px 0; }
+  .show-time { font-size: 9px; }
+  .show-name { font-size: 12px; }
+  .show-dj { font-size: 9px; }
+  .show-tag { font-size: 8px; padding: 2px 7px; }
+  .show-row.live-row { padding: 12px 10px; }
+  .day-label { font-size: 8px; padding: 6px 10px; margin: 18px 0 8px; }
+
+  .dj-grid { grid-template-columns: 1fr; }
+  .dj-photo { height: 180px; border-right: none; border-bottom: 2px solid var(--white); }
+  .dj-info { padding: 16px; }
+  .dj-name { font-size: 19px; }
+  .dj-block { margin-bottom: 28px; }
+
+  canvas#vizCanvas { height: 180px; }
+
+  .about-title { font-size: 30px; }
+  .about-body { font-size: 12px; }
+
+  #siteTickerLabel { padding: 0 12px; font-size: 8px; }
+  .site-ticker-msg { font-size: 9px; }
+
+  .section-rule { font-size: 8px; padding: 6px 10px; margin-top: 20px; }
+
+  .hi-title { font-size: 11px; }
+  .hi-artist { font-size: 9px; }
+  .hi-time { font-size: 9px; }
+  .hi-art { width: 30px; height: 30px; }
+
+  .now-playing-card, .on-air-card, .artist-card, .tz-card, .dj-grid,
+  canvas#vizCanvas, .show-row.live-row, .watch-card, .tv-video {
+    box-shadow: 4px 4px 0 var(--white);
+  }
+  .on-air-card:hover, .artist-card:hover { box-shadow: 5px 5px 0 var(--white); }
+  .album-art { box-shadow: 3px 3px 0 var(--white); }
+  .viz-btn { box-shadow: 2px 2px 0 var(--white); }
+}
+
+/* Staggered entrance for child elements */
+.now-playing-card,
+.on-air-card,
+.artist-card,
+.tz-card,
+.dj-block,
+.about-title,
+.about-body,
+.about-shows,
+.about-footer,
+#vizCanvas,
+.viz-controls {
+  animation: fadeUp 0.4s steps(5,end) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.now-playing-card  { animation-delay: 0.05s; }
+.on-air-card       { animation-delay: 0.12s; }
+.section-rule      { animation: fadeIn 0.3s ease 0.18s both; }
+.artist-card       { animation-delay: 0.04s; }
+.tz-card           { animation-delay: 0.14s; }
+.dj-block:nth-child(1) { animation-delay: 0.05s; }
+.dj-block:nth-child(2) { animation-delay: 0.14s; }
+.dj-block:nth-child(3) { animation-delay: 0.23s; }
+#vizCanvas         { animation-delay: 0.05s; }
+.viz-controls      { animation-delay: 0.14s; }
+.about-title       { animation-delay: 0.04s; }
+.about-body        { animation-delay: 0.12s; }
+.about-shows       { animation-delay: 0.2s; }
+.about-footer      { animation-delay: 0.28s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.history-item {
+  animation: fadeUp 0.3s steps(4,end) both;
+}
+.history-item:nth-child(1) { animation-delay: 0.22s; }
+.history-item:nth-child(2) { animation-delay: 0.28s; }
+.history-item:nth-child(3) { animation-delay: 0.34s; }
+.history-item:nth-child(4) { animation-delay: 0.40s; }
+.history-item:nth-child(5) { animation-delay: 0.46s; }
+.history-item:nth-child(6) { animation-delay: 0.52s; }
+.history-item:nth-child(7) { animation-delay: 0.58s; }
+
+.show-row {
+  animation: fadeUp 0.3s steps(4,end) both;
+}
+.show-row:nth-child(1)  { animation-delay: 0.08s; }
+.show-row:nth-child(2)  { animation-delay: 0.13s; }
+.show-row:nth-child(3)  { animation-delay: 0.18s; }
+.show-row:nth-child(4)  { animation-delay: 0.23s; }
+.show-row:nth-child(5)  { animation-delay: 0.28s; }
+.show-row:nth-child(6)  { animation-delay: 0.33s; }
+.show-row:nth-child(7)  { animation-delay: 0.38s; }
+.show-row:nth-child(8)  { animation-delay: 0.43s; }
+
+.day-label {
+  animation: fadeIn 0.3s ease both;
+}
+
+nav a { position: relative; }
+
+.tz-row { animation: fadeUp 0.25s steps(4,end) both; }
+.tz-row:nth-child(1)  { animation-delay: 0.15s; }
+.tz-row:nth-child(2)  { animation-delay: 0.18s; }
+.tz-row:nth-child(3)  { animation-delay: 0.21s; }
+.tz-row:nth-child(4)  { animation-delay: 0.24s; }
+.tz-row:nth-child(5)  { animation-delay: 0.27s; }
+.tz-row:nth-child(6)  { animation-delay: 0.30s; }
+.tz-row:nth-child(7)  { animation-delay: 0.33s; }
+.tz-row:nth-child(8)  { animation-delay: 0.36s; }
+.tz-row:nth-child(9)  { animation-delay: 0.39s; }
+.tz-row:nth-child(10) { animation-delay: 0.42s; }
+.tz-row:nth-child(11) { animation-delay: 0.45s; }
+.tz-row:nth-child(12) { animation-delay: 0.48s; }
+.tz-row:nth-child(13) { animation-delay: 0.51s; }
+
+header {
+  animation: fadeUp 0.5s steps(6,end) both;
+}
+nav {
+  animation: fadeUp 0.5s steps(6,end) 0.08s both;
+}
+
+.artist-card-img {
+  animation: fadeIn 0.5s ease both;
+}
+
+.now-playing-card,
+.artist-card,
+.tz-card,
+.dj-grid {
+  transition: border-color 0.2s;
+}
+
+.history-item { transition: opacity 0.2s, transform 0.2s; }
+.history-item:hover { transform: translateX(4px); }
+
+.show-row { transition: opacity 0.2s, background 0.2s; }
+.show-row:not(.live-row):hover { background: rgba(255,255,255,0.03); }
+
+/* ── CLOCK FLIP ── */
+.clock-wrap {
+  display: flex; align-items: center; gap: 2px;
+}
+.clock-seg {
+  display: inline-flex; flex-direction: column;
+  overflow: hidden; height: 1.2em; line-height: 1.2em;
+  position: relative;
+}
+.clock-seg-inner {
+  display: block;
+  transition: transform 0.3s steps(3,end), opacity 0.3s ease;
+}
+.clock-seg-inner.flip-out {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+.clock-sep { opacity: 0.5; }
+
+.tz-row.local-tz .tz-time { letter-spacing: 0.12em; }
+
+#historyList { transition: opacity 0.3s ease; }
+#historyList.fading { opacity: 0; }
+
+/* Global Connect flag — grayscale, no color */
+.on-air-card { position: relative; overflow: hidden; }
+#gcFlagOnAir {
+  position: absolute; right: -20px; top: -20px; bottom: -20px;
+  width: 160px; pointer-events: none;
+  opacity: 0; transition: opacity 1.4s ease;
+  transform: rotate(-8deg) scale(1.1);
+  overflow: hidden;
+  filter: grayscale(1) contrast(1.3);
+}
+#gcFlagOnAir canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  mask-image: linear-gradient(to left, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.14) 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.14) 55%, transparent 100%);
+}
+#gcFlagOnAir.visible { opacity: 1; }
+
+</style>
+</head>
+<body>
+
+<div id="bgBlur"></div>
+<div id="bgDark"></div>
+<div id="scanlines"></div>
+
+<div class="caster-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">
+  <script src="//myradiostream.com/embed/desksob"></script>
+</div>
+
+<div class="site">
+  <aside class="sidebar">
+    <header>
+      <img src="july-logo.png" alt="July Radio">
+      <div class="live-pill"><div class="dot"></div>Live · 24/7</div>
+    </header>
+
+    <nav>
+      <a class="active" onclick="show('listen',this)">Listen</a>
+      <a onclick="show('watch',this)">Watch</a>
+      <a onclick="show('schedule',this)">Schedule</a>
+      <a onclick="show('djs',this)">DJs</a>
+      <a onclick="show('visualizer',this)">Visualizer</a>
+      <a onclick="show('about',this)">About</a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+
+  <!-- ═══ LISTEN ═══ -->
+  <div id="listen" class="section active">
+    <div class="listen-grid">
+      <div>
+        <!-- Now playing -->
+        <div class="now-playing-card">
+          <div class="card-label" style="margin-bottom:12px;">Now Playing</div>
+          <div class="np-row">
+            <div class="album-art" id="albumArt" onclick="openLastfm()">
+              <div class="art-placeholder" id="artPlaceholder">art</div>
+            </div>
+            <div style="min-width:0;">
+              <div class="track-title" id="trackTitle">July Radio</div>
+              <div class="track-artist" id="trackArtist">—</div>
+              <div class="track-album" id="trackAlbum">syncing...</div>
+            </div>
+            <div class="vol-wrap">
+              <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
+            </div>
+            <button class="play-btn" id="playBtn" onclick="togglePlay()"></button>
+          </div>
+          <div class="status-line" id="statusMsg" style="margin-top:10px;">— PRESS PLAY TO TUNE IN</div>
+        </div>
+
+        <!-- On Air -->
+        <div class="on-air-card" id="miniOnAir" onclick="show('schedule', document.querySelector('nav a:nth-child(3)'))">
+          <div id="gcFlagOnAir"><canvas id="gcFlagCanvas"></canvas></div>
+          <div class="on-air-label"><div class="live-dot"></div>On Air Now</div>
+          <div id="miniShowName">—</div>
+          <div id="miniShowTime"></div>
+          <div class="on-air-hint">tap to view schedule →</div>
+        </div>
+
+        <!-- History -->
+        <div class="section-rule">Recently Played</div>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- Right column: timezones -->
+      <div>
+        <div class="artist-card" id="artistCard" style="display:none;cursor:pointer;" onclick="openLastfmArtist()">
+          <div id="artistCardImg"><div class="artist-card-img-placeholder">loading artist</div></div>
+          <div class="artist-card-body">
+            <div class="artist-card-label">Now Playing</div>
+            <div class="artist-card-name" id="artistCardName">—</div>
+            <div class="artist-card-tags" id="artistCardTags"></div>
+            <div class="artist-card-bio" id="artistCardBio"></div>
+            <div class="artist-card-listeners" id="artistCardListeners"></div>
+          </div>
+        </div>
+
+        <div class="tz-card">
+          <div class="card-label">World Clock</div>
+          <div id="tzList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ WATCH ═══ -->
+  <div id="watch" class="section">
+    <div style="padding:40px 0;max-width:900px;">
+      <div class="watch-card">
+        <div class="card-label" style="margin-bottom:12px;">Live TV</div>
+        <video id="tvPlayer" class="tv-video" controls playsinline></video>
+        <div class="status-line" id="tvStatus" style="margin-top:10px;">— PRESS PLAY TO START STREAM</div>
+        <div class="viz-controls">
+          <button class="viz-btn" id="tvPlayBtn" onclick="toggleTv()">Play</button>
+          <button class="viz-btn" id="tvStopBtn" onclick="stopTv()">Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCHEDULE ═══ -->
+  <div id="schedule" class="section">
+    <div id="scheduleGrid" style="padding:40px 0;"></div>
+  </div>
+
+  <!-- ═══ DJS ═══ -->
+  <div id="djs" class="section">
+    <div style="position:relative;">
+      <div style="filter:blur(6px);pointer-events:none;opacity:0.35;padding:40px 0;" id="djsGrid"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-family:Verdana,sans-serif;font-size:9px;color:var(--muted);letter-spacing:0.3em;text-transform:uppercase;">Under Construction</div>
+        <div style="font-family:Verdana,sans-serif;font-size:11px;color:var(--dim);letter-spacing:0.12em;">Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VISUALIZER ═══ -->
+  <div id="visualizer" class="section">
+    <div style="padding:40px 0;">
+      <canvas id="vizCanvas"></canvas>
+      <div style="font-family:Verdana,sans-serif;font-size:9px;color:var(--dim);letter-spacing:0.15em;text-transform:uppercase;margin-top:10px;text-align:center;">Press play on the Listen tab to activate</div>
+      <div class="viz-controls">
+        <button onclick="setVizMode('bars')" class="viz-btn active" id="btn-bars">Bars</button>
+        <button onclick="setVizMode('scope')" class="viz-btn" id="btn-scope">Scope</button>
+        <button onclick="setVizMode('xp')" class="viz-btn" id="btn-xp">XP Mode</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ABOUT ═══ -->
+  <div id="about" class="section">
+    <div style="position:relative;">
+      <div style="filter:blur(5px);pointer-events:none;opacity:0.3;">
+        <div class="about-title">July<br><em>Radio</em></div>
+    <p class="about-body">A personal radio station. Running four shows daily — curated playlists, new music discovery, focused listening, and live open air sets. On air around the clock.</p>
+    <ul class="about-shows">
+      <li><strong>Playlist</strong> curated selections, all day</li>
+      <li><strong>di:scovery</strong> new music, every morning</li>
+      <li><strong>Shuffle+</strong> random, always different</li>
+      <li><strong>in:focus</strong> 5 artists or albums of the day</li>
+      <li><strong>Open Air</strong> live mix, evenings</li>
+    </ul>
+    <div class="about-footer">made with love by desksob</div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-family:Verdana,sans-serif;font-size:9px;color:var(--muted);letter-spacing:0.3em;text-transform:uppercase;">Under Construction</div>
+        <div style="font-family:Verdana,sans-serif;font-size:11px;color:var(--dim);letter-spacing:0.12em;">Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+  </main>
+</div>
+
+<!-- TICKER -->
+<div id="siteTicker">
+  <div id="siteTickerLabel">July Radio</div>
+  <div id="siteTickerTrack">
+    <div id="siteTickerInner"><span class="site-ticker-msg">Welcome to July Radio</span></div>
+  </div>
+</div>
+
+<!-- ALERT -->
+<div class="alert-banner" id="alertBanner">
+  <div class="alert-dot"></div>
+  <span id="alertMsg"></span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mpegts.js/dist/mpegts.min.js"></script>
+<script>
+const TV_STREAM_URL = 'https://significant-revisions-bits-game.trycloudflare.com/iptv/channel/10.ts';
+let tvPlayer = null, tvPlaying = false;
+
+function initTv() {
+  if (tvPlayer) return;
+  const video = document.getElementById('tvPlayer');
+  const statusEl = document.getElementById('tvStatus');
+  if (!window.mpegts || !mpegts.getFeatureList().mseLivePlayback) {
+    statusEl.textContent = '— YOUR BROWSER CAN\'T PLAY THIS STREAM';
+    return;
+  }
+  tvPlayer = mpegts.createPlayer({
+    type: 'mpegts',
+    isLive: true,
+    url: TV_STREAM_URL
+  }, {
+    enableStashBuffer: false,
+    liveBufferLatencyChasing: true
+  });
+  tvPlayer.attachMediaElement(video);
+  tvPlayer.on(mpegts.Events.ERROR, () => {
+    statusEl.textContent = '— STREAM ERROR, TRY AGAIN';
+    tvPlaying = false;
+    document.getElementById('tvPlayBtn').textContent = 'Play';
+  });
+  tvPlayer.load();
+}
+
+function toggleTv() {
+  const statusEl = document.getElementById('tvStatus');
+  const btn = document.getElementById('tvPlayBtn');
+  if (!tvPlayer) initTv();
+  if (!tvPlayer) return;
+  if (!tvPlaying) {
+    tvPlayer.play();
+    tvPlaying = true;
+    btn.textContent = 'Pause';
+    statusEl.textContent = '— LIVE';
+  } else {
+    tvPlayer.pause();
+    tvPlaying = false;
+    btn.textContent = 'Play';
+    statusEl.textContent = '— PAUSED';
+  }
+}
+
+function stopTv() {
+  const statusEl = document.getElementById('tvStatus');
+  const btn = document.getElementById('tvPlayBtn');
+  if (tvPlayer) {
+    tvPlayer.unload();
+    tvPlayer.detachMediaElement();
+    tvPlayer.destroy();
+    tvPlayer = null;
+  }
+  tvPlaying = false;
+  btn.textContent = 'Play';
+  statusEl.textContent = '— PRESS PLAY TO START STREAM';
+}
+</script>
+<script>
+const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
+const LASTFM_USER = 'injeton';
+const WORKER = 'https://julyimages.sxrsq1.workers.dev';
+const streamUrl = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
+
+let playing = false, audio = null, lastTrack = '', lastfmTrackUrl = '';
+
+// ── LASTFM LINK ──
+function openLastfm() {
+  if (lastfmTrackUrl) window.open(lastfmTrackUrl, '_blank');
+}
+
+function openLastfmArtist() {
+  const name = document.getElementById('artistCardName').textContent;
+  if (name && name !== '—') window.open('https://www.last.fm/music/' + encodeURIComponent(name), '_blank');
+}
+
+// ── GLOBAL CONNECT FLAG DETECTION ──
+const COUNTRY_FLAGS = {
+  // Africa
+  'kenya':'https://flagcdn.com/w160/ke.webp','nigeria':'https://flagcdn.com/w160/ng.webp',
+  'ghana':'https://flagcdn.com/w160/gh.webp','south africa':'https://flagcdn.com/w160/za.webp',
+  'ethiopia':'https://flagcdn.com/w160/et.webp','tanzania':'https://flagcdn.com/w160/tz.webp',
+  'senegal':'https://flagcdn.com/w160/sn.webp','egypt':'https://flagcdn.com/w160/eg.webp',
+  'morocco':'https://flagcdn.com/w160/ma.webp','uganda':'https://flagcdn.com/w160/ug.webp',
+  'cameroon':'https://flagcdn.com/w160/cm.webp','ivory coast':'https://flagcdn.com/w160/ci.webp',
+  'mali':'https://flagcdn.com/w160/ml.webp','zimbabwe':'https://flagcdn.com/w160/zw.webp',
+  'zambia':'https://flagcdn.com/w160/zm.webp','mozambique':'https://flagcdn.com/w160/mz.webp',
+  'angola':'https://flagcdn.com/w160/ao.webp','rwanda':'https://flagcdn.com/w160/rw.webp',
+  'somalia':'https://flagcdn.com/w160/so.webp','sudan':'https://flagcdn.com/w160/sd.webp',
+  'algeria':'https://flagcdn.com/w160/dz.webp','tunisia':'https://flagcdn.com/w160/tn.webp',
+  'libya':'https://flagcdn.com/w160/ly.webp','congo':'https://flagcdn.com/w160/cd.webp',
+  'botswana':'https://flagcdn.com/w160/bw.webp','namibia':'https://flagcdn.com/w160/na.webp',
+  'malawi':'https://flagcdn.com/w160/mw.webp','madagascar':'https://flagcdn.com/w160/mg.webp',
+  'guinea':'https://flagcdn.com/w160/gn.webp','sierra leone':'https://flagcdn.com/w160/sl.webp',
+  'liberia':'https://flagcdn.com/w160/lr.webp','togo':'https://flagcdn.com/w160/tg.webp',
+  'benin':'https://flagcdn.com/w160/bj.webp','burkina faso':'https://flagcdn.com/w160/bf.webp',
+  'niger':'https://flagcdn.com/w160/ne.webp','chad':'https://flagcdn.com/w160/td.webp',
+  'eritrea':'https://flagcdn.com/w160/er.webp','djibouti':'https://flagcdn.com/w160/dj.webp',
+  'cape verde':'https://flagcdn.com/w160/cv.webp','mauritius':'https://flagcdn.com/w160/mu.webp',
+  'seychelles':'https://flagcdn.com/w160/sc.webp','eswatini':'https://flagcdn.com/w160/sz.webp',
+  'lesotho':'https://flagcdn.com/w160/ls.webp','gabon':'https://flagcdn.com/w160/ga.webp',
+  // Americas
+  'usa':'https://flagcdn.com/w160/us.webp','brazil':'https://flagcdn.com/w160/br.webp',
+  'canada':'https://flagcdn.com/w160/ca.webp','mexico':'https://flagcdn.com/w160/mx.webp',
+  'colombia':'https://flagcdn.com/w160/co.webp','argentina':'https://flagcdn.com/w160/ar.webp',
+  'chile':'https://flagcdn.com/w160/cl.webp','peru':'https://flagcdn.com/w160/pe.webp',
+  'venezuela':'https://flagcdn.com/w160/ve.webp','ecuador':'https://flagcdn.com/w160/ec.webp',
+  'bolivia':'https://flagcdn.com/w160/bo.webp','paraguay':'https://flagcdn.com/w160/py.webp',
+  'uruguay':'https://flagcdn.com/w160/uy.webp','jamaica':'https://flagcdn.com/w160/jm.webp',
+  'cuba':'https://flagcdn.com/w160/cu.webp','haiti':'https://flagcdn.com/w160/ht.webp',
+  'dominican republic':'https://flagcdn.com/w160/do.webp','puerto rico':'https://flagcdn.com/w160/pr.webp',
+  'trinidad':'https://flagcdn.com/w160/tt.webp','barbados':'https://flagcdn.com/w160/bb.webp',
+  'panama':'https://flagcdn.com/w160/pa.webp','costa rica':'https://flagcdn.com/w160/cr.webp',
+  'guatemala':'https://flagcdn.com/w160/gt.webp','honduras':'https://flagcdn.com/w160/hn.webp',
+  'el salvador':'https://flagcdn.com/w160/sv.webp','nicaragua':'https://flagcdn.com/w160/ni.webp',
+  'guyana':'https://flagcdn.com/w160/gy.webp','suriname':'https://flagcdn.com/w160/sr.webp',
+  // Europe
+  'uk':'https://flagcdn.com/w160/gb.webp','france':'https://flagcdn.com/w160/fr.webp',
+  'germany':'https://flagcdn.com/w160/de.webp','italy':'https://flagcdn.com/w160/it.webp',
+  'portugal':'https://flagcdn.com/w160/pt.webp','spain':'https://flagcdn.com/w160/es.webp',
+  'netherlands':'https://flagcdn.com/w160/nl.webp','belgium':'https://flagcdn.com/w160/be.webp',
+  'sweden':'https://flagcdn.com/w160/se.webp','norway':'https://flagcdn.com/w160/no.webp',
+  'denmark':'https://flagcdn.com/w160/dk.webp','finland':'https://flagcdn.com/w160/fi.webp',
+  'switzerland':'https://flagcdn.com/w160/ch.webp','austria':'https://flagcdn.com/w160/at.webp',
+  'poland':'https://flagcdn.com/w160/pl.webp','czechia':'https://flagcdn.com/w160/cz.webp',
+  'hungary':'https://flagcdn.com/w160/hu.webp','romania':'https://flagcdn.com/w160/ro.webp',
+  'greece':'https://flagcdn.com/w160/gr.webp','turkey':'https://flagcdn.com/w160/tr.webp',
+  'ukraine':'https://flagcdn.com/w160/ua.webp','ireland':'https://flagcdn.com/w160/ie.webp',
+  'scotland':'https://flagcdn.com/w160/gb-sct.webp','wales':'https://flagcdn.com/w160/gb-wls.webp',
+  'iceland':'https://flagcdn.com/w160/is.webp','luxembourg':'https://flagcdn.com/w160/lu.webp',
+  'croatia':'https://flagcdn.com/w160/hr.webp','serbia':'https://flagcdn.com/w160/rs.webp',
+  'slovakia':'https://flagcdn.com/w160/sk.webp','bulgaria':'https://flagcdn.com/w160/bg.webp',
+  'albania':'https://flagcdn.com/w160/al.webp','latvia':'https://flagcdn.com/w160/lv.webp',
+  'lithuania':'https://flagcdn.com/w160/lt.webp','estonia':'https://flagcdn.com/w160/ee.webp',
+  'slovenia':'https://flagcdn.com/w160/si.webp','north macedonia':'https://flagcdn.com/w160/mk.webp',
+  'malta':'https://flagcdn.com/w160/mt.webp','cyprus':'https://flagcdn.com/w160/cy.webp',
+  // Asia & Middle East
+  'japan':'https://flagcdn.com/w160/jp.webp','india':'https://flagcdn.com/w160/in.webp',
+  'china':'https://flagcdn.com/w160/cn.webp','south korea':'https://flagcdn.com/w160/kr.webp',
+  'indonesia':'https://flagcdn.com/w160/id.webp','philippines':'https://flagcdn.com/w160/ph.webp',
+  'thailand':'https://flagcdn.com/w160/th.webp','vietnam':'https://flagcdn.com/w160/vn.webp',
+  'malaysia':'https://flagcdn.com/w160/my.webp','singapore':'https://flagcdn.com/w160/sg.webp',
+  'pakistan':'https://flagcdn.com/w160/pk.webp','bangladesh':'https://flagcdn.com/w160/bd.webp',
+  'sri lanka':'https://flagcdn.com/w160/lk.webp','nepal':'https://flagcdn.com/w160/np.webp',
+  'myanmar':'https://flagcdn.com/w160/mm.webp','cambodia':'https://flagcdn.com/w160/kh.webp',
+  'laos':'https://flagcdn.com/w160/la.webp','mongolia':'https://flagcdn.com/w160/mn.webp',
+  'afghanistan':'https://flagcdn.com/w160/af.webp','iran':'https://flagcdn.com/w160/ir.webp',
+  'iraq':'https://flagcdn.com/w160/iq.webp','saudi arabia':'https://flagcdn.com/w160/sa.webp',
+  'uae':'https://flagcdn.com/w160/ae.webp','qatar':'https://flagcdn.com/w160/qa.webp',
+  'kuwait':'https://flagcdn.com/w160/kw.webp','bahrain':'https://flagcdn.com/w160/bh.webp',
+  'oman':'https://flagcdn.com/w160/om.webp','jordan':'https://flagcdn.com/w160/jo.webp',
+  'lebanon':'https://flagcdn.com/w160/lb.webp','syria':'https://flagcdn.com/w160/sy.webp',
+  'yemen':'https://flagcdn.com/w160/ye.webp','azerbaijan':'https://flagcdn.com/w160/az.webp',
+  'georgia':'https://flagcdn.com/w160/ge.webp','armenia':'https://flagcdn.com/w160/am.webp',
+  'kazakhstan':'https://flagcdn.com/w160/kz.webp','uzbekistan':'https://flagcdn.com/w160/uz.webp',
+  'taiwan':'https://flagcdn.com/w160/tw.webp','hong kong':'https://flagcdn.com/w160/hk.webp',
+  'palestine':'https://flagcdn.com/w160/ps.webp',
+  // Oceania
+  'australia':'https://flagcdn.com/w160/au.webp','new zealand':'https://flagcdn.com/w160/nz.webp',
+  'fiji':'https://flagcdn.com/w160/fj.webp','papua new guinea':'https://flagcdn.com/w160/pg.webp',
+  'samoa':'https://flagcdn.com/w160/ws.webp','tonga':'https://flagcdn.com/w160/to.webp',
+};
+
+function getGlobalConnectFlag(showName) {
+  if (!showName) return null;
+  const lower = showName.toLowerCase();
+  if (!lower.includes('global connect')) return null;
+  for (const [country, url] of Object.entries(COUNTRY_FLAGS)) {
+    if (lower.includes(country)) return url;
+  }
+  return null;
+}
+
+let wavingRAF = null;
+let wavingImg = null;
+
+function waveFlag(canvas, img) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cols = 60, rows = 40;
+  const cellW = W / cols, cellH = H / rows;
+  let t = 0;
+  if (wavingRAF) cancelAnimationFrame(wavingRAF);
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < rows; row++) {
+        const srcX = (col / cols) * img.naturalWidth;
+        const srcY = (row / rows) * img.naturalHeight;
+        const srcW = img.naturalWidth / cols;
+        const srcH = img.naturalHeight / rows;
+
+        const wave = Math.sin((col / cols) * Math.PI * 2.5 + t) * (col / cols) * 10;
+        const dx = col * cellW;
+        const dy = row * cellH + wave;
+
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, dx, dy, cellW + 0.5, cellH + 0.5);
+      }
+    }
+    t += 0.02;
+    wavingRAF = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function updateGlobalConnectFlag(showName) {
+  const flagUrl = getGlobalConnectFlag(showName);
+  const onAirFlag = document.getElementById('gcFlagOnAir');
+  const canvas = document.getElementById('gcFlagCanvas');
+  if (!onAirFlag || !canvas) return;
+
+  if (flagUrl) {
+    if (wavingRAF) cancelAnimationFrame(wavingRAF);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      const parent = onAirFlag;
+      canvas.width = parent.offsetWidth || 160;
+      canvas.height = parent.offsetHeight || 120;
+      waveFlag(canvas, img);
+    };
+    img.onerror = function() {
+      onAirFlag.style.backgroundImage = 'url('+flagUrl+')';
+    };
+    img.src = flagUrl;
+    onAirFlag.classList.add('visible');
+  } else {
+    if (wavingRAF) { cancelAnimationFrame(wavingRAF); wavingRAF = null; }
+    onAirFlag.classList.remove('visible');
+    onAirFlag.style.backgroundImage = '';
+  }
+}
+
+// ── PLAY ──
+function togglePlay() {
+  if (!playing) {
+    audio = new Audio(streamUrl);
+    audio.setAttribute('playsinline', '');
+    audio.preload = 'none';
+    audio.volume = document.getElementById('volSlider').value / 100;
+    audio.play().then(() => {
+      playing = true;
+      document.getElementById('playBtn').innerHTML = '';
+      document.getElementById('playBtn').classList.add('playing');
+      document.getElementById('statusMsg').textContent = '— live now';
+      document.getElementById('statusMsg').classList.add('live');
+      startVisualizer();
+      updateMediaSession(document.getElementById('trackTitle').textContent, document.getElementById('trackArtist').textContent, null);
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    }).catch(() => {
+      document.getElementById('statusMsg').textContent = '— could not connect';
+    });
+  } else {
+    audio.pause(); audio = null; playing = false;
+    document.getElementById('playBtn').innerHTML = '';
+    document.getElementById('playBtn').classList.remove('playing');
+    document.getElementById('statusMsg').textContent = '— paused';
+    document.getElementById('statusMsg').classList.remove('live');
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    stopVisualizer();
+  }
+}
+
+function setVol(v) { if (audio) audio.volume = v / 100; }
+
+// ── NAV ──
+function show(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  const sec = document.getElementById(id);
+  sec.classList.add('active');
+  sec.querySelectorAll('.now-playing-card,.on-air-card,.artist-card,.tz-card,.dj-block,.history-item,.show-row,.day-label,.tz-row,#vizCanvas,.viz-controls,.about-title,.about-body,.about-shows,.about-footer').forEach(el2 => {
+    el2.style.animation = 'none';
+    el2.offsetHeight;
+    el2.style.animation = '';
+  });
+  el.classList.add('active');
+}
+
+// ── HELPERS ──
+function timeAgo(u) {
+  const d = Math.floor(Date.now()/1000) - u;
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60) + ' min ago';
+  if (d < 86400) return Math.floor(d/3600) + ' hr ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+
+function getBestImage(imgs) {
+  for (const s of ['extralarge','large','medium','small']) {
+    const i = imgs.find(x => x.size === s);
+    if (i && i['#text']) return i['#text'];
+  }
+  return null;
+}
+
+function updateBg(url) {
+  document.getElementById('bgBlur').style.backgroundImage = url ? 'url('+url+')' : '';
+}
+
+// ── LAST.FM ──
+async function fetchNowPlaying() {
+  try {
+    const res = await fetch('https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user='+LASTFM_USER+'&api_key='+LASTFM_KEY+'&format=json&limit=10');
+    const data = await res.json();
+    const tracks = data.recenttracks.track;
+    if (!tracks || !tracks.length) return;
+
+    const current = tracks[0];
+    const isLive = current['@attr'] && current['@attr']['nowplaying'] === 'true';
+    const name = current.name, artist = current.artist['#text'], album = current.album['#text'];
+    lastfmTrackUrl = current.url || ('https://www.last.fm/music/'+encodeURIComponent(artist)+'/_/'+encodeURIComponent(name));
+    const key = name + artist;
+
+    if (key !== lastTrack) {
+      lastTrack = key;
+      const img = getBestImage(current.image);
+      const titleEl = document.getElementById('trackTitle');
+      const artistEl = document.getElementById('trackArtist');
+      const albumEl = document.getElementById('trackAlbum');
+      const artEl = document.getElementById('albumArt');
+
+      titleEl.classList.add('fading'); artistEl.classList.add('fading'); artEl.classList.add('fading');
+
+      setTimeout(() => {
+        titleEl.textContent = name;
+        artistEl.textContent = artist;
+        albumEl.textContent = album || '—';
+        if (img) {
+          artEl.innerHTML = '<img src="'+img+'" alt="">';
+          updateBg(img);
+        } else {
+          artEl.innerHTML = '<div class="art-placeholder">art</div>';
+        }
+        titleEl.classList.remove('fading'); artistEl.classList.remove('fading'); artEl.classList.remove('fading');
+        fetchArtistInfo(artist);
+      }, 600);
+
+      if (playing) updateMediaSession(name, artist, img);
+    }
+
+    // History
+    const hist = tracks.slice(isLive ? 1 : 0, (isLive ? 1 : 0) + 7);
+    const histEl = document.getElementById('historyList');
+    histEl.classList.add('fading');
+    await new Promise(r => setTimeout(r, 280));
+    histEl.innerHTML = hist.map(t => {
+      const img = getBestImage(t.image);
+      const time = t.date ? timeAgo(parseInt(t.date.uts)) : '—';
+      return '<div class="history-item">'
+        + '<div class="hi-art">'+(img ? '<img src="'+img+'" alt="">' : '')+'</div>'
+        + '<div style="flex:1"><div class="hi-title">'+t.name+'</div><div class="hi-artist">'+t.artist['#text']+'</div></div>'
+        + '<div class="hi-time">'+time+'</div>'
+        + '</div>';
+    }).join('');
+    histEl.classList.remove('fading');
+  } catch(e) {}
+}
+
+// ── MEDIA SESSION ──
+function updateMediaSession(title, artist, artUrl) {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: title || 'July Radio', artist: artist || 'Live Stream', album: 'July Radio',
+    artwork: artUrl ? [{ src: artUrl, sizes: '300x300', type: 'image/jpeg' }] : [{ src: 'july-logo.png', sizes: '512x512', type: 'image/png' }]
+  });
+  navigator.mediaSession.setActionHandler('play', () => { if (!playing) togglePlay(); });
+  navigator.mediaSession.setActionHandler('pause', () => { if (playing) togglePlay(); });
+  navigator.mediaSession.setActionHandler('stop', () => { if (playing) togglePlay(); });
+  try { navigator.mediaSession.setActionHandler('seekforward', null); } catch(e) {}
+  try { navigator.mediaSession.setActionHandler('seekbackward', null); } catch(e) {}
+  try { navigator.mediaSession.setActionHandler('nexttrack', null); } catch(e) {}
+  try { navigator.mediaSession.setActionHandler('previoustrack', null); } catch(e) {}
+}
+
+// ── TIMEZONES ──
+const TZ_LIST = [
+  { label: 'Nairobi · EAT',    tz: 'Africa/Nairobi',        current: true },
+  { label: 'Lagos · WAT',      tz: 'Africa/Lagos' },
+  { label: 'Jo\'burg · SAST',  tz: 'Africa/Johannesburg' },
+  { label: 'London · GMT',     tz: 'Europe/London' },
+  { label: 'Lisbon · WET',     tz: 'Europe/Lisbon' },
+  { label: 'Paris · CET',      tz: 'Europe/Paris' },
+  { label: 'Rome · CET',       tz: 'Europe/Rome' },
+  { label: 'Mumbai · IST',     tz: 'Asia/Kolkata' },
+  { label: 'Tokyo · JST',      tz: 'Asia/Tokyo' },
+  { label: 'Sydney · AEST',    tz: 'Australia/Sydney' },
+  { label: 'New York · EST',   tz: 'America/New_York' },
+  { label: 'Los Angeles · PST',tz: 'America/Los_Angeles' },
+  { label: 'São Paulo · BRT',  tz: 'America/Sao_Paulo' },
+];
+
+function getUserTz() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e) { return null; }
+}
+
+function convertShowTime(timeStr, sourceTz) {
+  try {
+    const [h, m] = timeStr.split(':').map(Number);
+    const now = new Date();
+    const srcStr = now.toLocaleDateString('en-CA', { timeZone: sourceTz });
+    const srcDate = new Date(srcStr + 'T' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00');
+    const srcFmt = new Intl.DateTimeFormat('en-GB', { timeZone: sourceTz, hour:'2-digit', minute:'2-digit', hour12: false });
+    const localFmt = new Intl.DateTimeFormat('en-GB', { timeZone: getUserTz()||sourceTz, hour:'2-digit', minute:'2-digit', hour12: false });
+    const srcWall = srcFmt.format(srcDate);
+    const srcH = parseInt(srcWall.split(':')[0]), srcM = parseInt(srcWall.split(':')[1]);
+    const diffH = h - srcH, diffM = m - srcM;
+    const localDate = new Date(srcDate.getTime() - (diffH * 60 + diffM) * 60000);
+    return localDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  } catch(e) { return timeStr; }
+}
+
+function showTimeToLocal(timeStr) {
+  const userTz = getUserTz();
+  if (!userTz) return timeStr;
+  try {
+    const [h, m] = timeStr.split(':').map(Number);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-CA', { timeZone: 'Africa/Nairobi' });
+    const asEAT = new Date(dateStr + 'T' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00+03:00');
+    return asEAT.toLocaleTimeString('en-GB', { timeZone: userTz, hour: '2-digit', minute: '2-digit' });
+  } catch(e) { return timeStr; }
+}
+
+const segValues = {};
+function flipSeg(id, newVal) {
+  if (segValues[id] === newVal) return;
+  const el = document.getElementById(id);
+  if (!el) { segValues[id] = newVal; return; }
+  const inner = el.querySelector('.clock-seg-inner');
+  if (!inner) { segValues[id] = newVal; return; }
+  inner.classList.add('flip-out');
+  setTimeout(() => {
+    inner.textContent = newVal;
+    inner.classList.remove('flip-out');
+    segValues[id] = newVal;
+  }, 180);
+}
+
+function buildClockHTML(id, showSecs) {
+  return '<div class="clock-wrap">'
+    + '<div class="clock-seg" id="'+id+'-h"><span class="clock-seg-inner">--</span></div>'
+    + '<span class="clock-sep">:</span>'
+    + '<div class="clock-seg" id="'+id+'-m"><span class="clock-seg-inner">--</span></div>'
+    + (showSecs
+        ? '<span class="clock-sep">:</span><div class="clock-seg" id="'+id+'-s"><span class="clock-seg-inner">--</span></div>'
+        : '')
+    + '</div>';
+}
+
+let tzListBuilt = false;
+function updateTimezones() {
+  const now = new Date();
+  const localTz = getUserTz();
+  const pad = n => String(n).padStart(2,'0');
+
+  if (!tzListBuilt) {
+    document.getElementById('tzList').innerHTML = TZ_LIST.map((t, i) => {
+      const isLocal = localTz && t.tz === localTz;
+      const cls = 'tz-row' + (t.current ? ' current' : '') + (isLocal ? ' local-tz' : '');
+      const showSecs = isLocal;
+      return '<div class="'+cls+'">'
+        + '<span class="tz-name">'+t.label+(isLocal ? ' · you' : '')+'</span>'
+        + buildClockHTML('tz-'+i, showSecs)
+        + '</div>';
+    }).join('');
+    tzListBuilt = true;
+  }
+
+  TZ_LIST.forEach((t, i) => {
+    const parts = now.toLocaleTimeString('en-GB', { timeZone: t.tz, hour:'2-digit', minute:'2-digit', second:'2-digit' }).split(':');
+    const isLocal = localTz && t.tz === localTz;
+    flipSeg('tz-'+i+'-h', parts[0]);
+    flipSeg('tz-'+i+'-m', parts[1]);
+    if (isLocal) flipSeg('tz-'+i+'-s', parts[2]);
+  });
+}
+
+updateTimezones();
+setInterval(updateTimezones, 1000);
+
+// ── SCHEDULE ──
+let schedule = {};
+const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+async function fetchSchedule() {
+  try {
+    const hosts = ['c','fziwe','fiscia'];
+    const allSlots = [];
+    for (const host of hosts) {
+      const res = await fetch(WORKER+'/schedule?host='+host);
+      const data = await res.json();
+      if (data.slots && data.slots.length) {
+        data.slots.forEach(slot => {
+          const sp = (slot.start||'00:00').split(':');
+          const ep = (slot.end||'02:00').split(':');
+          let endMins = parseInt(ep[0])*60 + parseInt(ep[1]||0);
+          if (endMins === 0) endMins = 1440;
+          allSlots.push({
+            name: slot.name, host: slot.host||host,
+            description: slot.description||'',
+            startMins: parseInt(sp[0])*60 + parseInt(sp[1]||0),
+            endMins, startStr: slot.start||'00:00',
+            endStr: slot.end||'02:00',
+            day: parseInt(slot.day),
+            tag: slot.name ? slot.name.toUpperCase() : '—'
+          });
+        });
+      }
+    }
+    for (let d = 0; d < 7; d++) {
+      schedule[d] = allSlots.filter(s => parseInt(s.day)===d).sort((a,b)=>a.startMins-b.startMins);
+    }
+    renderSchedule();
+    updateMiniWidget();
+  } catch(e) {}
+}
+
+function renderSchedule() {
+  const now = new Date();
+  const today = now.getDay();
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  const grid = document.getElementById('scheduleGrid');
+  if (!grid) return;
+  if (!schedule[today] || schedule[today].length === 0) {
+    grid.innerHTML = '<div style="font-family:Verdana,sans-serif;font-size:11px;color:var(--dim);padding:20px 0;letter-spacing:0.1em;">No shows scheduled yet.</div>';
+    return;
+  }
+  let html = '';
+  [0,1].forEach(offset => {
+    const dayIdx = (today+offset)%7;
+    const isToday = offset===0;
+    html += '<div class="day-label" style="'+(offset>0?'margin-top:24px;':'')+'">'+
+      (isToday ? 'Today · ' : 'Tomorrow · ')+dayNames[dayIdx]+'</div>';
+    schedule[dayIdx].forEach(show => {
+      const isLive = isToday && nowMins>=show.startMins && nowMins<show.endMins;
+      const isPast = isToday && nowMins>=show.endMins;
+      html += '<div class="'+(isLive?'show-row live-row':'show-row')+'" style="'+(isPast?'opacity:0.25;':'')+'">'+
+        (function() {
+          const localStart = showTimeToLocal(show.startStr);
+          const localEnd = showTimeToLocal(show.endStr);
+          const sameAsEAT = localStart === show.startStr && localEnd === show.endStr;
+          return '<div class="show-time">'+localStart+' – '+localEnd
+            + (sameAsEAT ? '' : '<div style="font-size:9px;color:var(--dim);margin-top:2px;">'+show.startStr+' – '+show.endStr+' EAT</div>')
+            + '</div>';
+        })() +
+        '<div style="display:flex;align-items:center;">'+
+          (isLive?'<div class="live-dot-inline"></div>':'')+
+          '<div><div class="show-name">'+show.name+'</div>'+
+          '<div class="show-dj">'+(show.host||'C.')+'</div>'+
+          (show.description?'<div class="show-desc">'+show.description+'</div>':'')+
+          '</div></div>'+
+        (function(){ const f=getGlobalConnectFlag(show.name); return f ? '<img src="'+f+'" style="height:16px;filter:grayscale(1) contrast(1.3);opacity:0.8;margin-right:4px;vertical-align:middle;" alt="">' : ''; })() +
+        '<div class="show-tag'+(isLive?' on-air':'')+'">'+(isLive?'ON AIR':show.tag)+'</div>'+
+        '</div>';
+    });
+  });
+  grid.innerHTML = html;
+}
+
+function updateMiniWidget() {
+  const now = new Date();
+  const nowMins = now.getHours()*60+now.getMinutes();
+  const todayShows = schedule[now.getDay()]||[];
+  const cur = todayShows.find(s => nowMins>=s.startMins && nowMins<s.endMins);
+  const el = document.getElementById('miniShowName');
+  const tel = document.getElementById('miniShowTime');
+  if (el) el.textContent = cur ? cur.name : '—';
+  if (tel) tel.textContent = cur ? showTimeToLocal(cur.startStr)+' – '+showTimeToLocal(cur.endStr) : '';
+  updateGlobalConnectFlag(cur ? cur.name : '');
+}
+
+fetchSchedule();
+setInterval(fetchSchedule, 30000);
+setInterval(updateMiniWidget, 30000);
+
+// BroadcastChannel
+var bc = new BroadcastChannel('july');
+bc.onmessage = function(e) {
+  if (e.data && e.data.type === 'scheduleUpdate') fetchSchedule();
+};
+
+// ── DJS ──
+async function loadHosts() {
+  try {
+    const res = await fetch(WORKER+'/profiles');
+    const data = await res.json();
+    const grid = document.getElementById('djsGrid');
+    if (!grid) return;
+
+    // Grayscale accent set — tonal distinction without color
+    const defaults = {
+      c:      { name:'C.',     shows:'Playlist · Open Air · di:scovery · Shuffle+ · in:focus', tagline:'taste over everything.', photo:'julyhost1.png', accent:'#ffffff' },
+      fziwe:  { name:'Fziwe',  shows:'Coming soon', tagline:'—', photo:'diogo.gif', accent:'#c0c0c0' },
+      fiscia: { name:'Fiscia', shows:'Coming soon', tagline:'—', photo:'fiscia.jpeg', accent:'#808080' },
+    };
+
+    const hosts = ['c','fziwe','fiscia'];
+    grid.innerHTML = hosts.map(id => {
+      const kv = data.profiles && data.profiles[id];
+      const def = defaults[id];
+      const name    = (kv&&kv.name)    || def.name;
+      const shows   = (kv&&kv.shows)   || def.shows;
+      const tagline = (kv&&kv.tagline) || def.tagline;
+      const bio     = (kv&&kv.bio)     || '';
+      const photo   = (kv&&kv.photo)   || def.photo;
+      const ig      = (kv&&kv.instagram) || '';
+      const sc      = (kv&&kv.soundcloud) || '';
+      const accent  = def.accent;
+
+      const imgHtml = photo
+        ? '<img src="'+photo+'" alt="'+name+'">'
+        : '<div class="dj-photo-placeholder">'+name[0]+'</div>';
+
+      const socials = [
+        ig ? '<a href="https://instagram.com/'+ig.replace('@','')+'" target="_blank">Instagram</a>' : '',
+        sc ? '<a href="'+sc+'" target="_blank">SoundCloud</a>' : '',
+      ].filter(Boolean).join('');
+
+      return '<div class="dj-block">'
+        + '<div class="dj-grid">'
+          + '<div class="dj-photo" style="border-color:'+accent+';">'+imgHtml+'</div>'
+          + '<div class="dj-info">'
+            + '<div>'
+              + '<div class="dj-name" style="color:'+accent+'">'+name+'</div>'
+              + '<div class="dj-shows">'+shows+'</div>'
+              + (tagline ? '<div style="font-family:Verdana,sans-serif;font-size:11px;color:var(--dim);font-style:italic;margin-bottom:14px;">'+tagline+'</div>' : '')
+              + (bio ? '<div class="dj-bio">'+bio+'</div>' : '')
+            + '</div>'
+            + (socials ? '<div class="dj-socials">'+socials+'</div>' : '')
+          + '</div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+  } catch(e) {}
+}
+
+loadHosts();
+setInterval(loadHosts, 60000);
+
+// ── ALERT ──
+let lastAlertId = null;
+async function checkAlert() {
+  try {
+    const res = await fetch(WORKER+'/alert');
+    const data = await res.json();
+    if (data.alert && data.alert.text && data.alert.id !== lastAlertId) {
+      lastAlertId = data.alert.id;
+      document.getElementById('alertMsg').textContent = data.alert.text;
+      const b = document.getElementById('alertBanner');
+      b.classList.add('visible');
+      setTimeout(() => b.classList.remove('visible'), 8000);
+    }
+  } catch(e) {}
+}
+checkAlert();
+setInterval(checkAlert, 30000);
+
+// ── VISUALIZER ──
+let vizMode = 'bars', animFrame, isVizRunning = false;
+const NUM_BARS = 64;
+let fakeData = [], targets = [];
+for (let i = 0; i < NUM_BARS; i++) { fakeData.push(Math.random()*0.3); targets.push(Math.random()); }
+
+function setVizMode(m) {
+  vizMode = m;
+  document.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-'+m).classList.add('active');
+}
+function startVisualizer() { if (!isVizRunning) { isVizRunning = true; drawViz(); } }
+function stopVisualizer() {
+  isVizRunning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  const c = document.getElementById('vizCanvas');
+  if (c) { const ctx = c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,c.width,c.height); }
+}
+function drawViz() {
+  if (!isVizRunning) return;
+  const canvas = document.getElementById('vizCanvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+  const ctx = canvas.getContext('2d');
+  for (let i = 0; i < NUM_BARS; i++) {
+    if (Math.random()<0.05) targets[i] = Math.random()*0.9+0.05;
+    fakeData[i] += (targets[i]-fakeData[i])*0.08;
+  }
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  if (vizMode==='bars') {
+    const bw = Math.floor(canvas.width/NUM_BARS)-1;
+    for (let i = 0; i < NUM_BARS; i++) {
+      const v = fakeData[i], h = v*canvas.height*0.9;
+      ctx.fillStyle = 'rgba(255,255,255,'+(0.35+v*0.65)+')';
+      ctx.fillRect(i*(bw+1), canvas.height-h, bw, h);
+    }
+  } else if (vizMode==='xp') {
+    const bw = Math.floor(canvas.width/NUM_BARS)-1;
+    for (let i = 0; i < NUM_BARS; i++) {
+      const v=fakeData[i],h=v*canvas.height*0.85;
+      const shade = v>0.5 ? 255 : Math.floor(v*2*180);
+      ctx.fillStyle='rgb('+shade+','+shade+','+shade+')'; ctx.globalAlpha=1;
+      ctx.fillRect(i*(bw+1),canvas.height/2-h,bw,h);
+      ctx.globalAlpha=0.25; ctx.fillRect(i*(bw+1),canvas.height/2,bw,h*0.4);
+      ctx.globalAlpha=1; ctx.fillStyle='#fff';
+      ctx.fillRect(i*(bw+1),canvas.height/2-h-3,bw,2);
+    }
+  } else {
+    ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.beginPath();
+    const sw=canvas.width/NUM_BARS;
+    for (let i = 0; i < NUM_BARS; i++) {
+      const y=canvas.height/2+(fakeData[i]-0.5)*canvas.height*0.8;
+      i===0?ctx.moveTo(0,y):ctx.lineTo(i*sw,y);
+    }
+    ctx.stroke();
+    ctx.lineWidth=1; ctx.strokeStyle='#333'; ctx.beginPath();
+    ctx.moveTo(0,canvas.height/2); ctx.lineTo(canvas.width,canvas.height/2); ctx.stroke();
+  }
+  animFrame = requestAnimationFrame(drawViz);
+}
+
+// ── ARTIST CARD ──
+const LASTFM_API = 'https://ws.audioscrobbler.com/2.0/';
+let lastArtistFetched = '';
+
+async function fetchArtistInfo(artistName) {
+  if (!artistName || artistName === '—' || artistName === lastArtistFetched) return;
+  lastArtistFetched = artistName;
+
+  const card = document.getElementById('artistCard');
+  const nameEl = document.getElementById('artistCardName');
+  const tagsEl = document.getElementById('artistCardTags');
+  const bioEl = document.getElementById('artistCardBio');
+  const listenersEl = document.getElementById('artistCardListeners');
+  const imgWrap = document.getElementById('artistCardImg');
+
+  if (!card) return;
+
+  const wasVisible = card.style.display !== 'none';
+  if (wasVisible) {
+    card.classList.add('fading');
+    await new Promise(r => setTimeout(r, 380));
+  }
+
+  nameEl.textContent = artistName;
+  tagsEl.innerHTML = '';
+  bioEl.textContent = '';
+  listenersEl.textContent = '';
+  imgWrap.innerHTML = '<div class="artist-card-img-placeholder">loading...</div>';
+  card.style.display = 'block';
+  card.classList.remove('fading');
+
+  try {
+    const res = await fetch(LASTFM_API+'?method=artist.getinfo&artist='+encodeURIComponent(artistName)+'&api_key='+LASTFM_KEY+'&format=json');
+    const data = await res.json();
+    const artist = data && data.artist;
+    if (artist) {
+      if (artist.tags && artist.tags.tag) {
+        tagsEl.innerHTML = artist.tags.tag.slice(0,4).map(t =>
+          '<span class="artist-card-tag">'+t.name+'</span>'
+        ).join('');
+      }
+      if (artist.bio && artist.bio.summary) {
+        const bio = artist.bio.summary.replace(/<a[^>]*>.*?<\/a>/gi,'').replace(/<[^>]+>/g,'').trim();
+        bioEl.textContent = bio.substring(0, 280)+(bio.length>280?'…':'');
+      }
+      if (artist.stats && artist.stats.listeners) {
+        listenersEl.innerHTML = '<span>'+parseInt(artist.stats.listeners).toLocaleString()+'</span> monthly listeners';
+      }
+    }
+  } catch(e) {}
+
+  try {
+    const imgRes = await fetch('https://julyimages.sxrsq1.workers.dev/?artist='+encodeURIComponent(artistName));
+    const imgData = await imgRes.json();
+    if (imgData.image) {
+      imgWrap.innerHTML = '<img class="artist-card-img" src="'+imgData.image+'" alt="'+artistName+'">';
+    } else {
+      imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+artistName+'</div>';
+    }
+  } catch(e) {
+    imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+artistName+'</div>';
+  }
+}
+
+// ── TICKER ──
+var SITE_TICKER_MESSAGES = [
+  'Welcome to July Radio',
+  'Live 24/7',
+  'New music every morning on di:scovery',
+  'Five artists a day on in:focus',
+  'Full website coming soon at julyfm.com'
+];
+
+(function() {
+  var inner = document.getElementById('siteTickerInner');
+  if (!inner) return;
+  var sep = '     ·     ';
+  var text = SITE_TICKER_MESSAGES.join(sep);
+  inner.innerHTML = '<span class="site-ticker-msg">'+text+sep+'</span><span class="site-ticker-msg">'+text+sep+'</span>';
+  inner.style.transform = 'translateY(-50%) translateX(0px)';
+  var x=0, sw=0;
+  requestAnimationFrame(function() {
+    var spans = inner.querySelectorAll('.site-ticker-msg');
+    sw = spans[0] ? spans[0].offsetWidth : 0;
+    (function loop() {
+      x -= 0.5; if (x<=-sw) x+=sw;
+      inner.style.transform = 'translateY(-50%) translateX('+x+'px)';
+      requestAnimationFrame(loop);
+    })();
+  });
+})();
+
+// ── START ──
+fetchNowPlaying();
+setInterval(fetchNowPlaying, 15000);
+</script>
+</body>
+</html>
