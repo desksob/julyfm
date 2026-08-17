@@ -184,29 +184,36 @@ nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
 .listen-stack.free-drag > .win-card{ display:flex; flex-direction:column; overflow:hidden; transition:height .28s cubic-bezier(.4,0,.2,1); }
 
 .now-playing-card .win-body{ padding:10px; }
-.np-footer{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px; margin-top:14px; flex-wrap:wrap;
+.now-playing-card .np-row, .now-playing-card .status-line{ padding-left:20px; padding-right:20px; }
+.np-divider{ height:1px; background:var(--hair); margin:16px 20px; }
+.np-controls{ display:flex; align-items:center; gap:16px; padding:0 20px; flex-wrap:wrap; }
+.play-live-btn{
+  display:flex; align-items:center; gap:8px; background:var(--ink); color:var(--bg);
+  border:none; padding:11px 20px; font-family:inherit; font-size:11px;
+  letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; flex-shrink:0;
 }
+.play-live-btn:hover{ opacity:0.85; }
+.play-live-btn.playing .play-live-icon{ content:''; }
+.play-live-icon{ font-size:10px; }
 .add-to-services{ position:relative; flex-shrink:0; }
-.add-streaming-btn{
-  font-size:9px; letter-spacing:0.08em; text-transform:uppercase;
-  color:var(--dim); background:none; border:1px solid var(--border);
-  padding:5px 10px; cursor:pointer; white-space:nowrap;
+.stream-url-btn{
+  font-size:10px; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--ink); background:none; border:1px solid var(--border);
+  padding:10px 16px; cursor:pointer; white-space:nowrap; font-family:inherit;
 }
-.add-streaming-btn:hover{ color:var(--ink); border-color:var(--ink); }
+.stream-url-btn:hover{ border-color:var(--ink); }
 .streaming-menu{
   display:none; position:absolute; bottom:calc(100% + 6px); right:0;
   background:var(--bg); border:1px solid var(--border); padding:8px; z-index:10; min-width:140px;
 }
+.now-playing-card .status-line{ margin-top:16px; padding-bottom:16px; }
 .listen-stack.free-drag > .win-card .win-titlebar{ flex-shrink:0; }
 
 .resize-handle{
-  display:none; position:absolute; bottom:0; right:0; width:22px; height:22px;
+  display:block; position:absolute; bottom:0; right:0; width:22px; height:22px;
   cursor:nwse-resize; z-index:15; touch-action:none;
   background:linear-gradient(135deg, transparent 0%, transparent 50%, var(--border) 50%, var(--border) 60%, transparent 60%, transparent 70%, var(--border) 70%, var(--border) 80%, transparent 80%);
 }
-.listen-stack.free-drag .resize-handle{ display:block; }
 .win-card.minimized .resize-handle{ display:none !important; }
 
 .win-dock{
@@ -258,9 +265,8 @@ nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
   padding:6px 14px; margin-bottom:16px; display:block;
 }
 .now-playing-card > .card-label{ margin:0 0 16px; }
-.now-playing-card .np-row, .now-playing-card .status-line{ padding-left:20px; padding-right:20px; }
 
-.np-row{ display:grid; grid-template-columns:minmax(56px,25%) 1fr auto auto; gap:16px; align-items:center; }
+.np-row{ display:grid; grid-template-columns:minmax(56px,25%) 1fr; gap:16px; align-items:center; }
 
 .album-art{
   width:100%; aspect-ratio:1/1; border:1px solid var(--border);
@@ -270,24 +276,14 @@ nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
 .art-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--dim); letter-spacing:0.1em; text-transform:uppercase; }
 .album-art.fading, .track-title.fading, .track-artist.fading, .artist-card.fading{ opacity:0.15; }
 
-.track-title{ font-size:22px; color:var(--ink); text-transform:uppercase; line-height:1.1; transition:opacity .3s; }
-.track-artist{ font-size:12px; color:var(--muted); margin-top:6px; letter-spacing:0.04em; text-transform:uppercase; transition:opacity .3s; }
-.track-album{ font-size:10px; color:var(--dim); margin-top:4px; letter-spacing:0.04em; }
+.track-title{ font-size:26px; color:var(--ink); text-transform:uppercase; line-height:1.1; transition:opacity .3s; font-weight:600; }
+.track-artist{ font-size:13px; color:var(--muted); margin-top:8px; letter-spacing:0.04em; text-transform:uppercase; transition:opacity .3s; }
+.track-album{ font-size:11px; color:var(--dim); margin-top:4px; letter-spacing:0.04em; }
 
-.vol-wrap{ display:flex; align-items:center; width:100%; min-width:0; }
+.vol-wrap{ display:flex; align-items:center; gap:8px; flex:1; min-width:80px; }
+.vol-label{ font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--dim); flex-shrink:0; }
 input[type=range]{ -webkit-appearance:none; flex:1; height:1px; background:var(--border); outline:none; }
 input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; height:11px; border-radius:50%; background:var(--bg); cursor:pointer; border:1px solid var(--accent); }
-
-.play-btn{
-  width:0; height:0; border:none; background:none;
-  border-top:10px solid transparent; border-bottom:10px solid transparent;
-  border-left:16px solid var(--accent); cursor:pointer; flex-shrink:0; padding:0;
-}
-.play-btn.playing{
-  width:16px; height:16px; border:none; background:none;
-  border-left:5px solid var(--accent); border-right:5px solid var(--accent);
-  box-sizing:border-box; border-top:0; border-bottom:0;
-}
 
 .status-line{ font-size:9px; color:var(--dim); letter-spacing:0.14em; text-transform:uppercase; margin-top:12px; }
 .streaming-menu-link{
@@ -318,25 +314,98 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 }
 .chat-join-row input:focus, .chat-input-row input:focus{ outline:none; border-color:var(--accent); }
 
-/* ═══ TV MODE (fullscreen) ═══ */
+/* ═══ TV MODE (fullscreen dashboard) ═══ */
 .tv-mode-overlay{
   display:none; position:fixed; inset:0; z-index:99999;
-  background:#000; color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+  background:#0a0a0a; color:#fff; flex-direction:column;
   font-family:'IBM Plex Mono','Courier New',monospace;
+  padding:32px 40px; box-sizing:border-box; overflow:auto;
 }
 .tv-mode-overlay.active{ display:flex; }
-.tv-mode-video-slot{ width:min(80vw, 1100px); aspect-ratio:16/9; background:#111; border:1px solid #333; }
-.tv-mode-video-slot video{ width:100%; height:100%; object-fit:contain; background:#000; }
-.tv-mode-info{ text-align:center; }
-.tv-mode-track{ font-size:22px; letter-spacing:0.04em; text-transform:uppercase; }
-.tv-mode-artist{ font-size:14px; color:#aaa; margin-top:6px; letter-spacing:0.08em; text-transform:uppercase; }
-.tv-mode-exit{
-  position:absolute; top:24px; right:24px; background:none; border:1px solid #555;
-  color:#fff; font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
-  padding:8px 16px; cursor:pointer;
+
+.tvm-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding-bottom:20px; border-bottom:1px solid #262626; margin-bottom:24px; flex-shrink:0;
 }
-.tv-mode-exit:hover{ border-color:#fff; }
-.tv-mode-clock{ position:absolute; top:24px; left:24px; font-size:13px; letter-spacing:0.1em; color:#888; }
+.tvm-logo{ height:36px; width:48px; background:#fff; -webkit-mask-size:contain; }
+.tvm-logo img{ height:36px; filter:none; }
+.tvm-clock{ font-size:14px; letter-spacing:0.1em; color:#888; }
+.tvm-exit{
+  background:none; border:1px solid #444; color:#fff;
+  font-size:10px; letter-spacing:0.08em; text-transform:uppercase;
+  padding:9px 18px; cursor:pointer; font-family:inherit;
+}
+.tvm-exit:hover{ border-color:#fff; }
+
+.tvm-grid{
+  display:grid;
+  grid-template-columns:minmax(260px, 1fr) 2fr;
+  grid-template-rows:130px 100px 160px 1fr;
+  grid-template-areas:
+    "now-playing tv"
+    "on-air tv"
+    "artist-pic history"
+    "artist-info history";
+  gap:1px; background:#262626; border:1px solid #262626; flex:1; min-height:0;
+}
+.tvm-panel{ background:#0a0a0a; padding:20px; overflow:auto; }
+.tvm-panel-label{
+  font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#888;
+  margin-bottom:14px; display:flex; align-items:center;
+}
+.tvm-now-playing{ grid-area:now-playing; }
+.tvm-on-air{ grid-area:on-air; }
+.tvm-artist-pic{ grid-area:artist-pic; padding:0; overflow:hidden; }
+.tvm-artist-info{ grid-area:artist-info; }
+.tvm-tv{ grid-area:tv; display:flex; flex-direction:column; }
+.tvm-tv .tvm-video-wrap{ flex:1; display:flex; align-items:center; justify-content:center; min-height:0; }
+.tvm-history{ grid-area:history; }
+
+.tvm-np-row{ display:flex; gap:16px; align-items:center; }
+.tvm-art{ width:80px; height:80px; background:#161616; border:1px solid #333; flex-shrink:0; background-size:cover; background-position:center; }
+.tvm-np-info{ flex:1; min-width:0; }
+.tvm-track{ font-size:19px; letter-spacing:0.02em; text-transform:uppercase; line-height:1.15; }
+.tvm-artist{ font-size:12px; color:#ccc; margin-top:5px; letter-spacing:0.02em; }
+.tvm-album{ font-size:10px; color:#777; margin-top:3px; }
+.tvm-play-btn{
+  width:44px; height:44px; flex-shrink:0; background:#fff; color:#0a0a0a;
+  border:none; font-size:14px; cursor:pointer; font-family:inherit;
+}
+.tvm-play-btn:hover{ opacity:0.85; }
+.tvm-show{ font-size:18px; text-transform:uppercase; }
+.tvm-show-time{ font-size:10px; color:#777; margin-top:6px; }
+
+.tvm-artist-photo{
+  width:100%; height:100%; min-height:140px; background-size:cover; background-position:center top; background-color:#161616;
+}
+.tvm-artist-name{ font-size:16px; text-transform:uppercase; }
+.tvm-artist-tags{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+.tvm-artist-tags span{ font-size:8px; letter-spacing:0.06em; text-transform:uppercase; border:1px solid #333; padding:3px 7px; color:#aaa; }
+.tvm-artist-bio{ font-size:11px; color:#999; line-height:1.5; margin-top:4px; }
+
+.tvm-video-slot{ width:100%; max-height:100%; aspect-ratio:4/3; background:#111; border:1px solid #262626; }
+.tvm-video-slot video{ width:100%; height:100%; object-fit:contain; background:#000; }
+
+.tvm-history-list{ display:flex; flex-direction:column; gap:10px; }
+.tvm-history-row{ display:flex; align-items:center; gap:12px; font-size:13px; }
+.h-art{ width:36px; height:36px; background-color:#161616; background-size:cover; background-position:center; border:1px solid #262626; flex-shrink:0; }
+.tvm-history-row .h-name{ text-transform:none; }
+.tvm-history-row .h-artist{ color:#777; font-size:11px; margin-top:2px; }
+.tvm-history-row .h-time{ color:#555; font-size:11px; flex-shrink:0; }
+
+@media (max-width:900px){
+  .tvm-grid{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "now-playing"
+      "on-air"
+      "tv"
+      "artist-pic"
+      "artist-info"
+      "history";
+  }
+}
+
 .tools-section:last-child{ margin-bottom:0; }
 .scrobble-status{ font-size:11px; color:var(--dim); letter-spacing:0.02em; }
 .scrobble-status a{ color:var(--ink); text-decoration:underline; text-underline-offset:2px; }
@@ -462,10 +531,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   header{ padding:20px 0 16px; }
   header img{ height:44px; }
   nav a{ padding:12px 12px 10px; font-size:9px; }
-  .np-row{ grid-template-columns:64px 1fr auto; gap:10px; }
+  .np-row{ grid-template-columns:64px 1fr; gap:12px; }
   .album-art{ width:64px; height:64px; margin:0; }
-  .track-title{ font-size:17px; }
-  .np-footer{ flex-direction:column; align-items:flex-start; gap:8px; }
+  .track-title{ font-size:18px; }
+  .np-controls{ flex-direction:column; align-items:stretch; gap:10px; padding:0 20px; }
+  .play-live-btn{ justify-content:center; }
   .streaming-menu{ right:auto; left:0; }
   .dj-grid{ grid-template-columns:1fr; }
   .dj-photo{ height:160px; border-right:none; border-bottom:1px solid var(--border); }
@@ -478,6 +548,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   .win-dock{ display:none; }
   .reset-layout-btn{ display:none; }
   .win-hint{ display:none !important; }
+
+  /* Guaranteed breathing room between stacked windows, independent of flex-gap support */
+  .listen-stack{ gap:0; }
+  .win-card{ margin-bottom:28px !important; }
+  .win-card:last-child{ margin-bottom:0 !important; }
 }
 </style>
 
@@ -492,12 +567,49 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 <div id="bgDark"></div>
 
 <div id="tvModeOverlay" class="tv-mode-overlay">
-  <div class="tv-mode-clock" id="tvModeClock"></div>
-  <button class="tv-mode-exit" onclick="exitTvMode()">Exit TV Mode</button>
-  <div class="tv-mode-video-slot" id="tvModeVideoSlot"></div>
-  <div class="tv-mode-info">
-    <div class="tv-mode-track" id="tvModeTrack">July Radio</div>
-    <div class="tv-mode-artist" id="tvModeArtist">JULY MUSIC TELEVISION</div>
+  <div class="tvm-header">
+    <div class="tvm-logo" id="tvmLogo"></div>
+    <div class="tvm-clock" id="tvModeClock"></div>
+    <button class="tvm-exit" onclick="exitTvMode()">Exit TV Mode</button>
+  </div>
+  <div class="tvm-grid">
+    <div class="tvm-panel tvm-now-playing">
+      <div class="tvm-panel-label">Now Playing</div>
+      <div class="tvm-np-row">
+        <div class="tvm-art" id="tvmAlbumArt"></div>
+        <div class="tvm-np-info">
+          <div class="tvm-track" id="tvmTrackTitle">July Radio</div>
+          <div class="tvm-artist" id="tvmTrackArtist">-</div>
+          <div class="tvm-album" id="tvmTrackAlbum"></div>
+        </div>
+        <button class="tvm-play-btn" id="tvmPlayBtn" onclick="togglePlay()" title="Play">▶</button>
+      </div>
+    </div>
+    <div class="tvm-panel tvm-on-air">
+      <div class="tvm-panel-label"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:8px;"></span>On Air Now</div>
+      <div class="tvm-show" id="tvmShowName">-</div>
+      <div class="tvm-show-time" id="tvmShowTime"></div>
+    </div>
+    <div class="tvm-panel tvm-artist-pic">
+      <div class="tvm-panel-label">Artist Pic</div>
+      <div class="tvm-artist-photo" id="tvmArtistPhoto"></div>
+    </div>
+    <div class="tvm-panel tvm-artist-info">
+      <div class="tvm-panel-label">Artist Info</div>
+      <div class="tvm-artist-name" id="tvmArtistName">-</div>
+      <div class="tvm-artist-tags" id="tvmArtistTags"></div>
+      <div class="tvm-artist-bio" id="tvmArtistBio"></div>
+    </div>
+    <div class="tvm-panel tvm-tv">
+      <div class="tvm-panel-label">July Music Television</div>
+      <div class="tvm-video-wrap">
+        <div class="tvm-video-slot" id="tvModeVideoSlot"></div>
+      </div>
+    </div>
+    <div class="tvm-panel tvm-history">
+      <div class="tvm-panel-label">Recently Played</div>
+      <div class="tvm-history-list" id="tvmHistoryList"></div>
+    </div>
   </div>
 </div>
 <div id="scanlines"></div>
@@ -580,15 +692,18 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
             <div class="track-artist" id="trackArtist">-</div>
             <div class="track-album" id="trackAlbum">syncing...</div>
           </div>
+        </div>
+        <div class="np-divider"></div>
+        <div class="np-controls">
+          <button class="play-live-btn" id="playBtn" onclick="togglePlay()">
+            <span class="play-live-icon">▶</span> Play Live
+          </button>
           <div class="vol-wrap">
+            <span class="vol-label">Vol</span>
             <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
           </div>
-          <button class="play-btn" id="playBtn" onclick="togglePlay()"></button>
-        </div>
-        <div class="np-footer">
-          <div class="status-line" id="statusMsg">· PRESS PLAY TO TUNE IN</div>
           <div class="add-to-services">
-            <button class="add-streaming-btn" onclick="toggleStreamingMenu(event)">+ Add to streaming</button>
+            <button class="stream-url-btn" onclick="toggleStreamingMenu(event)">Stream URL</button>
             <div class="streaming-menu" id="streamingMenu">
               <a href="#" id="spotifyLink" target="_blank" class="streaming-menu-link">Spotify</a>
               <a href="#" id="appleMusicLink" target="_blank" class="streaming-menu-link">Apple Music</a>
@@ -596,7 +711,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
             </div>
           </div>
         </div>
-        </div>
+        <div class="status-line" id="statusMsg">· PRESS PLAY TO TUNE IN</div>
         </div>
       </div>
 
@@ -783,6 +898,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       </div>
     </div>
   </div>
+</div>
 
 <!-- ALERT -->
 <div class="alert-banner" id="alertBanner">
@@ -793,7 +909,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script>
 // ⚠️ Cloudflare Quick Tunnel: changes every time cloudflared restarts
-const TV_STREAM_URL = 'https://estates-brain-expand-connected.trycloudflare.com/iptv/channel/10.m3u8';
+const TV_STREAM_URL = 'https://acts-automotive-tender-locator.trycloudflare.com/iptv/channel/10.m3u8';
 let tvPlayer = null, tvPlaying = false;
 
 function initTv() {
@@ -1045,6 +1161,7 @@ function updateGlobalConnectFlag(showName) {
 
 // ── PLAY ──
 function togglePlay() {
+  const btn = document.getElementById('playBtn');
   if (!playing) {
     audio = new Audio(streamUrl);
     audio.setAttribute('playsinline', '');
@@ -1052,22 +1169,24 @@ function togglePlay() {
     audio.volume = document.getElementById('volSlider').value / 100;
     audio.play().then(() => {
       playing = true;
-      document.getElementById('playBtn').innerHTML = '';
-      document.getElementById('playBtn').classList.add('playing');
+      btn.innerHTML = '<span class="play-live-icon">■</span> Stop';
+      btn.classList.add('playing');
       document.getElementById('statusMsg').textContent = '· live now';
       document.getElementById('statusMsg').classList.add('live');
       updateMediaSession(document.getElementById('trackTitle').textContent, document.getElementById('trackArtist').textContent, null);
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+      syncTvModeContent();
     }).catch(() => {
       document.getElementById('statusMsg').textContent = '· could not connect';
     });
   } else {
     audio.pause(); audio = null; playing = false;
-    document.getElementById('playBtn').innerHTML = '';
-    document.getElementById('playBtn').classList.remove('playing');
+    btn.innerHTML = '<span class="play-live-icon">▶</span> Play Live';
+    btn.classList.remove('playing');
     document.getElementById('statusMsg').textContent = '· paused';
     document.getElementById('statusMsg').classList.remove('live');
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    syncTvModeContent();
   }
 }
 
@@ -1204,6 +1323,7 @@ async function fetchNowPlaying() {
 
       if (playing) updateMediaSession(name, artist, img);
       scheduleScrobble(artist, name, album);
+      syncTvModeContent();
     }
 
     // History
@@ -1222,6 +1342,7 @@ async function fetchNowPlaying() {
         + '</div>';
     }).join('');
     histEl.classList.remove('fading');
+    syncTvModeContent();
   } catch(e) {}
 }
 
@@ -1444,6 +1565,7 @@ function updateMiniWidget() {
   if (el) el.textContent = cur ? cur.name : '-';
   if (tel) tel.textContent = cur ? showTimeToLocal(cur.startStr)+' – '+showTimeToLocal(cur.endStr) : '';
   updateGlobalConnectFlag(cur ? cur.name : '');
+  syncTvModeContent();
 }
 
 fetchSchedule();
@@ -1568,7 +1690,6 @@ async function fetchArtistInfo(artistName) {
   imgWrap.innerHTML = '<div class="artist-card-img-placeholder">loading...</div>';
   card.style.display = 'block';
   card.classList.remove('fading');
-  if (!wasVisible) positionCardLate('artist');
 
   try {
     const res = await fetch(LASTFM_API+'?method=artist.getinfo&artist='+encodeURIComponent(artistName)+'&api_key='+LASTFM_KEY+'&format=json');
@@ -1601,6 +1722,8 @@ async function fetchArtistInfo(artistName) {
   } catch(e) {
     imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+artistName+'</div>';
   }
+  if (!wasVisible) positionCardLate('artist');
+  syncTvModeContent();
 }
 
 // ── FREE DRAG LAYOUT + WINDOW SYSTEM (Listen page) ──
@@ -1654,6 +1777,24 @@ function initFreeDrag() {
       height: pos.height !== undefined ? pos.height : rect.height
     };
   });
+
+  // Pass 1.5: guarantee minimum spacing between cards stacked in the same
+  // natural column (only for fresh/natural positions, not user-dragged ones) —
+  // doesn't rely on the browser's flex-gap having been captured correctly,
+  // which can go wrong if a card's content was still loading/changing size
+  // at the exact moment it was measured.
+  const MIN_STACK_GAP = 24;
+  const naturalBoxes = boxes.filter(b => saved[b.card.dataset.cardId] === undefined)
+    .sort((a, b) => a.top - b.top);
+  for (let i = 1; i < naturalBoxes.length; i++) {
+    const prev = naturalBoxes[i - 1];
+    const cur = naturalBoxes[i];
+    const sameColumn = Math.abs(cur.left - prev.left) < 40;
+    if (sameColumn) {
+      const minTop = prev.top + prev.height + MIN_STACK_GAP;
+      if (cur.top < minTop) cur.top = minTop;
+    }
+  }
 
   // Pass 2: switch to absolute positioning mode FIRST, then apply coordinates:
   // so left/top are read as absolute placements, not relative offsets.
@@ -1998,7 +2139,19 @@ function dismissHint() {
   });
 })();
 
-window.addEventListener('load', () => requestAnimationFrame(initFreeDrag));
+function startFreeDragWhenReady() {
+  // Wait for the actual webfont to finish loading before measuring anything —
+  // on a fresh visit with no font cache (incognito, first-time visitor), text
+  // renders in a fallback font first and reflows once IBM Plex Mono swaps in.
+  // Measuring before that swap locks in positions based on the wrong sizes,
+  // which is exactly what was causing windows to overlap only for new visitors.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => requestAnimationFrame(initFreeDrag));
+  } else {
+    requestAnimationFrame(initFreeDrag);
+  }
+}
+window.addEventListener('load', startFreeDragWhenReady);
 
 // ── LIVE CHAT (WebSocket via Cloudflare Durable Object) ──
 let chatSocket = null;
@@ -2102,6 +2255,8 @@ function updateChatPresence(count) {
 // ── TV MODE (fullscreen) ──
 let tvModeClockInterval = null;
 
+let tvModeActive = false;
+
 function enterTvMode() {
   const overlay = document.getElementById('tvModeOverlay');
   const slot = document.getElementById('tvModeVideoSlot');
@@ -2110,12 +2265,18 @@ function enterTvMode() {
 
   slot.appendChild(video); // reparenting keeps playback going, no reload
   overlay.classList.add('active');
+  tvModeActive = true;
 
-  const trackEl = document.getElementById('trackTitle');
-  const artistEl = document.getElementById('trackArtist');
-  document.getElementById('tvModeTrack').textContent = trackEl ? trackEl.textContent : 'July Radio';
-  document.getElementById('tvModeArtist').textContent = artistEl ? artistEl.textContent : 'JULY MUSIC TELEVISION';
+  const logo = document.getElementById('tvmLogo');
+  const headerLogo = document.querySelector('header img');
+  if (logo && headerLogo) {
+    logo.innerHTML = '';
+    const img = headerLogo.cloneNode(true);
+    img.style.filter = 'none';
+    logo.appendChild(img);
+  }
 
+  syncTvModeContent();
   updateTvModeClock();
   tvModeClockInterval = setInterval(updateTvModeClock, 1000);
 
@@ -2126,6 +2287,68 @@ function enterTvMode() {
   if (!tvPlaying) toggleTv();
 }
 
+// Called once on entry, and again from the normal render functions whenever
+// they update — so the TV dashboard doesn't go stale while it's left open.
+function syncTvModeContent() {
+  if (!tvModeActive) return;
+
+  const copyText = (fromId, toId) => {
+    const from = document.getElementById(fromId), to = document.getElementById(toId);
+    if (from && to) to.textContent = from.textContent;
+  };
+  copyText('trackTitle', 'tvmTrackTitle');
+  copyText('trackArtist', 'tvmTrackArtist');
+  copyText('trackAlbum', 'tvmTrackAlbum');
+  copyText('miniShowName', 'tvmShowName');
+  copyText('miniShowTime', 'tvmShowTime');
+  copyText('artistCardName', 'tvmArtistName');
+  copyText('artistCardBio', 'tvmArtistBio');
+
+  const art = document.getElementById('albumArt');
+  const tvmArt = document.getElementById('tvmAlbumArt');
+  if (art && tvmArt) {
+    const img = art.querySelector('img');
+    tvmArt.style.backgroundImage = img ? 'url(' + img.src + ')' : 'none';
+  }
+
+  const artistImg = document.getElementById('artistCardImg');
+  const tvmArtistPhoto = document.getElementById('tvmArtistPhoto');
+  if (artistImg && tvmArtistPhoto) {
+    const img = artistImg.querySelector('img');
+    tvmArtistPhoto.style.backgroundImage = img ? 'url(' + img.src + ')' : 'none';
+  }
+
+  const tvmPlayBtn = document.getElementById('tvmPlayBtn');
+  if (tvmPlayBtn) {
+    tvmPlayBtn.textContent = playing ? '■' : '▶';
+    tvmPlayBtn.title = playing ? 'Stop' : 'Play';
+  }
+
+  const tags = document.getElementById('artistCardTags');
+  const tvmTags = document.getElementById('tvmArtistTags');
+  if (tags && tvmTags) tvmTags.innerHTML = tags.innerHTML;
+
+  const hist = document.getElementById('historyList');
+  const tvmHist = document.getElementById('tvmHistoryList');
+  if (hist && tvmHist) {
+    tvmHist.innerHTML = Array.from(hist.querySelectorAll('.history-item')).slice(0, 6).map(item => {
+      const title = item.querySelector('.hi-title');
+      const artist = item.querySelector('.hi-artist');
+      const time = item.querySelector('.hi-time');
+      const artImg = item.querySelector('.hi-art img');
+      const artHtml = artImg
+        ? '<div class="h-art" style="background-image:url(\'' + artImg.src + '\')"></div>'
+        : '<div class="h-art"></div>';
+      return '<div class="tvm-history-row">'
+        + artHtml
+        + '<div style="flex:1;min-width:0;"><div class="h-name">' + (title ? title.textContent : '') + '</div>'
+        + '<div class="h-artist">' + (artist ? artist.textContent : '') + '</div></div>'
+        + '<div class="h-time">' + (time ? time.textContent : '') + '</div>'
+        + '</div>';
+    }).join('');
+  }
+}
+
 function exitTvMode() {
   const overlay = document.getElementById('tvModeOverlay');
   const video = document.getElementById('tvPlayer');
@@ -2133,6 +2356,7 @@ function exitTvMode() {
   if (!overlay) return;
 
   overlay.classList.remove('active');
+  tvModeActive = false;
   if (video && homeSlot) homeSlot.insertBefore(video, homeSlot.firstChild);
 
   if (tvModeClockInterval) { clearInterval(tvModeClockInterval); tvModeClockInterval = null; }
