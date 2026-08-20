@@ -327,8 +327,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   display:flex; align-items:center; justify-content:space-between;
   padding-bottom:20px; border-bottom:1px solid #262626; margin-bottom:24px; flex-shrink:0;
 }
-.tvm-logo{ height:36px; width:48px; background:#fff; -webkit-mask-size:contain; }
-.tvm-logo img{ height:36px; filter:none; }
+.tvm-logo{ height:36px; width:48px; display:flex; align-items:center; }
+.tvm-logo img{ height:36px; width:auto; }
 .tvm-clock{ font-size:14px; letter-spacing:0.1em; color:#888; }
 .tvm-exit{
   background:none; border:1px solid #444; color:#fff;
@@ -338,28 +338,20 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .tvm-exit:hover{ border-color:#fff; }
 
 .tvm-grid{
-  display:grid;
-  grid-template-columns:minmax(260px, 1fr) 2fr;
-  grid-template-rows:130px 100px 160px 1fr;
-  grid-template-areas:
-    "now-playing tv"
-    "on-air tv"
-    "artist-pic history"
-    "artist-info history";
-  gap:1px; background:#262626; border:1px solid #262626; flex:1; min-height:0;
+  display:flex; gap:1px; background:#262626; border:1px solid #262626; flex:1; min-height:0;
 }
+.tvm-col{ display:flex; flex-direction:column; gap:1px; background:#262626; min-width:0; }
+.tvm-col-left{ width:34%; flex-shrink:0; }
+.tvm-col-right{ flex:1; min-width:0; }
 .tvm-panel{ background:#0a0a0a; padding:20px; overflow:auto; }
 .tvm-panel-label{
   font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#888;
   margin-bottom:14px; display:flex; align-items:center;
 }
-.tvm-now-playing{ grid-area:now-playing; }
-.tvm-on-air{ grid-area:on-air; }
-.tvm-artist-pic{ grid-area:artist-pic; padding:0; overflow:hidden; }
-.tvm-artist-info{ grid-area:artist-info; }
-.tvm-tv{ grid-area:tv; display:flex; flex-direction:column; }
-.tvm-tv .tvm-video-wrap{ flex:1; display:flex; align-items:center; justify-content:center; min-height:0; }
-.tvm-history{ grid-area:history; }
+.tvm-now-playing, .tvm-on-air{ flex-shrink:0; }
+.tvm-artist-info{ flex:1; min-height:0; }
+.tvm-tv{ flex-shrink:0; }
+.tvm-history{ flex:1; min-height:0; }
 
 .tvm-np-row{ display:flex; gap:16px; align-items:center; }
 .tvm-art{ width:80px; height:80px; background:#161616; border:1px solid #333; flex-shrink:0; background-size:cover; background-position:center; }
@@ -375,16 +367,23 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .tvm-show{ font-size:18px; text-transform:uppercase; }
 .tvm-show-time{ font-size:10px; color:#777; margin-top:6px; }
 
-.tvm-artist-photo{
-  width:100%; height:100%; min-height:140px; background-size:cover; background-position:center top; background-color:#161616;
+.tvm-artist-header{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.tvm-artist-thumb{
+  width:44px; height:44px; background-size:cover; background-position:center;
+  background-color:#161616; border:1px solid #333; flex-shrink:0;
 }
 .tvm-artist-name{ font-size:16px; text-transform:uppercase; }
 .tvm-artist-tags{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
 .tvm-artist-tags span{ font-size:8px; letter-spacing:0.06em; text-transform:uppercase; border:1px solid #333; padding:3px 7px; color:#aaa; }
 .tvm-artist-bio{ font-size:11px; color:#999; line-height:1.5; margin-top:4px; }
 
-.tvm-video-slot{ width:100%; max-height:100%; aspect-ratio:4/3; background:#111; border:1px solid #262626; }
-.tvm-video-slot video{ width:100%; height:100%; object-fit:contain; background:#000; }
+/* Simple, reliable sizing: width-driven with a sensible cap, instead of
+   fighting height/max-height/aspect-ratio combinations that kept breaking. */
+.tvm-video-slot{
+  width:100%; max-width:640px; aspect-ratio:4/3;
+  background:#111; border:1px solid #262626; margin:0 auto;
+}
+.tvm-video-slot video{ width:100%; height:100%; display:block; object-fit:contain; background:#000; }
 
 .tvm-history-list{ display:flex; flex-direction:column; gap:10px; }
 .tvm-history-row{ display:flex; align-items:center; gap:12px; font-size:13px; }
@@ -394,16 +393,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .tvm-history-row .h-time{ color:#555; font-size:11px; flex-shrink:0; }
 
 @media (max-width:900px){
-  .tvm-grid{
-    grid-template-columns:1fr;
-    grid-template-areas:
-      "now-playing"
-      "on-air"
-      "tv"
-      "artist-pic"
-      "artist-info"
-      "history";
-  }
+  .tvm-grid{ flex-direction:column; }
+  .tvm-col-left{ width:auto; }
 }
 
 .tools-section:last-child{ margin-bottom:0; }
@@ -573,42 +564,43 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
     <button class="tvm-exit" onclick="exitTvMode()">Exit TV Mode</button>
   </div>
   <div class="tvm-grid">
-    <div class="tvm-panel tvm-now-playing">
-      <div class="tvm-panel-label">Now Playing</div>
-      <div class="tvm-np-row">
-        <div class="tvm-art" id="tvmAlbumArt"></div>
-        <div class="tvm-np-info">
-          <div class="tvm-track" id="tvmTrackTitle">July Radio</div>
-          <div class="tvm-artist" id="tvmTrackArtist">-</div>
-          <div class="tvm-album" id="tvmTrackAlbum"></div>
+    <div class="tvm-col tvm-col-left">
+      <div class="tvm-panel tvm-now-playing">
+        <div class="tvm-panel-label">Now Playing</div>
+        <div class="tvm-np-row">
+          <div class="tvm-art" id="tvmAlbumArt"></div>
+          <div class="tvm-np-info">
+            <div class="tvm-track" id="tvmTrackTitle">July Radio</div>
+            <div class="tvm-artist" id="tvmTrackArtist">-</div>
+            <div class="tvm-album" id="tvmTrackAlbum"></div>
+          </div>
+          <button class="tvm-play-btn" id="tvmPlayBtn" onclick="togglePlay()" title="Play">▶</button>
         </div>
-        <button class="tvm-play-btn" id="tvmPlayBtn" onclick="togglePlay()" title="Play">▶</button>
+      </div>
+      <div class="tvm-panel tvm-on-air">
+        <div class="tvm-panel-label"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:8px;"></span>On Air Now</div>
+        <div class="tvm-show" id="tvmShowName">-</div>
+        <div class="tvm-show-time" id="tvmShowTime"></div>
+      </div>
+      <div class="tvm-panel tvm-artist-info">
+        <div class="tvm-panel-label">Artist Info</div>
+        <div class="tvm-artist-header">
+          <div class="tvm-artist-thumb" id="tvmArtistPhoto"></div>
+          <div class="tvm-artist-name" id="tvmArtistName">-</div>
+        </div>
+        <div class="tvm-artist-tags" id="tvmArtistTags"></div>
+        <div class="tvm-artist-bio" id="tvmArtistBio"></div>
       </div>
     </div>
-    <div class="tvm-panel tvm-on-air">
-      <div class="tvm-panel-label"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:8px;"></span>On Air Now</div>
-      <div class="tvm-show" id="tvmShowName">-</div>
-      <div class="tvm-show-time" id="tvmShowTime"></div>
-    </div>
-    <div class="tvm-panel tvm-artist-pic">
-      <div class="tvm-panel-label">Artist Pic</div>
-      <div class="tvm-artist-photo" id="tvmArtistPhoto"></div>
-    </div>
-    <div class="tvm-panel tvm-artist-info">
-      <div class="tvm-panel-label">Artist Info</div>
-      <div class="tvm-artist-name" id="tvmArtistName">-</div>
-      <div class="tvm-artist-tags" id="tvmArtistTags"></div>
-      <div class="tvm-artist-bio" id="tvmArtistBio"></div>
-    </div>
-    <div class="tvm-panel tvm-tv">
-      <div class="tvm-panel-label">July Music Television</div>
-      <div class="tvm-video-wrap">
+    <div class="tvm-col tvm-col-right">
+      <div class="tvm-panel tvm-tv">
+        <div class="tvm-panel-label">July Music Television</div>
         <div class="tvm-video-slot" id="tvModeVideoSlot"></div>
       </div>
-    </div>
-    <div class="tvm-panel tvm-history">
-      <div class="tvm-panel-label">Recently Played</div>
-      <div class="tvm-history-list" id="tvmHistoryList"></div>
+      <div class="tvm-panel tvm-history">
+        <div class="tvm-panel-label">Recently Played</div>
+        <div class="tvm-history-list" id="tvmHistoryList"></div>
+      </div>
     </div>
   </div>
 </div>
