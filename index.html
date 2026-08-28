@@ -79,7 +79,7 @@ html[data-theme="dark"] header img{ filter:invert(1); }
 .header-right{ display:flex; align-items:center; gap:12px; }
 
 .splash-screen{
-  position:fixed; inset:0; z-index:9999;
+  position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999;
   background:var(--bg); display:flex; align-items:center; justify-content:center;
   transition:opacity .4s ease; opacity:1;
 }
@@ -269,7 +269,7 @@ nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
 .np-row{ display:grid; grid-template-columns:minmax(56px,25%) 1fr; gap:16px; align-items:center; }
 
 .album-art{
-  width:100%; aspect-ratio:1/1; border:1px solid var(--border);
+  width:100%; aspect-ratio:1/1; min-height:56px; border:1px solid var(--border);
   background:var(--hair); flex-shrink:0; overflow:hidden; cursor:pointer; position:relative;
 }
 .album-art img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -316,7 +316,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 
 /* ═══ TV MODE (fullscreen dashboard) ═══ */
 .tv-mode-overlay{
-  display:none; position:fixed; inset:0; z-index:99999;
+  display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:99999;
   background:#0a0a0a; color:#fff; flex-direction:column;
   font-family:'IBM Plex Mono','Courier New',monospace;
   padding:32px 40px; box-sizing:border-box; overflow:auto;
@@ -367,12 +367,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .tvm-show{ font-size:18px; text-transform:uppercase; }
 .tvm-show-time{ font-size:10px; color:#777; margin-top:6px; }
 
-.tvm-artist-header{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-.tvm-artist-thumb{
-  width:44px; height:44px; background-size:cover; background-position:center;
-  background-color:#161616; border:1px solid #333; flex-shrink:0;
+.tvm-artist-photo-big{
+  width:100%; aspect-ratio:16/10; min-height:180px; background-size:cover; background-position:center top;
+  background-color:#161616; border:1px solid #262626; margin-bottom:16px;
 }
-.tvm-artist-name{ font-size:16px; text-transform:uppercase; }
+.tvm-artist-name{ font-size:22px; text-transform:uppercase; font-weight:600; margin-bottom:10px; }
 .tvm-artist-tags{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
 .tvm-artist-tags span{ font-size:8px; letter-spacing:0.06em; text-transform:uppercase; border:1px solid #333; padding:3px 7px; color:#aaa; }
 .tvm-artist-bio{ font-size:11px; color:#999; line-height:1.5; margin-top:4px; }
@@ -380,10 +379,19 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 /* Simple, reliable sizing: width-driven with a sensible cap, instead of
    fighting height/max-height/aspect-ratio combinations that kept breaking. */
 .tvm-video-slot{
-  width:100%; max-width:640px; aspect-ratio:4/3;
+  position:relative;
+  width:100%; max-width:700px; aspect-ratio:4/3; min-height:280px;
   background:#111; border:1px solid #262626; margin:0 auto;
 }
 .tvm-video-slot video{ width:100%; height:100%; display:block; object-fit:contain; background:#000; }
+.tvm-vol-control{
+  position:absolute; top:12px; right:12px; z-index:5;
+  display:flex; align-items:center; gap:8px;
+  background:rgba(0,0,0,0.55); padding:8px 12px;
+}
+.tvm-vol-control input[type=range]{ width:100px; height:1px; background:#555; }
+.tvm-vol-control input[type=range]::-webkit-slider-thumb{ background:#fff; border-color:#fff; }
+.tvm-vol-icon{ font-size:13px; flex-shrink:0; }
 
 .tvm-history-list{ display:flex; flex-direction:column; gap:10px; }
 .tvm-history-row{ display:flex; align-items:center; gap:12px; font-size:13px; }
@@ -461,7 +469,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 /* ═══ WATCH (TV) ═══ */
 .watch-card{ border:1px solid var(--border); position:relative; }
 .watch-card .viz-controls, .watch-card .status-line{ padding-left:20px; padding-right:20px; }
-.tv-video{ width:100%; aspect-ratio:4/3; display:block; background:var(--hair); border:1px solid var(--border); object-fit:contain; }
+.tv-video{ width:100%; aspect-ratio:4/3; min-height:200px; display:block; background:var(--hair); border:1px solid var(--border); object-fit:contain; }
 
 /* ═══ SCHEDULE ═══ */
 #schedule{ padding:40px 0; }
@@ -511,7 +519,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 /* Global connect flag: kept subtle, monochrome */
 .on-air-card{ position:relative; overflow:hidden; }
 #gcFlagOnAir{ position:absolute; right:-20px; top:-20px; bottom:-20px; width:140px; pointer-events:none; opacity:0; transition:opacity 1s ease; filter:grayscale(1) contrast(1.1); }
-#gcFlagOnAir canvas{ position:absolute; inset:0; width:100%; height:100%; mask-image:linear-gradient(to left, rgba(0,0,0,0.25) 0%, transparent 100%); -webkit-mask-image:linear-gradient(to left, rgba(0,0,0,0.25) 0%, transparent 100%); }
+#gcFlagOnAir canvas{ position:absolute; top:0; left:0; right:0; bottom:0; width:100%; height:100%; mask-image:linear-gradient(to left, rgba(0,0,0,0.25) 0%, transparent 100%); -webkit-mask-image:linear-gradient(to left, rgba(0,0,0,0.25) 0%, transparent 100%); }
 #gcFlagOnAir.visible{ opacity:1; }
 
 ::selection{ background:var(--ink); color:var(--bg); }
@@ -525,8 +533,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   .np-row{ grid-template-columns:64px 1fr; gap:12px; }
   .album-art{ width:64px; height:64px; margin:0; }
   .track-title{ font-size:18px; }
-  .np-controls{ flex-direction:column; align-items:stretch; gap:10px; padding:0 20px; }
-  .play-live-btn{ justify-content:center; }
+  .np-controls{ flex-direction:row; flex-wrap:wrap; align-items:stretch; gap:10px; padding:0 20px; }
+  .play-live-btn{ justify-content:center; order:1; flex:1 1 calc(50% - 5px); }
+  .add-to-services{ order:2; flex:1 1 calc(50% - 5px); }
+  .stream-url-btn{ width:100%; height:100%; box-sizing:border-box; justify-content:center; }
+  .vol-wrap{ order:3; flex:1 1 100%; }
   .streaming-menu{ right:auto; left:0; }
   .dj-grid{ grid-template-columns:1fr; }
   .dj-photo{ height:160px; border-right:none; border-bottom:1px solid var(--border); }
@@ -584,10 +595,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       </div>
       <div class="tvm-panel tvm-artist-info">
         <div class="tvm-panel-label">Artist Info</div>
-        <div class="tvm-artist-header">
-          <div class="tvm-artist-thumb" id="tvmArtistPhoto"></div>
-          <div class="tvm-artist-name" id="tvmArtistName">-</div>
-        </div>
+        <div class="tvm-artist-photo-big" id="tvmArtistPhoto"></div>
+        <div class="tvm-artist-name" id="tvmArtistName">-</div>
         <div class="tvm-artist-tags" id="tvmArtistTags"></div>
         <div class="tvm-artist-bio" id="tvmArtistBio"></div>
       </div>
@@ -595,7 +604,12 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
     <div class="tvm-col tvm-col-right">
       <div class="tvm-panel tvm-tv">
         <div class="tvm-panel-label">July Music Television</div>
-        <div class="tvm-video-slot" id="tvModeVideoSlot"></div>
+        <div class="tvm-video-slot" id="tvModeVideoSlot">
+          <div class="tvm-vol-control">
+            <input type="range" min="0" max="100" value="100" id="tvmVolSlider" oninput="setTvVideoVol(this.value)">
+            <span class="tvm-vol-icon">🔊</span>
+          </div>
+        </div>
       </div>
       <div class="tvm-panel tvm-history">
         <div class="tvm-panel-label">Recently Played</div>
@@ -652,10 +666,6 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         <span class="dock-status"></span>
         <span class="dock-icon-glyph">⚙</span><span class="dock-icon-label">Tools</span>
       </button>
-      <button class="dock-icon" data-dock-for="chat" onclick="openCard('chat')" title="Chat">
-        <span class="dock-status"></span>
-        <span class="dock-icon-glyph">✉</span><span class="dock-icon-label">Chat</span>
-      </button>
       <button class="reset-layout-btn" onclick="resetLayout()" style="margin-left:auto;align-self:center;">Reset layout</button>
     </div>
     <div class="win-hint" id="winHint" style="display:none;">
@@ -695,7 +705,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
             <input type="range" min="0" max="100" value="80" id="volSlider" oninput="setVol(this.value)">
           </div>
           <div class="add-to-services">
-            <button class="stream-url-btn" onclick="toggleStreamingMenu(event)">Stream URL</button>
+            <button class="stream-url-btn" onclick="toggleStreamingMenu(event)">Add to Streaming</button>
             <div class="streaming-menu" id="streamingMenu">
               <a href="#" id="spotifyLink" target="_blank" class="streaming-menu-link">Spotify</a>
               <a href="#" id="appleMusicLink" target="_blank" class="streaming-menu-link">Apple Music</a>
@@ -813,8 +823,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         </div>
       </div>
 
-      <!-- Chat -->
-      <div class="chat-card win-card" data-card-id="chat">
+      <!-- Chat (disabled for now — overlap issue) -->
+      <div class="chat-card win-card" data-card-id="chat" style="display:none;">
         <div class="resize-handle" title="Resize"></div>
         <div class="win-titlebar">
           <span class="win-title">CHAT <span id="chatPresence" style="opacity:0.7;"></span></span>
@@ -901,7 +911,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script>
 // ⚠️ Cloudflare Quick Tunnel: changes every time cloudflared restarts
-const TV_STREAM_URL = 'https://acts-automotive-tender-locator.trycloudflare.com/iptv/channel/10.m3u8';
+const TV_STREAM_URL = 'https://grocery-springs-nickname-elevation.trycloudflare.com/iptv/channel/10.m3u8';
 let tvPlayer = null, tvPlaying = false;
 
 function initTv() {
@@ -2249,6 +2259,11 @@ let tvModeClockInterval = null;
 
 let tvModeActive = false;
 
+function setTvVideoVol(val) {
+  const video = document.getElementById('tvPlayer');
+  if (video) video.volume = val / 100;
+}
+
 function enterTvMode() {
   const overlay = document.getElementById('tvModeOverlay');
   const slot = document.getElementById('tvModeVideoSlot');
@@ -2258,6 +2273,9 @@ function enterTvMode() {
   slot.appendChild(video); // reparenting keeps playback going, no reload
   overlay.classList.add('active');
   tvModeActive = true;
+
+  const volSlider = document.getElementById('tvmVolSlider');
+  if (volSlider) volSlider.value = Math.round((video.volume || 1) * 100);
 
   const logo = document.getElementById('tvmLogo');
   const headerLogo = document.querySelector('header img');
