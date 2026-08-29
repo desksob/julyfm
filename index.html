@@ -516,6 +516,44 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .alert-banner.visible{ transform:translateX(-50%) translateY(0); }
 .alert-dot{ width:6px; height:6px; border-radius:50%; background:var(--bg); flex-shrink:0; animation:pulse 1.4s ease-in-out infinite; }
 
+/* WEBGL ACCELERATION HELP MODAL */
+.viz-help-overlay{
+  position:fixed; inset:0; z-index:500;
+  background:rgba(0,0,0,0.55);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+  opacity:0; pointer-events:none;
+  transition:opacity .2s ease;
+}
+.viz-help-overlay.visible{ opacity:1; pointer-events:auto; }
+.viz-help-modal{
+  background:var(--bg); color:var(--ink); border:1px solid var(--border);
+  max-width:440px; width:100%; max-height:80vh; overflow-y:auto;
+  font-family:'IBM Plex Mono','Courier New',monospace;
+}
+.viz-help-titlebar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; border-bottom:1px solid var(--border);
+  font-size:10px; letter-spacing:0.1em; text-transform:uppercase;
+}
+.viz-help-close{
+  background:none; border:none; color:var(--ink); cursor:pointer;
+  font-size:14px; line-height:1; padding:0 4px;
+}
+.viz-help-body{ padding:16px; }
+.viz-help-body p{ font-size:11px; line-height:1.6; color:var(--muted); margin:0 0 12px; }
+.viz-help-steps{ margin:0 0 16px; padding-left:18px; }
+.viz-help-steps li{ font-size:11px; line-height:1.7; color:var(--ink); margin-bottom:6px; }
+.viz-help-steps code{ background:var(--hair); padding:1px 5px; font-size:10px; }
+.viz-help-footer{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.viz-help-dismiss-row{ display:flex; align-items:center; gap:6px; font-size:9px; letter-spacing:0.06em; text-transform:uppercase; color:var(--dim); }
+.viz-help-ok-btn{
+  font-size:9px; letter-spacing:0.12em; text-transform:uppercase;
+  border:1px solid var(--border); background:var(--ink); color:var(--bg);
+  padding:8px 16px; cursor:pointer;
+}
+.viz-help-ok-btn:hover{ opacity:0.85; }
+
 /* Global connect flag: kept subtle, monochrome */
 .on-air-card{ position:relative; overflow:hidden; }
 #gcFlagOnAir{ position:absolute; right:-20px; top:-20px; bottom:-20px; width:140px; pointer-events:none; opacity:0; transition:opacity 1s ease; filter:grayscale(1) contrast(1.1); }
@@ -537,7 +575,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   .play-live-btn{ justify-content:center; order:1; flex:1 1 calc(50% - 5px); }
   .add-to-services{ order:2; flex:1 1 calc(50% - 5px); }
   .stream-url-btn{ width:100%; height:100%; box-sizing:border-box; justify-content:center; }
-  .vol-wrap{ order:3; flex:1 1 100%; }
+  .vol-wrap{ display:none; }
   .streaming-menu{ right:auto; left:0; }
   .dj-grid{ grid-template-columns:1fr; }
   .dj-photo{ height:160px; border-right:none; border-bottom:1px solid var(--border); }
@@ -661,6 +699,10 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       <button class="dock-icon" data-dock-for="tv" onclick="openCard('tv')" title="TV">
         <span class="dock-status"></span>
         <span class="dock-icon-glyph">▭</span><span class="dock-icon-label">TV</span>
+      </button>
+      <button class="dock-icon" data-dock-for="visualizer" onclick="openCard('visualizer')" title="Visualizer">
+        <span class="dock-status"></span>
+        <span class="dock-icon-glyph">◈</span><span class="dock-icon-label">Visualizer</span>
       </button>
       <button class="dock-icon" data-dock-for="tools" onclick="openCard('tools')" title="Tools">
         <span class="dock-status"></span>
@@ -791,6 +833,26 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         </div>
       </div>
 
+      <!-- Visualizer -->
+      <div class="watch-card win-card" data-card-id="visualizer">
+        <div class="resize-handle" title="Resize"></div>
+        <div class="win-titlebar">
+          <span class="win-title">VISUALIZER</span>
+          <div class="win-controls">
+            <button class="win-btn win-min" onclick="minimizeCard('visualizer',event)" title="Minimize">–</button>
+            <button class="win-btn win-close" onclick="closeCard('visualizer',event)" title="Close">×</button>
+          </div>
+        </div>
+        <div class="win-body" id="body-visualizer">
+          <canvas id="vizCanvas" class="tv-video" style="background:#000;"></canvas>
+          <div class="status-line" id="vizStatus" style="margin-top:10px;">· PRESS PLAY LIVE TO START VISUALIZER</div>
+          <div class="viz-controls" style="margin-top:14px;">
+            <button class="viz-btn" onclick="nextVizPreset()">Next preset</button>
+            <button class="viz-btn" onclick="randomVizPreset()">Random preset</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Tools -->
       <div class="tools-card win-card" data-card-id="tools">
         <div class="resize-handle" title="Resize"></div>
@@ -813,6 +875,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
               <label>Text<input type="color" id="inkPicker" onchange="setThemeColor('--ink', this.value)"></label>
               <label>Border<input type="color" id="borderPicker" onchange="setThemeColor('--border', this.value)"></label>
               <label>Accent<input type="color" id="accentPicker" onchange="setThemeColor('--accent', this.value)"></label>
+              <label>Muted text<input type="color" id="mutedPicker" onchange="setThemeColor('--muted', this.value)"></label>
+              <label>Dim text<input type="color" id="dimPicker" onchange="setThemeColor('--dim', this.value)"></label>
               <button class="reset-colors-btn" onclick="resetColors()">Reset colors</button>
             </div>
           </div>
@@ -908,10 +972,32 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   <span id="alertMsg"></span>
 </div>
 
+<!-- VISUALIZER WEBGL HELP MODAL -->
+<div class="viz-help-overlay" id="vizHelpOverlay">
+  <div class="viz-help-modal">
+    <div class="viz-help-titlebar">
+      <span>Enable the visualizer</span>
+      <button class="viz-help-close" onclick="dismissVizHelp()" title="Close">×</button>
+    </div>
+    <div class="viz-help-body">
+      <p>Your browser blocked the visualizer's graphics (WebGL2). This is usually a setting, not a real limitation — here's how to fix it:</p>
+      <ol class="viz-help-steps" id="vizHelpSteps"></ol>
+      <div class="viz-help-footer">
+        <label class="viz-help-dismiss-row">
+          <input type="checkbox" id="vizHelpDontShow"> Don't show this again
+        </label>
+        <button class="viz-help-ok-btn" onclick="dismissVizHelp()">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/lib/butterchurn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/lib/isSupported.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js"></script>
 <script>
-// ⚠️ Cloudflare Quick Tunnel: changes every time cloudflared restarts
-const TV_STREAM_URL = 'https://grocery-springs-nickname-elevation.trycloudflare.com/iptv/channel/10.m3u8';
+const TV_STREAM_URL = 'https://tv.july.rip/iptv/channel/10.m3u8';
 let tvPlayer = null, tvPlaying = false;
 
 function initTv() {
@@ -989,7 +1075,7 @@ const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
 const LASTFM_USER = 'injeton';
 const WORKER = 'https://julyimages.sxrsq1.workers.dev';
 const LASTFM_SCROBBLE_KEY = 'b32ec79d8c7167c20ab00af991bd5531'; // public app key, safe client-side — the secret never leaves the Worker
-const streamUrl = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
+const streamUrl = 'https://radio.july.rip/listen/july_radio/radio.mp3';
 
 let playing = false, audio = null, lastTrack = '', lastfmTrackUrl = '';
 
@@ -1165,7 +1251,9 @@ function updateGlobalConnectFlag(showName) {
 function togglePlay() {
   const btn = document.getElementById('playBtn');
   if (!playing) {
-    audio = new Audio(streamUrl);
+    audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+    audio.src = streamUrl;
     audio.setAttribute('playsinline', '');
     audio.preload = 'none';
     audio.volume = document.getElementById('volSlider').value / 100;
@@ -1178,6 +1266,7 @@ function togglePlay() {
       updateMediaSession(document.getElementById('trackTitle').textContent, document.getElementById('trackArtist').textContent, null);
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
       syncTvModeContent();
+      connectVisualizer(audio);
     }).catch(() => {
       document.getElementById('statusMsg').textContent = '· could not connect';
     });
@@ -1189,10 +1278,185 @@ function togglePlay() {
     document.getElementById('statusMsg').classList.remove('live');
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
     syncTvModeContent();
+    stopVisualizer();
   }
 }
 
 function setVol(v) { if (audio) audio.volume = v / 100; }
+
+// ── VISUALIZER (Butterchurn) ──
+let vizAudioCtx = null, vizAnalyserSource = null, vizInstance = null, vizRAF = null, vizPresetKeys = [], vizPresetIndex = 0;
+
+function ensureVizPresets() {
+  if (vizPresetKeys.length || typeof butterchurnPresets === 'undefined') return;
+  const presets = butterchurnPresets.getPresets();
+  vizPresetKeys = Object.keys(presets);
+}
+
+// ── WEBGL ACCELERATION HELP MODAL ──
+function detectBrowserForViz() {
+  const ua = navigator.userAgent;
+  if (navigator.brave && typeof navigator.brave.isBrave === 'function') return 'brave';
+  if (/Firefox\//.test(ua)) return 'firefox';
+  if (/Edg\//.test(ua)) return 'edge';
+  if (/OPR\//.test(ua) || /Opera/.test(ua)) return 'opera';
+  if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) return 'chrome';
+  if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'safari';
+  return 'generic';
+}
+
+function vizHelpStepsFor(browser) {
+  switch (browser) {
+    case 'brave':
+      return [
+        'Click the Brave Shields icon (the lion) in the address bar for this site.',
+        'Open "Advanced controls" and set Fingerprinting to "Standard" — Aggressive mode disables WebGL.',
+        'Also visit <code>brave://settings/system</code> and make sure "Use graphics acceleration when available" is on, then relaunch Brave.',
+        'Reload this page and press Play Live again.'
+      ];
+    case 'chrome':
+      return [
+        'Go to <code>chrome://settings/system</code>.',
+        'Turn on "Use graphics acceleration when available".',
+        'Relaunch Chrome, then reload this page.'
+      ];
+    case 'edge':
+      return [
+        'Go to <code>edge://settings/system</code>.',
+        'Turn on "Use graphics acceleration when available".',
+        'Relaunch Edge, then reload this page.'
+      ];
+    case 'firefox':
+      return [
+        'Go to <code>about:preferences#general</code>.',
+        'Under Performance, uncheck "Use recommended performance settings".',
+        'Check "Use hardware acceleration when available", then restart Firefox.'
+      ];
+    case 'opera':
+      return [
+        'Open Opera Settings → Advanced → System.',
+        'Turn on "Use graphics acceleration when available".',
+        'Relaunch Opera, then reload this page.'
+      ];
+    default:
+      return [
+        'Open your browser\'s Settings and look for "System" or "Performance".',
+        'Turn on "Use hardware/graphics acceleration when available".',
+        'Restart your browser, then reload this page.'
+      ];
+  }
+}
+
+function showVizHelpModal() {
+  try {
+    if (localStorage.getItem('july-viz-help-dismissed') === '1') return;
+  } catch(e) {}
+  const overlay = document.getElementById('vizHelpOverlay');
+  const stepsList = document.getElementById('vizHelpSteps');
+  if (!overlay || !stepsList) return;
+  const steps = vizHelpStepsFor(detectBrowserForViz());
+  stepsList.innerHTML = steps.map(s => '<li>' + s + '</li>').join('');
+  overlay.classList.add('visible');
+}
+
+function dismissVizHelp() {
+  const overlay = document.getElementById('vizHelpOverlay');
+  if (overlay) overlay.classList.remove('visible');
+  const cb = document.getElementById('vizHelpDontShow');
+  if (cb && cb.checked) {
+    try { localStorage.setItem('july-viz-help-dismissed', '1'); } catch(e) {}
+  }
+}
+
+function initVizInstance() {
+  const canvas = document.getElementById('vizCanvas');
+  if (!canvas || typeof butterchurn === 'undefined') return null;
+  if (typeof isSupported !== 'undefined') {
+    const check = isSupported.default || isSupported;
+    if (typeof check === 'function' && !check()) {
+      const status = document.getElementById('vizStatus');
+      if (status) status.textContent = '· your browser does not support WebGL2, required for the visualizer';
+      showVizHelpModal();
+      return null;
+    }
+  }
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width || 480;
+  canvas.height = rect.height || 270;
+  const bc = butterchurn.default || butterchurn;
+  const viz = bc.createVisualizer(vizAudioCtx, canvas, {
+    width: canvas.width,
+    height: canvas.height
+  });
+  ensureVizPresets();
+  if (vizPresetKeys.length) {
+    const presets = butterchurnPresets.getPresets();
+    vizPresetIndex = Math.floor(Math.random() * vizPresetKeys.length);
+    viz.loadPreset(presets[vizPresetKeys[vizPresetIndex]], 0.0);
+  }
+  return viz;
+}
+
+function renderVizFrame() {
+  vizRAF = requestAnimationFrame(renderVizFrame);
+  if (vizInstance) vizInstance.render();
+}
+
+function connectVisualizer(audioEl) {
+  try {
+    if (typeof butterchurn === 'undefined') return; // library failed to load, e.g. offline
+    if (!vizAudioCtx) vizAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (vizAudioCtx.state === 'suspended') vizAudioCtx.resume();
+    if (!vizInstance) vizInstance = initVizInstance();
+    if (!vizInstance) return;
+    const source = vizAudioCtx.createMediaElementSource(audioEl);
+    source.connect(vizAudioCtx.destination);
+    vizInstance.connectAudio(source);
+    vizAnalyserSource = source;
+    const status = document.getElementById('vizStatus');
+    if (status) status.textContent = '· live now';
+    if (!vizRAF) renderVizFrame();
+  } catch(e) {
+    // CORS or unsupported browser — fail silently, rest of the site keeps working
+    console.error('Visualizer connect failed:', e);
+    const status = document.getElementById('vizStatus');
+    if (status) status.textContent = '· visualizer unavailable (' + (e.message || e.name || 'error') + ')';
+  }
+}
+
+function stopVisualizer() {
+  if (vizRAF) { cancelAnimationFrame(vizRAF); vizRAF = null; }
+  const status = document.getElementById('vizStatus');
+  if (status) status.textContent = '· PAUSED';
+}
+
+function nextVizPreset() {
+  if (!vizInstance) return;
+  ensureVizPresets();
+  if (!vizPresetKeys.length) return;
+  vizPresetIndex = (vizPresetIndex + 1) % vizPresetKeys.length;
+  const presets = butterchurnPresets.getPresets();
+  vizInstance.loadPreset(presets[vizPresetKeys[vizPresetIndex]], 1.0);
+}
+
+function randomVizPreset() {
+  if (!vizInstance) return;
+  ensureVizPresets();
+  if (!vizPresetKeys.length) return;
+  vizPresetIndex = Math.floor(Math.random() * vizPresetKeys.length);
+  const presets = butterchurnPresets.getPresets();
+  vizInstance.loadPreset(presets[vizPresetKeys[vizPresetIndex]], 1.0);
+}
+
+window.addEventListener('resize', () => {
+  if (!vizInstance) return;
+  const canvas = document.getElementById('vizCanvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width || canvas.width;
+  canvas.height = rect.height || canvas.height;
+  vizInstance.setRendererSize(canvas.width, canvas.height);
+});
 
 // ── THEME ──
 function applyTheme(mode) {
@@ -1213,7 +1477,7 @@ function toggleTheme() {
 
 // ── COLOR CUSTOMIZATION (background, text, border, accent) ──
 const THEME_COLOR_KEY = 'july-custom-colors';
-const CUSTOM_VARS = ['--bg', '--ink', '--border', '--accent'];
+const CUSTOM_VARS = ['--bg', '--ink', '--border', '--accent', '--muted', '--dim'];
 
 function setThemeColor(varName, value) {
   document.documentElement.style.setProperty(varName, value);
@@ -1234,7 +1498,7 @@ function resetColors() {
 
 function syncColorPickers() {
   const computed = getComputedStyle(document.documentElement);
-  const map = { '--bg': 'bgPicker', '--ink': 'inkPicker', '--border': 'borderPicker', '--accent': 'accentPicker' };
+  const map = { '--bg': 'bgPicker', '--ink': 'inkPicker', '--border': 'borderPicker', '--accent': 'accentPicker', '--muted': 'mutedPicker', '--dim': 'dimPicker' };
   Object.keys(map).forEach(varName => {
     const input = document.getElementById(map[varName]);
     if (!input) return;
