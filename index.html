@@ -65,6 +65,12 @@ body{
 
 /* LAYOUT */
 .site{ position:relative; z-index:1; padding:0 40px 80px; max-width:640px; margin:0 auto; }
+@media (min-width:900px){
+  .site{ max-width:820px; }
+}
+@media (min-width:1200px){
+  .site{ max-width:1080px; }
+}
 
 /* HEADER */
 header{
@@ -257,7 +263,7 @@ nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
 }
 .reset-layout-btn:hover{ color:var(--ink); }
 
-.now-playing-card{ border:1px solid var(--border); }
+.now-playing-card{ border:1px solid var(--border); container-type:inline-size; }
 .history-card{ border:1px solid var(--border); }
 .card-label{
   font-size:10px; color:var(--bg); background:var(--ink);
@@ -350,7 +356,6 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 }
 .tvm-now-playing, .tvm-on-air{ flex-shrink:0; }
 .tvm-artist-info{ flex:1; min-height:0; }
-.tvm-tv{ flex-shrink:0; }
 .tvm-history{ flex:1; min-height:0; }
 
 .tvm-np-row{ display:flex; gap:16px; align-items:center; }
@@ -376,14 +381,16 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .tvm-artist-tags span{ font-size:8px; letter-spacing:0.06em; text-transform:uppercase; border:1px solid #333; padding:3px 7px; color:#aaa; }
 .tvm-artist-bio{ font-size:11px; color:#999; line-height:1.5; margin-top:4px; }
 
-/* Simple, reliable sizing: width-driven with a sensible cap, instead of
-   fighting height/max-height/aspect-ratio combinations that kept breaking. */
-.tvm-video-slot{
-  position:relative;
-  width:100%; max-width:700px; aspect-ratio:4/3; min-height:280px;
-  background:#111; border:1px solid #262626; margin:0 auto;
+/* TV + Visualizer sit side by side and share the row's height, so neither
+   eats the whole viewport and Recently Played always has room below. */
+.tvm-row-media{ display:flex; gap:1px; background:#262626; flex-shrink:0; max-height:44vh; }
+.tvm-row-media .tvm-panel{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.tvm-video-slot, .tvm-viz-slot{
+  position:relative; flex:1; min-height:180px;
+  background:#111; border:1px solid #262626;
 }
 .tvm-video-slot video{ width:100%; height:100%; display:block; object-fit:contain; background:#000; }
+.tvm-viz-slot canvas{ width:100%; height:100%; display:block; background:#000; }
 .tvm-vol-control{
   position:absolute; top:12px; right:12px; z-index:5;
   display:flex; align-items:center; gap:8px;
@@ -403,6 +410,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 @media (max-width:900px){
   .tvm-grid{ flex-direction:column; }
   .tvm-col-left{ width:auto; }
+  .tvm-row-media{ flex-direction:column; max-height:none; }
+  .tvm-video-slot, .tvm-viz-slot{ flex:none; width:100%; aspect-ratio:16/9; min-height:200px; }
 }
 
 .tools-section:last-child{ margin-bottom:0; }
@@ -594,6 +603,19 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   .win-card{ margin-bottom:28px !important; }
   .win-card:last-child{ margin-bottom:0 !important; }
 }
+
+/* The now-playing card can end up narrow for reasons that have nothing to do
+   with the viewport — sitting in one half of the desktop two-column layout,
+   or manually resized by dragging its corner. A viewport media query can't
+   see that; a container query can, and stops Play Live / Vol / Add to
+   Streaming from crowding into and overlapping each other when that happens. */
+@container (max-width:560px){
+  .np-controls{ flex-wrap:wrap; gap:10px; }
+  .play-live-btn{ flex:1 1 calc(50% - 5px); justify-content:center; }
+  .add-to-services{ flex:1 1 calc(50% - 5px); }
+  .stream-url-btn{ width:100%; height:100%; box-sizing:border-box; justify-content:center; }
+  .vol-wrap{ order:3; flex:1 1 100%; }
+}
 </style>
 
 </head>
@@ -640,13 +662,19 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       </div>
     </div>
     <div class="tvm-col tvm-col-right">
-      <div class="tvm-panel tvm-tv">
-        <div class="tvm-panel-label">July Music Television</div>
-        <div class="tvm-video-slot" id="tvModeVideoSlot">
-          <div class="tvm-vol-control">
-            <input type="range" min="0" max="100" value="100" id="tvmVolSlider" oninput="setTvVideoVol(this.value)">
-            <span class="tvm-vol-icon">🔊</span>
+      <div class="tvm-row-media">
+        <div class="tvm-panel tvm-tv">
+          <div class="tvm-panel-label">July Music Television</div>
+          <div class="tvm-video-slot" id="tvModeVideoSlot">
+            <div class="tvm-vol-control">
+              <input type="range" min="0" max="100" value="100" id="tvmVolSlider" oninput="setTvVideoVol(this.value)">
+              <span class="tvm-vol-icon">🔊</span>
+            </div>
           </div>
+        </div>
+        <div class="tvm-panel tvm-visualizer">
+          <div class="tvm-panel-label">Visualizer</div>
+          <div class="tvm-viz-slot" id="tvmVizSlot"></div>
         </div>
       </div>
       <div class="tvm-panel tvm-history">
@@ -673,7 +701,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   <nav>
     <a class="active" onclick="show('listen',this)">Listen</a>
     <a onclick="show('schedule',this)">Schedule</a>
-    <a onclick="show('djs',this)">DJs</a>
+    <a onclick="show('djs',this)">Team</a>
     <a onclick="show('about',this)">About</a>
   </nav>
 
@@ -703,6 +731,10 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       <button class="dock-icon" data-dock-for="visualizer" onclick="openCard('visualizer')" title="Visualizer">
         <span class="dock-status"></span>
         <span class="dock-icon-glyph">◈</span><span class="dock-icon-label">Visualizer</span>
+      </button>
+      <button class="dock-icon" data-dock-for="chat" onclick="openCard('chat')" title="Chat">
+        <span class="dock-status"></span>
+        <span class="dock-icon-glyph">✉</span><span class="dock-icon-label">Chat</span>
       </button>
       <button class="dock-icon" data-dock-for="tools" onclick="openCard('tools')" title="Tools">
         <span class="dock-status"></span>
@@ -849,6 +881,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
           <div class="viz-controls" style="margin-top:14px;">
             <button class="viz-btn" onclick="nextVizPreset()">Next preset</button>
             <button class="viz-btn" onclick="randomVizPreset()">Random preset</button>
+            <button class="viz-btn" id="vizAutoCycleBtn" onclick="toggleVizAutoCycle()">Auto cycle: Off</button>
           </div>
         </div>
       </div>
@@ -887,8 +920,8 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         </div>
       </div>
 
-      <!-- Chat (disabled for now — overlap issue) -->
-      <div class="chat-card win-card" data-card-id="chat" style="display:none;">
+      <!-- Chat -->
+      <div class="chat-card win-card" data-card-id="chat">
         <div class="resize-handle" title="Resize"></div>
         <div class="win-titlebar">
           <span class="win-title">CHAT <span id="chatPresence" style="opacity:0.7;"></span></span>
@@ -959,7 +992,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         </div>
         <div class="about-block">
           <div class="about-label">Team</div>
-          <div class="about-text">desksob, fziwe, fiscia</div>
+          <div class="about-text">desksob, fziwe, fiscia, pmuhav, azarinthecut, sewn, neetcamp</div>
         </div>
       </div>
     </div>
@@ -1261,8 +1294,8 @@ function togglePlay() {
       playing = true;
       btn.innerHTML = '<span class="play-live-icon">■</span> Stop';
       btn.classList.add('playing');
-      document.getElementById('statusMsg').textContent = '· live now';
-      document.getElementById('statusMsg').classList.add('live');
+      document.getElementById('statusMsg').textContent = '';
+      document.getElementById('statusMsg').classList.remove('live');
       updateMediaSession(document.getElementById('trackTitle').textContent, document.getElementById('trackArtist').textContent, null);
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
       syncTvModeContent();
@@ -1448,7 +1481,7 @@ function randomVizPreset() {
   vizInstance.loadPreset(presets[vizPresetKeys[vizPresetIndex]], 1.0);
 }
 
-window.addEventListener('resize', () => {
+function resizeVizCanvas() {
   if (!vizInstance) return;
   const canvas = document.getElementById('vizCanvas');
   if (!canvas) return;
@@ -1456,43 +1489,56 @@ window.addEventListener('resize', () => {
   canvas.width = rect.width || canvas.width;
   canvas.height = rect.height || canvas.height;
   vizInstance.setRendererSize(canvas.width, canvas.height);
-});
+}
+
+window.addEventListener('resize', resizeVizCanvas);
+
+// ── VISUALIZER AUTO-CYCLE (change preset every 5s) ──
+let vizAutoCycleEnabled = false;
+let vizAutoCycleTimer = null;
+let vizPrevAutoCycleState = false;
+
+function startVizAutoCycle() {
+  if (vizAutoCycleTimer) return;
+  vizAutoCycleTimer = setInterval(() => { nextVizPreset(); }, 5000);
+}
+
+function stopVizAutoCycle() {
+  if (vizAutoCycleTimer) { clearInterval(vizAutoCycleTimer); vizAutoCycleTimer = null; }
+}
+
+function setVizAutoCycle(on) {
+  vizAutoCycleEnabled = on;
+  if (on) startVizAutoCycle(); else stopVizAutoCycle();
+  const btn = document.getElementById('vizAutoCycleBtn');
+  if (btn) btn.textContent = 'Auto cycle: ' + (on ? 'On' : 'Off');
+}
+
+function toggleVizAutoCycle() {
+  setVizAutoCycle(!vizAutoCycleEnabled);
+}
 
 // ── THEME ──
-function applyTheme(mode) {
-  document.documentElement.setAttribute('data-theme', mode);
-  const btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = mode === 'light' ? 'Dark' : 'Light';
-  try { localStorage.setItem('july-theme', mode); } catch(e) {}
-}
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'light' ? 'dark' : 'light');
-}
-(function initTheme() {
-  let saved = 'light';
-  try { saved = localStorage.getItem('july-theme') || 'light'; } catch(e) {}
-  applyTheme(saved);
-})();
+const THEME_COLOR_KEY = 'july-custom-colors'; // legacy key, kept only for the migration below
 
-// ── COLOR CUSTOMIZATION (background, text, border, accent) ──
-const THEME_COLOR_KEY = 'july-custom-colors';
-const CUSTOM_VARS = ['--bg', '--ink', '--border', '--accent', '--muted', '--dim'];
+function themeColorKey(mode) {
+  return 'july-custom-colors-' + (mode || document.documentElement.getAttribute('data-theme') || 'light');
+}
+
+function loadCustomColors(mode) {
+  try { return JSON.parse(localStorage.getItem(themeColorKey(mode)) || '{}'); } catch(e) { return {}; }
+}
 
 function setThemeColor(varName, value) {
   document.documentElement.style.setProperty(varName, value);
   const custom = loadCustomColors();
   custom[varName] = value;
-  try { localStorage.setItem(THEME_COLOR_KEY, JSON.stringify(custom)); } catch(e) {}
-}
-
-function loadCustomColors() {
-  try { return JSON.parse(localStorage.getItem(THEME_COLOR_KEY) || '{}'); } catch(e) { return {}; }
+  try { localStorage.setItem(themeColorKey(), JSON.stringify(custom)); } catch(e) {}
 }
 
 function resetColors() {
   CUSTOM_VARS.forEach(v => document.documentElement.style.removeProperty(v));
-  try { localStorage.removeItem(THEME_COLOR_KEY); } catch(e) {}
+  try { localStorage.removeItem(themeColorKey()); } catch(e) {}
   syncColorPickers();
 }
 
@@ -1507,11 +1553,45 @@ function syncColorPickers() {
   });
 }
 
-(function initCustomColors() {
-  const custom = loadCustomColors();
+const CUSTOM_VARS = ['--bg', '--ink', '--border', '--accent', '--muted', '--dim'];
+
+// Clears whichever theme's overrides are currently inline, then applies only
+// the overrides saved specifically for the theme being switched to — without
+// this, a color customized in one theme would stay "stuck" after switching
+// to the other theme, since inline styles always beat the theme's CSS rules.
+function applyCustomColorsForTheme(mode) {
+  CUSTOM_VARS.forEach(v => document.documentElement.style.removeProperty(v));
+  const custom = loadCustomColors(mode);
   Object.keys(custom).forEach(varName => {
     document.documentElement.style.setProperty(varName, custom[varName]);
   });
+}
+
+function applyTheme(mode) {
+  document.documentElement.setAttribute('data-theme', mode);
+  applyCustomColorsForTheme(mode);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = mode === 'light' ? 'Dark' : 'Light';
+  try { localStorage.setItem('july-theme', mode); } catch(e) {}
+  syncColorPickers();
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'light' ? 'dark' : 'light');
+}
+(function initTheme() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('july-theme') || 'light'; } catch(e) {}
+  // One-time migration: move any color customized under the old shared key
+  // into "light" (the default theme), so nobody's existing customization
+  // just silently disappears after this fix.
+  try {
+    const legacy = localStorage.getItem(THEME_COLOR_KEY);
+    if (legacy && !localStorage.getItem(themeColorKey('light'))) {
+      localStorage.setItem(themeColorKey('light'), legacy);
+    }
+  } catch(e) {}
+  applyTheme(saved);
 })();
 
 // ── NAV ──
@@ -1573,19 +1653,18 @@ async function fetchNowPlaying() {
 
       titleEl.classList.add('fading'); artistEl.classList.add('fading'); artEl.classList.add('fading');
 
-      setTimeout(() => {
-        titleEl.textContent = name;
-        artistEl.textContent = artist;
-        albumEl.textContent = album || '-';
-        if (img) {
-          artEl.innerHTML = '<img src="'+img+'" alt="">';
-          updateBg(img);
-        } else {
-          artEl.innerHTML = '<div class="art-placeholder">art</div>';
-        }
-        titleEl.classList.remove('fading'); artistEl.classList.remove('fading'); artEl.classList.remove('fading');
-        fetchArtistInfo(artist);
-      }, 600);
+      await new Promise(r => setTimeout(r, 600));
+      titleEl.textContent = name;
+      artistEl.textContent = artist;
+      albumEl.textContent = album || '-';
+      if (img) {
+        artEl.innerHTML = '<img src="'+img+'" alt="">';
+        updateBg(img);
+      } else {
+        artEl.innerHTML = '<div class="art-placeholder">art</div>';
+      }
+      titleEl.classList.remove('fading'); artistEl.classList.remove('fading'); artEl.classList.remove('fading');
+      fetchArtistInfo(artist);
 
       if (playing) updateMediaSession(name, artist, img);
       scheduleScrobble(artist, name, album);
@@ -1742,6 +1821,28 @@ function showTimeToLocal(timeStr) {
   } catch(e) { return timeStr; }
 }
 
+// Schedule times are stored/entered in EAT (Africa/Nairobi, the station's home
+// timezone) — e.g. a show starting "08:00" means 8am EAT, not 8am wherever the
+// visitor happens to be. Comparing that raw number against the visitor's LOCAL
+// clock (as the code used to) meant someone in Australia would see a totally
+// different show marked "on air" than someone actually in Nairobi. This gets
+// the current day-of-week and minute-of-day AS SEEN IN EAT, so "is this show
+// live right now" is always evaluated in the same timezone the data is in.
+function getEATNow() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Nairobi',
+    weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(now);
+  const map = {};
+  parts.forEach(p => { map[p.type] = p.value; });
+  const dayMap = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+  let hour = parseInt(map.hour, 10);
+  if (hour === 24) hour = 0; // some locales format midnight as "24" instead of "00"
+  const mins = hour * 60 + parseInt(map.minute, 10);
+  return { day: dayMap[map.weekday], mins };
+}
+
 // ── SCHEDULE ──
 let schedule = {};
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -1780,9 +1881,7 @@ async function fetchSchedule() {
 }
 
 function renderSchedule() {
-  const now = new Date();
-  const today = now.getDay();
-  const nowMins = now.getHours()*60 + now.getMinutes();
+  const { day: today, mins: nowMins } = getEATNow();
   const grid = document.getElementById('scheduleGrid');
   if (!grid) return;
   if (!schedule[today] || schedule[today].length === 0) {
@@ -1822,9 +1921,8 @@ function renderSchedule() {
 }
 
 function updateMiniWidget() {
-  const now = new Date();
-  const nowMins = now.getHours()*60+now.getMinutes();
-  const todayShows = schedule[now.getDay()]||[];
+  const { day: todayEAT, mins: nowMins } = getEATNow();
+  const todayShows = schedule[todayEAT]||[];
   const cur = todayShows.find(s => nowMins>=s.startMins && nowMins<s.endMins);
   const el = document.getElementById('miniShowName');
   const tel = document.getElementById('miniShowTime');
@@ -1834,7 +1932,7 @@ function updateMiniWidget() {
   syncTvModeContent();
 }
 
-fetchSchedule();
+let initialSchedulePromise = fetchSchedule();
 setInterval(fetchSchedule, 30000);
 setInterval(updateMiniWidget, 30000);
 
@@ -1993,7 +2091,7 @@ async function fetchArtistInfo(artistName) {
 }
 
 // ── FREE DRAG LAYOUT + WINDOW SYSTEM (Listen page) ──
-const DRAG_STORAGE_KEY = 'july-listen-layout-v3';
+const DRAG_STORAGE_KEY = 'july-listen-layout-v4';
 const WIN_STATE_KEY = 'july-win-state'; // { cardId: { closed: bool, minimized: bool } }
 let activeDrag = null;
 let topZ = 10;
@@ -2025,40 +2123,68 @@ function initFreeDrag() {
 
   const stackRect = stack.getBoundingClientRect();
   const saved = loadLayout();
+  const GAP = 24;
+  const wide = window.innerWidth >= 1200; // matches the .site wide breakpoint
+  const colWidth = wide ? (stackRect.width - GAP) / 2 : stackRect.width;
 
-  // Pass 1: measure every card's natural position WHILE still in normal flow,
-  // before any styles are touched (so earlier measurements can't shift later ones).
+  // Pass 1: measure every card's height AT ITS TARGET WIDTH while still in
+  // normal flow. Height can depend on width (aspect-ratio media, wrapped
+  // text), so on wide screens we briefly narrow each card to column width
+  // before reading its height — otherwise we'd be packing stale full-width
+  // heights into half-width columns and everything would overlap.
   const boxes = visibleCards.map(card => {
     const id = card.dataset.cardId;
+    const pos = saved[id] || {};
+    const hasSaved = pos.width !== undefined;
+    const targetWidth = hasSaved ? pos.width : colWidth;
+
+    const prevWidth = card.style.width;
+    card.style.width = targetWidth + 'px';
     const rect = card.getBoundingClientRect();
     const naturalLeft = rect.left - stackRect.left;
     const naturalTop = rect.top - stackRect.top;
+    const height = pos.height !== undefined ? pos.height : rect.height;
+    card.style.width = prevWidth;
 
-    const pos = saved[id] || {};
     return {
       card,
+      id,
+      hasSaved,
       left: pos.left !== undefined ? pos.left : naturalLeft,
       top: pos.top !== undefined ? pos.top : naturalTop,
-      width: pos.width !== undefined ? pos.width : rect.width,
-      height: pos.height !== undefined ? pos.height : rect.height
+      width: targetWidth,
+      height
     };
   });
 
-  // Pass 1.5: guarantee minimum spacing between cards stacked in the same
-  // natural column (only for fresh/natural positions, not user-dragged ones) —
-  // doesn't rely on the browser's flex-gap having been captured correctly,
-  // which can go wrong if a card's content was still loading/changing size
-  // at the exact moment it was measured.
-  const MIN_STACK_GAP = 24;
-  const naturalBoxes = boxes.filter(b => saved[b.card.dataset.cardId] === undefined)
-    .sort((a, b) => a.top - b.top);
-  for (let i = 1; i < naturalBoxes.length; i++) {
-    const prev = naturalBoxes[i - 1];
-    const cur = naturalBoxes[i];
-    const sameColumn = Math.abs(cur.left - prev.left) < 40;
-    if (sameColumn) {
-      const minTop = prev.top + prev.height + MIN_STACK_GAP;
-      if (cur.top < minTop) cur.top = minTop;
+  if (wide) {
+    // Bin-pack cards with no saved position into two columns, always adding
+    // to whichever column is currently shorter — turns one long scroll into
+    // a balanced desktop layout that actually uses the screen at 1080p+.
+    const colHeights = [0, 0];
+    boxes.filter(b => !b.hasSaved).sort((a, b) => a.top - b.top).forEach(box => {
+      const col = colHeights[0] <= colHeights[1] ? 0 : 1;
+      box.left = col * (colWidth + GAP);
+      box.top = colHeights[col];
+      colHeights[col] += box.height + GAP;
+    });
+  } else {
+    // Narrower screens: single column. Guarantee minimum spacing between
+    // cards stacked in the same natural column (only for fresh/natural
+    // positions, not user-dragged ones) — doesn't rely on the browser's
+    // flex-gap having been captured correctly, which can go wrong if a
+    // card's content was still loading/changing size at the exact moment
+    // it was measured.
+    const MIN_STACK_GAP = 24;
+    const naturalBoxes = boxes.filter(b => !b.hasSaved).sort((a, b) => a.top - b.top);
+    for (let i = 1; i < naturalBoxes.length; i++) {
+      const prev = naturalBoxes[i - 1];
+      const cur = naturalBoxes[i];
+      const sameColumn = Math.abs(cur.left - prev.left) < 40;
+      if (sameColumn) {
+        const minTop = prev.top + prev.height + MIN_STACK_GAP;
+        if (cur.top < minTop) cur.top = minTop;
+      }
     }
   }
 
@@ -2105,25 +2231,48 @@ function positionCardLate(id) {
     left = saved[id].left; top = saved[id].top;
     width = saved[id].width; height = saved[id].height;
   } else {
-    // measure natural size by briefly taking it out of absolute positioning
+    const stackRect = stack.getBoundingClientRect();
+    const wide = window.innerWidth >= 1200;
+    const GAP = 24;
+    const colWidth = wide ? (stackRect.width - GAP) / 2 : stackRect.width;
+
+    // measure natural height AT THE TARGET WIDTH by briefly taking it out of
+    // absolute positioning (height can depend on width, same as initFreeDrag)
     card.style.position = 'static';
     card.style.visibility = 'hidden';
     card.style.display = 'block';
+    card.style.width = colWidth + 'px';
     const rect = card.getBoundingClientRect();
-    width = rect.width;
+    width = colWidth;
     height = rect.height;
     card.style.position = ''; // let the .free-drag CSS rule re-apply position:absolute
 
-    // place it just below whatever is currently the lowest positioned card
-    let maxBottom = 0;
-    stack.querySelectorAll('[data-card-id]').forEach(c => {
-      if (c === card) return;
-      const t = parseFloat(c.style.top || 0);
-      const h = parseFloat(c.style.height || c.offsetHeight || 0);
-      maxBottom = Math.max(maxBottom, t + h);
-    });
-    left = 0;
-    top = maxBottom + 28;
+    if (wide) {
+      // drop it into whichever column is currently shorter
+      const colBottoms = [0, 0];
+      stack.querySelectorAll('[data-card-id]').forEach(c => {
+        if (c === card) return;
+        const l = parseFloat(c.style.left || 0);
+        const t = parseFloat(c.style.top || 0);
+        const h = parseFloat(c.style.height || c.offsetHeight || 0);
+        const col = l < colWidth / 2 ? 0 : 1;
+        colBottoms[col] = Math.max(colBottoms[col], t + h);
+      });
+      const col = colBottoms[0] <= colBottoms[1] ? 0 : 1;
+      left = col * (colWidth + GAP);
+      top = colBottoms[col] + GAP;
+    } else {
+      // place it just below whatever is currently the lowest positioned card
+      let maxBottom = 0;
+      stack.querySelectorAll('[data-card-id]').forEach(c => {
+        if (c === card) return;
+        const t = parseFloat(c.style.top || 0);
+        const h = parseFloat(c.style.height || c.offsetHeight || 0);
+        maxBottom = Math.max(maxBottom, t + h);
+      });
+      left = 0;
+      top = maxBottom + 28;
+    }
   }
 
   card.style.width = width + 'px';
@@ -2411,11 +2560,23 @@ function startFreeDragWhenReady() {
   // renders in a fallback font first and reflows once IBM Plex Mono swaps in.
   // Measuring before that swap locks in positions based on the wrong sizes,
   // which is exactly what was causing windows to overlap only for new visitors.
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => requestAnimationFrame(initFreeDrag));
-  } else {
-    requestAnimationFrame(initFreeDrag);
-  }
+  const fontsPromise = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+  // ALSO wait for the initial Now Playing (which fills in History too) and
+  // Schedule fetches — these populate real content into cards that start
+  // empty/placeholder. Measuring before they land freezes those cards at an
+  // undersized height (win-body scrolls instead of growing), which is why
+  // everything looked cramped until a manual "Reset Layout" click forced a
+  // fresh measurement after the data had since arrived. Race against a
+  // timeout so a slow or failed fetch can never block layout from appearing.
+  const dataPromise = Promise.all([
+    typeof initialNowPlayingPromise !== 'undefined' ? initialNowPlayingPromise : Promise.resolve(),
+    typeof initialSchedulePromise !== 'undefined' ? initialSchedulePromise : Promise.resolve()
+  ]).catch(() => {});
+  const timeoutPromise = new Promise(resolve => setTimeout(resolve, 4000));
+
+  Promise.all([fontsPromise, Promise.race([dataPromise, timeoutPromise])])
+    .then(() => requestAnimationFrame(initFreeDrag));
 }
 window.addEventListener('load', startFreeDragWhenReady);
 
@@ -2538,6 +2699,15 @@ function enterTvMode() {
   overlay.classList.add('active');
   tvModeActive = true;
 
+  const vizSlot = document.getElementById('tvmVizSlot');
+  const vizCanvas = document.getElementById('vizCanvas');
+  if (vizSlot && vizCanvas) {
+    vizSlot.appendChild(vizCanvas); // reparenting keeps the WebGL context alive
+    requestAnimationFrame(resizeVizCanvas);
+  }
+  vizPrevAutoCycleState = vizAutoCycleEnabled;
+  setVizAutoCycle(true); // 5s auto-cycle is on by default in TV Mode
+
   const volSlider = document.getElementById('tvmVolSlider');
   if (volSlider) volSlider.value = Math.round((video.volume || 1) * 100);
 
@@ -2546,7 +2716,7 @@ function enterTvMode() {
   if (logo && headerLogo) {
     logo.innerHTML = '';
     const img = headerLogo.cloneNode(true);
-    img.style.filter = 'none';
+    img.style.filter = 'invert(1)';
     logo.appendChild(img);
   }
 
@@ -2633,6 +2803,14 @@ function exitTvMode() {
   tvModeActive = false;
   if (video && homeSlot) homeSlot.insertBefore(video, homeSlot.firstChild);
 
+  const vizCanvas = document.getElementById('vizCanvas');
+  const homeVizSlot = document.getElementById('body-visualizer');
+  if (vizCanvas && homeVizSlot) {
+    homeVizSlot.insertBefore(vizCanvas, homeVizSlot.firstChild);
+    requestAnimationFrame(resizeVizCanvas);
+  }
+  setVizAutoCycle(vizPrevAutoCycleState); // restore whatever it was set to before TV Mode
+
   if (tvModeClockInterval) { clearInterval(tvModeClockInterval); tvModeClockInterval = null; }
   document.removeEventListener('keydown', tvModeEscHandler);
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -2657,7 +2835,7 @@ function updateTvModeClock() {
 }
 
 // ── START ──
-fetchNowPlaying();
+let initialNowPlayingPromise = fetchNowPlaying();
 setInterval(fetchNowPlaying, 15000);
 updateScrobbleUI();
 window.addEventListener('load', syncColorPickers);
