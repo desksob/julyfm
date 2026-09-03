@@ -319,6 +319,34 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   font-size:11px; padding:6px 8px;
 }
 .chat-join-row input:focus, .chat-input-row input:focus{ outline:none; border-color:var(--accent); }
+.chat-color-input{
+  flex:0 0 auto; width:30px; height:30px; padding:0; border:1px solid var(--border);
+  background:none; cursor:pointer; -webkit-appearance:none; appearance:none;
+}
+.chat-color-input::-webkit-color-swatch-wrapper{ padding:2px; }
+.chat-color-input::-webkit-color-swatch{ border:none; }
+.chat-color-input::-moz-color-swatch{ border:none; }
+.chat-msg.bot{ color:var(--accent); font-size:10.5px; }
+.chat-msg.bot .chat-name{ color:var(--accent); }
+.chat-msg.error{ color:#c0392b; font-style:italic; font-size:10px; }
+.chat-emoji-btn{
+  flex:0 0 auto; width:30px; height:30px; border:1px solid var(--border); background:none;
+  color:var(--ink); cursor:pointer; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;
+}
+.chat-emoji-btn:hover{ border-color:var(--accent); }
+.chat-input-row{ position:relative; }
+.chat-emoji-popover{
+  display:none; position:absolute; bottom:100%; left:14px; margin-bottom:6px;
+  background:var(--bg); border:1px solid var(--border); padding:8px;
+  grid-template-columns:repeat(8, 1fr); gap:4px; width:236px; z-index:10;
+  max-height:160px; overflow-y:auto;
+}
+.chat-emoji-popover.open{ display:grid; }
+.chat-emoji-popover button{
+  background:none; border:none; font-size:16px; cursor:pointer; padding:3px;
+  line-height:1; border-radius:2px;
+}
+.chat-emoji-popover button:hover{ background:var(--hair); }
 
 /* ═══ TV MODE (fullscreen dashboard) ═══ */
 .tv-mode-overlay{
@@ -933,11 +961,14 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         <div class="win-body" id="body-chat" style="display:flex;flex-direction:column;padding:0;">
           <div id="chatMessages" class="chat-messages"></div>
           <div id="chatJoinRow" class="chat-join-row">
+            <input type="color" id="chatColorInput" class="chat-color-input" title="Your name color" value="#c8a96e">
             <input type="text" id="chatNameInput" placeholder="Your name" maxlength="24">
             <button class="add-streaming-btn" onclick="joinChat()">Join chat</button>
           </div>
           <div id="chatInputRow" class="chat-input-row" style="display:none;">
-            <input type="text" id="chatTextInput" placeholder="Say something..." maxlength="500" onkeydown="if(event.key==='Enter')sendChatMessage();">
+            <div class="chat-emoji-popover" id="chatEmojiPopover"></div>
+            <button class="chat-emoji-btn" onclick="toggleEmojiPicker(event)" title="Emoji">☺</button>
+            <input type="text" id="chatTextInput" placeholder="Say something... (try !like)" maxlength="500" onkeydown="if(event.key==='Enter')sendChatMessage();">
             <button class="add-streaming-btn" onclick="sendChatMessage()">Send</button>
           </div>
         </div>
@@ -1331,6 +1362,7 @@ function detectBrowserForViz() {
   const ua = navigator.userAgent;
   if (navigator.brave && typeof navigator.brave.isBrave === 'function') return 'brave';
   if (/Firefox\//.test(ua)) return 'firefox';
+  if (/Vivaldi\//.test(ua)) return 'vivaldi';
   if (/Edg\//.test(ua)) return 'edge';
   if (/OPR\//.test(ua) || /Opera/.test(ua)) return 'opera';
   if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) return 'chrome';
@@ -1359,6 +1391,12 @@ function vizHelpStepsFor(browser) {
         'Turn on "Use graphics acceleration when available".',
         'Relaunch Edge, then reload this page.'
       ];
+    case 'vivaldi':
+      return [
+        'Click the menu icon (top-left) → Settings, or go to <code>vivaldi://settings/performance</code>.',
+        'Under Performance, turn on "Use Hardware Acceleration When Available".',
+        'Relaunch Vivaldi, then reload this page.'
+      ];
     case 'firefox':
       return [
         'Go to <code>about:preferences#general</code>.',
@@ -1373,9 +1411,9 @@ function vizHelpStepsFor(browser) {
       ];
     default:
       return [
-        'Open your browser\'s Settings and look for "System" or "Performance".',
-        'Turn on "Use hardware/graphics acceleration when available".',
-        'Restart your browser, then reload this page.'
+        'Open your browser\'s Settings and look for a "System" or "Performance" section.',
+        'Turn on "Use hardware acceleration when available" (sometimes called "graphics acceleration" or "GPU rendering").',
+        'Restart your browser fully, then reload this page and press Play Live again.'
       ];
   }
 }
@@ -2583,22 +2621,69 @@ window.addEventListener('load', startFreeDragWhenReady);
 // ── LIVE CHAT (WebSocket via Cloudflare Durable Object) ──
 let chatSocket = null;
 let chatUsername = '';
+let chatColor = '#c8a96e';
+let chatJoined = false;
 let chatReconnectTimer = null;
+
+// Names that could impersonate the system/bot or site staff — checked
+// case-insensitively and trimmed, both client-side (fast feedback) and
+// server-side (the real enforcement, since client checks can be bypassed).
+const CHAT_RESERVED_NAMES = ['admin', 'administrator', 'mod', 'moderator', 'system', 'bot', 'july bot', 'julybot', 'july radio', 'julyradio'];
+
+function isReservedChatName(name) {
+  return CHAT_RESERVED_NAMES.includes(name.trim().toLowerCase());
+}
 
 function getChatWsUrl() {
   // WORKER is https://... — swap to wss:// for the WebSocket upgrade
   return WORKER.replace(/^https:/, 'wss:') + '/chat';
 }
 
+// Connect right away (read-only) so anyone opening the site is greeted with
+// the chat history immediately — joining (picking a name) is only required
+// to actually send a message, not to see what's already been said.
+function initChatOnLoad() {
+  let savedName = '', savedColor = '';
+  try {
+    savedName = localStorage.getItem('july-chat-name') || '';
+    savedColor = localStorage.getItem('july-chat-color') || '';
+  } catch(e) {}
+  if (savedName) {
+    const input = document.getElementById('chatNameInput');
+    if (input) input.value = savedName;
+    chatUsername = savedName;
+  }
+  if (savedColor) {
+    chatColor = savedColor;
+    const colorInput = document.getElementById('chatColorInput');
+    if (colorInput) colorInput.value = savedColor;
+  }
+  connectChat();
+}
+
 function joinChat() {
   const input = document.getElementById('chatNameInput');
   const name = (input.value || '').trim();
   if (!name) { input.focus(); return; }
+  if (isReservedChatName(name)) {
+    addChatSystemMessage('That name is reserved — please pick another.', 'error');
+    input.focus();
+    return;
+  }
   chatUsername = name.slice(0, 24);
-  try { localStorage.setItem('july-chat-name', chatUsername); } catch(e) {}
+  const colorInput = document.getElementById('chatColorInput');
+  chatColor = (colorInput && colorInput.value) || chatColor;
+  try {
+    localStorage.setItem('july-chat-name', chatUsername);
+    localStorage.setItem('july-chat-color', chatColor);
+  } catch(e) {}
   document.getElementById('chatJoinRow').style.display = 'none';
   document.getElementById('chatInputRow').style.display = 'flex';
-  connectChat();
+  if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+    chatSocket.send(JSON.stringify({ type: 'join', name: chatUsername, color: chatColor }));
+  } else {
+    connectChat();
+  }
 }
 
 function connectChat() {
@@ -2608,22 +2693,29 @@ function connectChat() {
   } catch(e) { return; }
 
   chatSocket.onopen = () => {
-    addChatSystemMessage('Connected');
-    chatSocket.send(JSON.stringify({ type: 'join', name: chatUsername }));
+    // Auto-join only if the person already has a saved name from a previous
+    // visit — otherwise stay in read-only mode until they click "Join chat".
+    if (chatUsername && !isReservedChatName(chatUsername)) {
+      chatSocket.send(JSON.stringify({ type: 'join', name: chatUsername, color: chatColor }));
+      chatJoined = true;
+      document.getElementById('chatJoinRow').style.display = 'none';
+      document.getElementById('chatInputRow').style.display = 'flex';
+    }
   };
   chatSocket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (data.type === 'message') addChatMessage(data.name, data.text);
+      if (data.type === 'message') addChatMessage(data.name, data.text, data.color);
       else if (data.type === 'system') addChatSystemMessage(data.text);
+      else if (data.type === 'bot') addChatSystemMessage(data.text, 'bot');
+      else if (data.type === 'error') addChatSystemMessage(data.text, 'error');
       else if (data.type === 'presence') updateChatPresence(data.count);
       else if (data.type === 'history') {
-        (data.messages || []).forEach(m => addChatMessage(m.name, m.text));
+        (data.messages || []).forEach(m => addChatMessage(m.name, m.text, m.color));
       }
     } catch(e) {}
   };
   chatSocket.onclose = () => {
-    addChatSystemMessage('Disconnected — reconnecting...');
     if (chatReconnectTimer) clearTimeout(chatReconnectTimer);
     chatReconnectTimer = setTimeout(connectChat, 3000);
   };
@@ -2634,11 +2726,28 @@ function sendChatMessage() {
   const input = document.getElementById('chatTextInput');
   const text = (input.value || '').trim();
   if (!text || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-  chatSocket.send(JSON.stringify({ type: 'message', name: chatUsername, text: text.slice(0, 500) }));
+
+  // Bot commands — "!like" saves whatever's currently playing to a shared
+  // favorites list; "!liked" asks the bot to list the last few saved songs.
+  const lower = text.toLowerCase();
+  if (lower === '!like' || lower.startsWith('!like ')) {
+    const title = (document.getElementById('trackTitle') || {}).textContent || '';
+    const artist = (document.getElementById('trackArtist') || {}).textContent || '';
+    chatSocket.send(JSON.stringify({ type: 'command', command: 'like', name: chatUsername, track: { title, artist } }));
+    input.value = '';
+    return;
+  }
+  if (lower === '!liked') {
+    chatSocket.send(JSON.stringify({ type: 'command', command: 'liked', name: chatUsername }));
+    input.value = '';
+    return;
+  }
+
+  chatSocket.send(JSON.stringify({ type: 'message', name: chatUsername, text: text.slice(0, 500), color: chatColor }));
   input.value = '';
 }
 
-function addChatMessage(name, text) {
+function addChatMessage(name, text, color) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
   const div = document.createElement('div');
@@ -2646,6 +2755,7 @@ function addChatMessage(name, text) {
   const nameSpan = document.createElement('span');
   nameSpan.className = 'chat-name';
   nameSpan.textContent = name + ': ';
+  if (color) nameSpan.style.color = color;
   const textSpan = document.createElement('span');
   textSpan.className = 'chat-text';
   textSpan.textContent = text;
@@ -2655,12 +2765,12 @@ function addChatMessage(name, text) {
   box.scrollTop = box.scrollHeight;
 }
 
-function addChatSystemMessage(text) {
+function addChatSystemMessage(text, kind) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
   const div = document.createElement('div');
-  div.className = 'chat-msg system';
-  div.textContent = text;
+  div.className = 'chat-msg system' + (kind ? ' ' + kind : '');
+  div.textContent = (kind === 'bot' ? '🎵 ' : '') + text;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
@@ -2670,14 +2780,37 @@ function updateChatPresence(count) {
   if (el) el.textContent = count ? ('(' + count + ')') : '';
 }
 
-(function initChatName() {
-  let saved = '';
-  try { saved = localStorage.getItem('july-chat-name') || ''; } catch(e) {}
-  if (saved) {
-    const input = document.getElementById('chatNameInput');
-    if (input) input.value = saved;
+// ── EMOJI PICKER ──
+const CHAT_EMOJIS = ['😀','😂','😍','😎','🤔','😢','😭','😡','🥳','🔥','💯','👍','👎','🙌','👏','🤝','❤️','💛','💚','💙','💜','🖤','✨','🎵','🎶','🎧','🎤','📻','⭐','🌙','☀️','🌧️','🍕','☕','🍺','💃','🕺','🙏','😴','👀'];
+
+function toggleEmojiPicker(e) {
+  e.stopPropagation();
+  const pop = document.getElementById('chatEmojiPopover');
+  if (!pop) return;
+  if (pop.classList.contains('open')) { pop.classList.remove('open'); return; }
+  if (!pop.dataset.built) {
+    CHAT_EMOJIS.forEach(em => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = em;
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const input = document.getElementById('chatTextInput');
+        if (input) { input.value += em; input.focus(); }
+        pop.classList.remove('open');
+      });
+      pop.appendChild(btn);
+    });
+    pop.dataset.built = '1';
   }
-})();
+  pop.classList.add('open');
+}
+document.addEventListener('click', () => {
+  const pop = document.getElementById('chatEmojiPopover');
+  if (pop) pop.classList.remove('open');
+});
+
+window.addEventListener('load', initChatOnLoad);
 
 // ── TV MODE (fullscreen) ──
 let tvModeClockInterval = null;
