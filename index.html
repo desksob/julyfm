@@ -1667,8 +1667,62 @@ function updateBg(url) {
   document.getElementById('bgBlur').style.backgroundImage = url ? 'url('+url+')' : '';
 }
 
+// ── BROADCAST MODE (Last.fm vs DJ Set) ──
+// The admin panel lets a host switch to "DJ Set" mode with a custom title/
+// name/image — this was previously saved to the backend but never actually
+// read anywhere on the site, so switching modes had no visible effect at
+// all. This checks which mode is active before deciding what to show.
+let broadcastMode = 'lastfm';
+let djsetData = null;
+
+async function fetchBroadcastMode() {
+  try {
+    const res = await fetch(WORKER + '/mode');
+    const data = await res.json();
+    broadcastMode = data.mode || 'lastfm';
+    djsetData = data.djset || null;
+  } catch(e) {
+    broadcastMode = 'lastfm'; // fail safe to the normal Last.fm display
+  }
+}
+
+async function renderDjSetNowPlaying() {
+  const key = 'djset:' + djsetData.title + '|' + (djsetData.djName || '');
+  if (key === lastTrack) return; // already showing this, nothing to update
+  lastTrack = key;
+
+  const titleEl = document.getElementById('trackTitle');
+  const artistEl = document.getElementById('trackArtist');
+  const albumEl = document.getElementById('trackAlbum');
+  const artEl = document.getElementById('albumArt');
+
+  titleEl.classList.add('fading'); artistEl.classList.add('fading'); artEl.classList.add('fading');
+  await new Promise(r => setTimeout(r, 600));
+
+  titleEl.textContent = djsetData.title;
+  artistEl.textContent = djsetData.djName ? ('DJ Set — ' + djsetData.djName) : 'Live DJ Set';
+  albumEl.textContent = '';
+  if (djsetData.image) {
+    artEl.innerHTML = '<img src="'+djsetData.image+'" alt="">';
+    updateBg(djsetData.image);
+  } else {
+    artEl.innerHTML = '<div class="art-placeholder">art</div>';
+  }
+  titleEl.classList.remove('fading'); artistEl.classList.remove('fading'); artEl.classList.remove('fading');
+
+  if (playing) updateMediaSession(djsetData.title, djsetData.djName || 'July Radio', djsetData.image || null);
+  syncTvModeContent();
+}
+
 // ── LAST.FM ──
 async function fetchNowPlaying() {
+  await fetchBroadcastMode();
+
+  if (broadcastMode === 'djset' && djsetData && djsetData.title) {
+    await renderDjSetNowPlaying();
+    return; // skip Last.fm entirely while a DJ set is live
+  }
+
   try {
     const res = await fetch('https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user='+LASTFM_USER+'&api_key='+LASTFM_KEY+'&format=json&limit=10');
     const data = await res.json();
