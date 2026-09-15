@@ -83,7 +83,43 @@
   .mode-btn { background: #0a0a0a; border: none; color: #555; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; cursor: pointer; transition: all 0.2s; }
   .mode-btn.active { background: #111; color: #e0d9cc; }
 
-  /* SCHEDULE */
+  /* SCHEDULE — weekly time-axis grid */
+  .week-scroll { display: flex; max-height: 560px; overflow-y: auto; border: 1px solid #1a1a1a; border-radius: 2px; background: #0a0a0a; }
+  .week-gutter { width: 40px; flex-shrink: 0; border-right: 1px solid #1a1a1a; background: #0a0a0a; }
+  .week-gutter-header { height: 34px; position: sticky; top: 0; background: #111; z-index: 3; border-bottom: 1px solid #1a1a1a; }
+  .week-gutter-times { position: relative; }
+  .week-time-label { position: absolute; right: 6px; transform: translateY(-50%); font-size: 8px; color: #3a3a3a; letter-spacing: 0.02em; }
+  .week-days { display: flex; flex: 1; }
+  .week-day-col { flex: 1; min-width: 92px; position: relative; border-right: 1px solid #1a1a1a; }
+  .week-day-col:last-child { border-right: none; }
+  .week-day-header { height: 34px; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; background: #111; position: sticky; top: 0; z-index: 2; border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: color 0.2s; }
+  .week-day-header:hover { color: var(--accent); }
+  .week-day-track { position: relative; background-image: repeating-linear-gradient(to bottom, #151515 0, #151515 1px, transparent 1px, transparent 48px); cursor: crosshair; }
+  .week-block { position: absolute; left: 2px; right: 2px; border: 1px solid #2a2a2a; border-radius: 2px; background: #161616; overflow: hidden; cursor: pointer; box-sizing: border-box; transition: border-color 0.15s; }
+  .week-block:hover { border-color: var(--accent); }
+  .week-block.dragging { border-color: var(--accent); z-index: 5; }
+  .week-block-inner { padding: 3px 6px; overflow: hidden; height: 100%; pointer-events: none; }
+  .week-block-img { width: 100%; height: 22px; object-fit: cover; display: block; margin-bottom: 2px; }
+  .week-block-time { font-size: 8px; color: #666; letter-spacing: 0.02em; }
+  .week-block-name { font-size: 10px; color: #e0d9cc; text-transform: uppercase; line-height: 1.25; margin-top: 1px; }
+  .week-resize-handle { position: absolute; left: 0; right: 0; height: 10px; cursor: ns-resize; z-index: 4; }
+  .week-resize-handle.top { top: -5px; }
+  .week-resize-handle.bottom { bottom: -5px; }
+  .week-resize-handle:hover { background: var(--accent); opacity: 0.3; }
+  .week-hint { font-size: 9px; color: #444; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+  /* SHOW EDIT MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.active { display: flex; }
+  .modal-box { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #e0d9cc; }
+  .modal-close { background: none; border: none; color: #555; font-size: 16px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: #e0d9cc; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid #1a1a1a; display: flex; gap: 10px; align-items: center; }
+  .time-group input[type=number] { width: 60px; text-align: center; -moz-appearance: textfield; }
+
+  /* SCHEDULE (legacy list styles, still used elsewhere) */
   .schedule-slot { border: 1px solid #1a1a1a; border-radius: 3px; padding: 14px; margin-bottom: 10px; }
   .slot-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px; }
   .slot-field { display: flex; flex-direction: column; gap: 4px; }
@@ -140,6 +176,10 @@
     .np-prev, .np-clocks { display: none; }
     .btn-row { flex-direction: column; }
     .btn-row .btn { width: 100%; }
+    .week-scroll { max-height: 420px; }
+    .week-day-col { min-width: 72px; }
+    .week-time-label { font-size: 7px; right: 3px; }
+    .week-block-name { font-size: 9px; }
   }
 </style>
 </head>
@@ -236,9 +276,9 @@
     <div class="dash-panel" id="panel-schedule">
       <div class="section-title">Your Shows</div>
       <div class="msg" id="scheduleMsg"></div>
-      <div id="scheduleList"></div>
-      <div class="btn-row" style="margin-top:8px;">
-        <button class="btn secondary" onclick="addShowSlot()">+ Add Show</button>
+      <div class="week-hint">Click a show to edit it · click empty space to add one · drag a show's top/bottom edge to adjust its time</div>
+      <div id="weekGrid"></div>
+      <div class="btn-row" style="margin-top:16px;">
         <button class="btn" onclick="saveSchedule()">Save Schedule</button>
       </div>
     </div>
@@ -292,6 +332,50 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- SHOW EDIT MODAL -->
+<div class="modal-overlay" id="showModalOverlay" onclick="if(event.target===this) closeShowModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="showModalTitle">Add Show</span>
+      <button class="modal-close" onclick="closeShowModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="msg" id="showModalMsg"></div>
+      <div class="field"><label class="field-label">Show Name</label><input type="text" id="sm-name" placeholder="e.g. Open Air"></div>
+      <div class="grid-2">
+        <div class="field">
+          <label class="field-label">Start</label>
+          <div class="time-group">
+            <select id="sm-start-h"></select>
+            <input type="number" id="sm-start-m" min="0" max="59" value="0" onblur="clampMinuteInput(this)">
+            <select id="sm-start-a"><option>AM</option><option>PM</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">End</label>
+          <div class="time-group">
+            <select id="sm-end-h"></select>
+            <input type="number" id="sm-end-m" min="0" max="59" value="0" onblur="clampMinuteInput(this)">
+            <select id="sm-end-a"><option>AM</option><option>PM</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Show Image URL</label>
+        <input type="url" id="sm-image" placeholder="https://..." oninput="previewShowImg()">
+        <img id="sm-image-preview" class="preview-img" alt="preview">
+      </div>
+      <div class="field"><label class="field-label">Description (optional)</label><input type="text" id="sm-desc" placeholder="e.g. tonight we go deep into 90s ambient"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn danger" id="sm-delete-btn" onclick="deleteShowFromModal()">Delete</button>
+      <div style="flex:1;"></div>
+      <button class="btn secondary" onclick="closeShowModal()">Cancel</button>
+      <button class="btn" onclick="saveShowFromModal()">Save Show</button>
+    </div>
   </div>
 </div>
 
@@ -489,7 +573,8 @@ async function loadSchedule() {
         start: s.start || '00:00',
         end: s.end || '02:00',
         name: s.name || '',
-        description: s.description || ''
+        description: s.description || '',
+        image: s.image || ''
       };
     });
   } catch(e) { scheduleSlots = []; }
@@ -517,170 +602,316 @@ function partsTo24(h12, m, ampm) {
   return pad(h) + ':' + pad(m);
 }
 
-function readSlotTimes(i) {
-  var sh = parseInt(document.getElementById('sh-start-h-' + i).value);
-  var sm = parseInt(document.getElementById('sh-start-m-' + i).value);
-  var sa = document.getElementById('sh-start-a-' + i).value;
-  var eh = parseInt(document.getElementById('sh-end-h-' + i).value);
-  var em = parseInt(document.getElementById('sh-end-m-' + i).value);
-  var ea = document.getElementById('sh-end-a-' + i).value;
-  scheduleSlots[i].start = partsTo24(sh, sm, sa);
-  scheduleSlots[i].end   = partsTo24(eh, em, ea);
+function timeToMins(t) {
+  var p = (t || '00:00').split(':');
+  return (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0);
 }
 
-function makeSelect(id, options, selected, onChange) {
-  var sel = document.createElement('select');
-  sel.id = id;
-  options.forEach(function(opt) {
+function fmtDisplayTime(t) {
+  var p = parseTime(t);
+  return pad(p.h12) + ':' + pad(p.m) + ' ' + p.ampm;
+}
+
+function populateHourSelect(sel) {
+  sel.innerHTML = '';
+  for (var h = 1; h <= 12; h++) {
     var o = document.createElement('option');
-    o.value = opt.value !== undefined ? opt.value : opt;
-    o.textContent = opt.label !== undefined ? opt.label : opt;
-    if (String(o.value) === String(selected)) o.selected = true;
+    o.value = h; o.textContent = pad(h);
     sel.appendChild(o);
-  });
-  sel.addEventListener('change', onChange);
-  return sel;
+  }
+}
+
+// ── SCHEDULE GRID CONSTANTS ──
+var HOUR_PX = 48;
+var MIN_PX = HOUR_PX / 60;
+var DAY_PX = HOUR_PX * 24;
+var SNAP_MINS = 5;
+var MIN_DURATION = 15;
+
+function minsToTime(mins) {
+  mins = Math.max(0, Math.min(1440, mins));
+  return pad(Math.floor(mins / 60)) + ':' + pad(mins % 60);
 }
 
 function renderSchedule() {
-  var list = document.getElementById('scheduleList');
-  list.innerHTML = '';
+  var grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
 
-  if (!scheduleSlots.length) {
-    list.innerHTML = '<div style="font-size:11px;color:#444;padding:12px 0;letter-spacing:0.08em;">No shows yet. Click + Add Show to start.</div>';
-    return;
+  var scroll = document.createElement('div');
+  scroll.className = 'week-scroll';
+
+  // Time gutter
+  var gutter = document.createElement('div');
+  gutter.className = 'week-gutter';
+  var gutterHeader = document.createElement('div');
+  gutterHeader.className = 'week-gutter-header';
+  gutter.appendChild(gutterHeader);
+  var gutterTimes = document.createElement('div');
+  gutterTimes.className = 'week-gutter-times';
+  gutterTimes.style.height = DAY_PX + 'px';
+  for (var h = 0; h < 24; h++) {
+    var label = document.createElement('div');
+    label.className = 'week-time-label';
+    label.style.top = (h * HOUR_PX) + 'px';
+    label.textContent = pad(h) + ':00';
+    gutterTimes.appendChild(label);
+  }
+  gutter.appendChild(gutterTimes);
+  scroll.appendChild(gutter);
+
+  // Day columns
+  var days = document.createElement('div');
+  days.className = 'week-days';
+
+  DAYS.forEach(function(dayName, d) {
+    var col = document.createElement('div');
+    col.className = 'week-day-col';
+
+    var header = document.createElement('div');
+    header.className = 'week-day-header';
+    header.textContent = dayName.slice(0, 3);
+    header.title = 'Click to add a show on ' + dayName;
+    header.addEventListener('click', function() { openShowModal(null, d, 18 * 60); });
+    col.appendChild(header);
+
+    var track = document.createElement('div');
+    track.className = 'week-day-track';
+    track.style.height = DAY_PX + 'px';
+    track.dataset.day = d;
+
+    track.addEventListener('click', function(e) {
+      if (e.target !== track) return; // ignore bubbled clicks from blocks/handles
+      var rect = track.getBoundingClientRect();
+      var y = e.clientY - rect.top;
+      var mins = Math.round((y / MIN_PX) / 15) * 15;
+      mins = Math.max(0, Math.min(1425, mins));
+      openShowModal(null, d, mins);
+    });
+
+    var dayShows = [];
+    scheduleSlots.forEach(function(s, i) { if (s.day === d) dayShows.push({ s: s, i: i }); });
+    dayShows.sort(function(a, b) { return timeToMins(a.s.start) - timeToMins(b.s.start); });
+
+    dayShows.forEach(function(x) {
+      var startMins = timeToMins(x.s.start);
+      var endMins = timeToMins(x.s.end);
+      if (endMins <= startMins) endMins = 1440;
+
+      var block = document.createElement('div');
+      block.className = 'week-block';
+      block.style.top = (startMins * MIN_PX) + 'px';
+      block.style.height = Math.max((endMins - startMins) * MIN_PX, 16) + 'px';
+
+      var inner = document.createElement('div');
+      inner.className = 'week-block-inner';
+      var html = '';
+      if (x.s.image) html += '<img src="' + x.s.image + '" class="week-block-img" alt="">';
+      html += '<div class="week-block-time">' + fmtDisplayTime(x.s.start) + '–' + fmtDisplayTime(x.s.end) + '</div>';
+      html += '<div class="week-block-name">' + (x.s.name || 'Untitled') + '</div>';
+      inner.innerHTML = html;
+      block.appendChild(inner);
+
+      var topHandle = document.createElement('div');
+      topHandle.className = 'week-resize-handle top';
+      topHandle.addEventListener('pointerdown', function(e) { startResize(e, d, x.i, 'top'); });
+      block.appendChild(topHandle);
+
+      var bottomHandle = document.createElement('div');
+      bottomHandle.className = 'week-resize-handle bottom';
+      bottomHandle.addEventListener('pointerdown', function(e) { startResize(e, d, x.i, 'bottom'); });
+      block.appendChild(bottomHandle);
+
+      block.addEventListener('click', function() {
+        if (suppressNextBlockClick) { suppressNextBlockClick = false; return; }
+        openShowModal(x.i);
+      });
+
+      track.appendChild(block);
+    });
+
+    col.appendChild(track);
+    days.appendChild(col);
+  });
+
+  scroll.appendChild(days);
+  grid.appendChild(scroll);
+}
+
+// ── DRAG-RESIZE ──
+var dragState = null;
+var suppressNextBlockClick = false;
+
+function startResize(e, dayIdx, slotIndex, edge) {
+  e.stopPropagation();
+  e.preventDefault();
+
+  var daySlots = [];
+  scheduleSlots.forEach(function(s, i) { if (s.day === dayIdx) daySlots.push({ s: s, i: i }); });
+  daySlots.sort(function(a, b) { return timeToMins(a.s.start) - timeToMins(b.s.start); });
+  var idxInDay = daySlots.findIndex(function(x) { return x.i === slotIndex; });
+  var prev = idxInDay > 0 ? daySlots[idxInDay - 1] : null;
+  var next = idxInDay < daySlots.length - 1 ? daySlots[idxInDay + 1] : null;
+  var slot = scheduleSlots[slotIndex];
+
+  var origStart = timeToMins(slot.start);
+  var origEnd = timeToMins(slot.end);
+  var contiguousPrev = prev && timeToMins(prev.s.end) === origStart;
+  var contiguousNext = next && timeToMins(next.s.start) === origEnd;
+
+  dragState = {
+    dayIdx: dayIdx, slotIndex: slotIndex, edge: edge,
+    startY: e.clientY, origStart: origStart, origEnd: origEnd,
+    moved: false,
+    prevIndex: prev ? prev.i : null,
+    nextIndex: next ? next.i : null,
+    contiguousPrev: contiguousPrev,
+    contiguousNext: contiguousNext,
+    prevOrigStart: prev ? timeToMins(prev.s.start) : null,
+    nextOrigEnd: next ? timeToMins(next.s.end) : null
+  };
+
+  document.addEventListener('pointermove', onResizeMove);
+  document.addEventListener('pointerup', onResizeEnd);
+}
+
+function onResizeMove(e) {
+  if (!dragState) return;
+  var deltaY = e.clientY - dragState.startY;
+  if (Math.abs(deltaY) > 2) dragState.moved = true;
+  var deltaMins = Math.round((deltaY / MIN_PX) / SNAP_MINS) * SNAP_MINS;
+  if (deltaMins === 0 && !dragState.moved) return;
+
+  var slot = scheduleSlots[dragState.slotIndex];
+
+  if (dragState.edge === 'bottom') {
+    var newEnd = dragState.origEnd + deltaMins;
+    var minEnd = dragState.origStart + MIN_DURATION;
+    var maxEnd = dragState.contiguousNext
+      ? dragState.nextOrigEnd - MIN_DURATION
+      : (dragState.nextIndex !== null ? timeToMins(scheduleSlots[dragState.nextIndex].start) : 1440);
+    newEnd = Math.max(minEnd, Math.min(maxEnd, newEnd));
+    slot.end = minsToTime(newEnd);
+    if (dragState.contiguousNext) scheduleSlots[dragState.nextIndex].start = minsToTime(newEnd);
+  } else {
+    var newStart = dragState.origStart + deltaMins;
+    var maxStart = dragState.origEnd - MIN_DURATION;
+    var minStart = dragState.contiguousPrev
+      ? dragState.prevOrigStart + MIN_DURATION
+      : (dragState.prevIndex !== null ? timeToMins(scheduleSlots[dragState.prevIndex].end) : 0);
+    newStart = Math.max(minStart, Math.min(maxStart, newStart));
+    slot.start = minsToTime(newStart);
+    if (dragState.contiguousPrev) scheduleSlots[dragState.prevIndex].end = minsToTime(newStart);
   }
 
-  var hourOpts = [];
-  for (var h = 1; h <= 12; h++) hourOpts.push({ value: h, label: pad(h) });
-  var minOpts = [0,15,30,45].map(function(m) { return { value: m, label: pad(m) }; });
-  var apOpts  = [{ value:'AM', label:'AM' }, { value:'PM', label:'PM' }];
-  var dayOpts = DAYS.map(function(d, j) { return { value: j, label: d }; });
-
-  scheduleSlots.forEach(function(slot, i) {
-    var sp = parseTime(slot.start);
-    var ep = parseTime(slot.end);
-
-    var wrap = document.createElement('div');
-    wrap.className = 'schedule-slot';
-
-    // ── Row: day + start + end + name + buttons ──
-    var row = document.createElement('div');
-    row.className = 'slot-row';
-
-    // Day
-    var dayField = document.createElement('div');
-    dayField.className = 'slot-field';
-    dayField.innerHTML = '<div class="time-label">Day</div>';
-    dayField.appendChild(makeSelect('sh-day-' + i, dayOpts, slot.day, function() {
-      scheduleSlots[i].day = parseInt(this.value);
-    }));
-    row.appendChild(dayField);
-
-    // Start
-    var startField = document.createElement('div');
-    startField.className = 'slot-field';
-    startField.innerHTML = '<div class="time-label">Start</div>';
-    var startGroup = document.createElement('div');
-    startGroup.className = 'time-group';
-    startGroup.appendChild(makeSelect('sh-start-h-' + i, hourOpts, sp.h12, function() { readSlotTimes(i); }));
-    startGroup.appendChild(makeSelect('sh-start-m-' + i, minOpts, sp.m,   function() { readSlotTimes(i); }));
-    startGroup.appendChild(makeSelect('sh-start-a-' + i, apOpts,  sp.ampm, function() { readSlotTimes(i); }));
-    startField.appendChild(startGroup);
-    row.appendChild(startField);
-
-    // End
-    var endField = document.createElement('div');
-    endField.className = 'slot-field';
-    endField.innerHTML = '<div class="time-label">End</div>';
-    var endGroup = document.createElement('div');
-    endGroup.className = 'time-group';
-    endGroup.appendChild(makeSelect('sh-end-h-' + i, hourOpts, ep.h12, function() { readSlotTimes(i); }));
-    endGroup.appendChild(makeSelect('sh-end-m-' + i, minOpts,  ep.m,   function() { readSlotTimes(i); }));
-    endGroup.appendChild(makeSelect('sh-end-a-' + i, apOpts,   ep.ampm, function() { readSlotTimes(i); }));
-    endField.appendChild(endGroup);
-    row.appendChild(endField);
-
-    // Name
-    var nameField = document.createElement('div');
-    nameField.className = 'slot-field slot-name';
-    nameField.innerHTML = '<div class="time-label">Show Name</div>';
-    var nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.value = slot.name;
-    nameInput.placeholder = 'Show name';
-    nameInput.addEventListener('input', function() { scheduleSlots[i].name = this.value; });
-    nameField.appendChild(nameInput);
-    row.appendChild(nameField);
-
-    // Buttons
-    var btns = document.createElement('div');
-    btns.className = 'slot-btns';
-
-    var descBtn = document.createElement('button');
-    descBtn.className = 'btn secondary small';
-    descBtn.textContent = '✎ desc';
-    descBtn.addEventListener('click', (function(idx) {
-      return function() {
-        var dr = document.getElementById('desc-row-' + idx);
-        if (dr) dr.classList.toggle('open');
-      };
-    })(i));
-
-    var removeBtn = document.createElement('button');
-    removeBtn.className = 'btn danger small';
-    removeBtn.textContent = '✕';
-    removeBtn.addEventListener('click', (function(idx) {
-      return function() { removeSlot(idx); };
-    })(i));
-
-    btns.appendChild(descBtn);
-    btns.appendChild(removeBtn);
-    row.appendChild(btns);
-    wrap.appendChild(row);
-
-    // Description row
-    var descRow = document.createElement('div');
-    descRow.id = 'desc-row-' + i;
-    descRow.className = 'desc-row' + (slot.description ? ' open' : '');
-    var descLbl = document.createElement('div');
-    descLbl.className = 'time-label';
-    descLbl.style.marginBottom = '4px';
-    descLbl.textContent = 'Description (optional)';
-    var descInput = document.createElement('input');
-    descInput.type = 'text';
-    descInput.value = slot.description || '';
-    descInput.placeholder = 'e.g. tonight we go deep into 90s ambient';
-    descInput.addEventListener('input', function() { scheduleSlots[i].description = this.value; });
-    descRow.appendChild(descLbl);
-    descRow.appendChild(descInput);
-    wrap.appendChild(descRow);
-
-    list.appendChild(wrap);
-  });
+  renderSchedule();
 }
 
-function addShowSlot() {
-  scheduleSlots.push({ day: new Date().getDay(), start: '18:00', end: '20:00', name: '', description: '' });
-  renderSchedule();
-  // Scroll to new slot
-  var list = document.getElementById('scheduleList');
-  if (list.lastChild) list.lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+function onResizeEnd(e) {
+  document.removeEventListener('pointermove', onResizeMove);
+  document.removeEventListener('pointerup', onResizeEnd);
+  if (dragState && dragState.moved) suppressNextBlockClick = true;
+  dragState = null;
 }
 
-function removeSlot(i) {
-  scheduleSlots.splice(i, 1);
+// ── SHOW EDIT MODAL ──
+var editingIndex = null;
+var editingDay = null;
+
+function clampMinuteInput(el) {
+  var v = parseInt(el.value);
+  if (isNaN(v)) v = 0;
+  v = Math.max(0, Math.min(59, v));
+  el.value = v;
+  return v;
+}
+
+function previewShowImg() {
+  var url = document.getElementById('sm-image').value;
+  var img = document.getElementById('sm-image-preview');
+  img.src = url; img.style.display = url ? 'block' : 'none';
+}
+
+function openShowModal(index, dayForNew, startMinsForNew) {
+  editingIndex = index;
+  var slot;
+  if (index === null || index === undefined) {
+    editingDay = dayForNew;
+    var s = (typeof startMinsForNew === 'number') ? startMinsForNew : 18 * 60;
+    var e = Math.min(s + 120, 1440);
+    slot = { day: dayForNew, start: minsToTime(s), end: minsToTime(e), name: '', description: '', image: '' };
+  } else {
+    slot = scheduleSlots[index];
+    editingDay = slot.day;
+  }
+
+  document.getElementById('showModalTitle').textContent = (index === null || index === undefined) ? 'Add Show' : 'Edit Show';
+  document.getElementById('sm-delete-btn').style.display = (index === null || index === undefined) ? 'none' : 'inline-block';
+  document.getElementById('showModalMsg').className = 'msg';
+
+  document.getElementById('sm-name').value = slot.name || '';
+  document.getElementById('sm-desc').value = slot.description || '';
+  document.getElementById('sm-image').value = slot.image || '';
+  previewShowImg();
+
+  populateHourSelect(document.getElementById('sm-start-h'));
+  populateHourSelect(document.getElementById('sm-end-h'));
+
+  var sp = parseTime(slot.start);
+  var ep = parseTime(slot.end);
+  document.getElementById('sm-start-h').value = sp.h12;
+  document.getElementById('sm-start-m').value = sp.m;
+  document.getElementById('sm-start-a').value = sp.ampm;
+  document.getElementById('sm-end-h').value = ep.h12;
+  document.getElementById('sm-end-m').value = ep.m;
+  document.getElementById('sm-end-a').value = ep.ampm;
+
+  document.getElementById('showModalOverlay').classList.add('active');
+}
+
+function closeShowModal() {
+  document.getElementById('showModalOverlay').classList.remove('active');
+  editingIndex = null; editingDay = null;
+}
+
+function saveShowFromModal() {
+  var name = document.getElementById('sm-name').value.trim();
+  if (!name) { showMsg('showModalMsg', 'error', 'Please enter a show name'); return; }
+
+  var sh = document.getElementById('sm-start-h').value;
+  var sm = clampMinuteInput(document.getElementById('sm-start-m'));
+  var sa = document.getElementById('sm-start-a').value;
+  var eh = document.getElementById('sm-end-h').value;
+  var em = clampMinuteInput(document.getElementById('sm-end-m'));
+  var ea = document.getElementById('sm-end-a').value;
+
+  var slot = {
+    day: editingDay,
+    start: partsTo24(sh, sm, sa),
+    end: partsTo24(eh, em, ea),
+    name: name,
+    description: document.getElementById('sm-desc').value.trim(),
+    image: document.getElementById('sm-image').value.trim()
+  };
+
+  if (editingIndex === null || editingIndex === undefined) {
+    scheduleSlots.push(slot);
+  } else {
+    scheduleSlots[editingIndex] = slot;
+  }
+
   renderSchedule();
+  closeShowModal();
+}
+
+function deleteShowFromModal() {
+  if (editingIndex === null || editingIndex === undefined) return;
+  scheduleSlots.splice(editingIndex, 1);
+  renderSchedule();
+  closeShowModal();
 }
 
 async function saveSchedule() {
-  // Read any final state from DOM before saving
-  scheduleSlots.forEach(function(s, i) {
-    s.host = currentHost;
-    // Read name from DOM in case it wasn't triggered by input event
-    var nameEl = document.querySelector('#scheduleList .schedule-slot:nth-child(' + (i+1) + ') input[type=text]');
-    if (nameEl) s.name = nameEl.value;
-  });
+  scheduleSlots.forEach(function(s) { s.host = currentHost; });
 
   if (!scheduleSlots.length) {
     showMsg('scheduleMsg', 'error', 'No shows to save — add at least one');
