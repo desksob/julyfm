@@ -58,7 +58,8 @@ body{
 }
 
 /* every label / mono-ish element uses IBM Plex Mono */
-.label-face, .card-label, nav a, .live-pill, .show-tag, .tag, .dj-shows,
+.label-face, .card-label, nav a, .live-pill, .show-tag, .tag,
+.dj-tile-name, .dj-tile-sub, .dj-detail-shows, .dj-group-label, .about-person, .dj-back,
 .artist-card-label, .artist-card-tag, .status-line, .hi-time,
 .on-air-label, .day-label,
 .viz-btn, .dj-socials a, .artist-card-listeners, .display-black {
@@ -486,8 +487,10 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   display:flex; align-items:center; gap:8px;
 }
 .live-dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 1.4s ease-in-out infinite; flex-shrink:0; }
-.on-air-main{ display:flex; align-items:center; gap:12px; }
-#miniShowImg{ width:48px; height:48px; flex-shrink:0; overflow:hidden; border:1px solid var(--border); display:none; }
+#body-on-air{ display:flex; flex-direction:column; }
+.on-air-layout{ display:flex; flex:1; align-items:stretch; gap:12px; }
+.on-air-text{ flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+#miniShowImg{ flex-shrink:0; width:96px; margin:-16px -16px -16px 0; overflow:hidden; border-left:1px solid var(--border); display:none; }
 #miniShowImg img{ width:100%; height:100%; object-fit:cover; display:block; }
 #miniShowName{ font-size:17px; color:var(--ink); text-transform:uppercase; }
 #miniShowTime{ font-size:10px; color:var(--muted); margin-top:6px; letter-spacing:0.06em; }
@@ -532,27 +535,46 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .show-row{ display:grid; grid-template-columns:100px 1fr auto; align-items:center; padding:14px 0; border-bottom:1px solid var(--hair); gap:14px; }
 .show-time{ font-size:10px; color:var(--muted); letter-spacing:0.04em; }
 .show-name{ font-size:13px; color:var(--ink); text-transform:uppercase; }
-.show-img{ width:40px; height:40px; object-fit:cover; flex-shrink:0; margin-right:10px; border:1px solid var(--border); }
+.show-img{ width:56px; height:56px; object-fit:cover; flex-shrink:0; margin-right:12px; border:1px solid var(--border); }
 .show-desc{ font-size:10px; color:var(--dim); font-style:italic; margin-top:3px; }
 .show-tag{ font-size:9px; padding:3px 10px; border:1px solid var(--border); color:var(--ink); letter-spacing:0.06em; text-transform:uppercase; }
 .show-tag.on-air{ background:var(--ink); color:var(--bg); }
 .show-row.live-row{ padding:14px 12px; border:1px solid var(--ink); }
 
-/* ═══ DJS ═══ */
-.dj-block{ margin-bottom:24px; }
-.dj-grid{ display:grid; grid-template-columns:180px 1fr; border:1px solid var(--border); overflow:hidden; }
-.dj-photo{ height:180px; overflow:hidden; border-right:1px solid var(--border); }
-.dj-photo img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block; filter:grayscale(1) contrast(1.1); }
-.dj-photo-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:56px; color:var(--hair); }
-.dj-info{ padding:18px 22px; display:flex; flex-direction:column; justify-content:space-between; }
-.dj-name{ font-size:22px; text-transform:uppercase; color:var(--ink); margin-bottom:6px; }
-.dj-shows{ font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; }
-.dj-bio{ font-size:11px; color:var(--muted); line-height:1.8; flex:1; }
-.dj-tags{ display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; }
-.tag{ font-size:9px; letter-spacing:0.1em; text-transform:uppercase; border:1px solid var(--border); padding:3px 9px; color:var(--ink); }
+/* ═══ DJS / TEAM ═══ */
+.dj-tiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:18px; }
+.dj-tile{ cursor:pointer; background:var(--bg); border:1px solid var(--border); padding:10px; transition:border-color .15s,transform .15s; clip-path:polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); }
+.dj-tile:hover{ border-color:var(--ink); transform:translateY(-2px); }
+.dj-tile-img{ width:100%; aspect-ratio:1; overflow:hidden; background:var(--hair); }
+.dj-tile-img img{ width:100%; height:100%; object-fit:cover; object-position:center; display:block; filter:grayscale(1) contrast(1.1); transition:filter .2s; }
+.dj-tile:hover .dj-tile-img img{ filter:grayscale(0) contrast(1); }
+.dj-tile-ph{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:44px; color:var(--muted); }
+.dj-tile-name{ font-size:12px; text-transform:uppercase; color:var(--ink); letter-spacing:0.06em; margin-top:10px; }
+.dj-tile-sub{ font-size:10px; text-transform:uppercase; color:var(--muted); letter-spacing:0.05em; margin-top:3px; line-height:1.4; }
+.dj-group-label{ font-size:9px; letter-spacing:0.25em; text-transform:uppercase; color:var(--muted); margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+#djsListView{ margin-top:24px; }
+#djsDetailView{ margin-top:24px; }
+.dj-group{ margin-bottom:38px; }
+
+/* DJ DETAIL VIEW */
+.dj-detail{ display:none; }
+.dj-detail.active{ display:block; }
+.dj-back{ font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); background:none; border:1px solid var(--border); padding:6px 14px; cursor:pointer; margin-bottom:22px; font-family:inherit; transition:all .12s; }
+.dj-back:hover{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.dj-detail-grid{ display:grid; grid-template-columns:260px 1fr; gap:26px; align-items:start; }
+.dj-detail-img{ width:100%; aspect-ratio:1; overflow:hidden; border:1px solid var(--border); }
+.dj-detail-img img{ width:100%; height:100%; object-fit:cover; display:block; filter:grayscale(1) contrast(1.1); }
+.dj-detail-name{ font-size:28px; text-transform:uppercase; color:var(--ink); margin-bottom:8px; line-height:1.1; }
+.dj-detail-shows{ font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px; }
+.dj-detail-tagline{ font-size:12px; color:var(--dim); font-style:italic; margin-bottom:18px; }
+.dj-detail-bio{ font-size:12px; color:var(--muted); line-height:1.9; margin-bottom:20px; white-space:pre-wrap; }
 .dj-socials{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
 .dj-socials a{ font-size:9px; color:var(--ink); letter-spacing:0.08em; text-decoration:none; border:1px solid var(--border); padding:4px 12px; text-transform:uppercase; transition:background .12s,color .12s; }
 .dj-socials a:hover{ background:var(--ink); color:var(--bg); }
+
+/* ABOUT — team + residents */
+.about-people{ display:flex; flex-wrap:wrap; gap:8px; }
+.about-person{ font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink); border:1px solid var(--border); padding:4px 12px; }
 
 .viz-controls{ display:flex; gap:8px; margin-top:20px; flex-wrap:wrap; }
 .viz-btn{ font-size:9px; letter-spacing:0.12em; border:1px solid var(--border); background:transparent; color:var(--ink); padding:6px 14px; cursor:pointer; text-transform:uppercase; transition:all .12s; }
@@ -619,22 +641,43 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 
 /* MOBILE */
 @media (max-width:640px){
-  .site{ padding:0 18px 60px; }
+  .site{ padding:0 18px calc(84px + env(safe-area-inset-bottom)); }
   header{ padding:20px 0 16px; }
   header img{ height:44px; }
-  nav a{ padding:12px 12px 10px; font-size:9px; }
+
+  /* Bottom tab bar: nav moves from a top row of text links to a fixed,
+     thumb-reachable bar. Same underlying <a onclick="show(...)"> markup —
+     just restyled and repositioned for mobile. */
+  nav{
+    position:fixed; left:0; right:0; bottom:0; z-index:80;
+    background:var(--bg); border-top:1px solid var(--border); border-bottom:none;
+    flex-wrap:nowrap; padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav a{
+    flex:1; text-align:center; padding:13px 4px; margin-bottom:0;
+    border-bottom:none; font-size:9px; letter-spacing:0.06em;
+    transition:background .12s,color .12s;
+  }
+  nav a.active{ background:var(--ink); color:var(--bg); }
+  nav a:active{ opacity:0.6; }
+
+  .alert-banner{ bottom:calc(76px + env(safe-area-inset-bottom)); }
+
   .np-row{ grid-template-columns:64px 1fr; gap:12px; }
   .album-art{ width:64px; height:64px; margin:0; }
   .track-title{ font-size:18px; }
   .np-controls{ flex-direction:row; flex-wrap:wrap; align-items:stretch; gap:10px; padding:0 20px; }
-  .play-live-btn{ justify-content:center; order:1; flex:1 1 calc(50% - 5px); }
+  .play-live-btn{ justify-content:center; order:1; flex:1 1 calc(50% - 5px); min-height:46px; }
   .add-to-services{ order:2; flex:1 1 calc(50% - 5px); }
   .stream-url-btn{ width:100%; height:100%; box-sizing:border-box; justify-content:center; }
   .vol-wrap{ display:none; }
   .streaming-menu{ right:auto; left:0; }
-  .dj-grid{ grid-template-columns:1fr; }
-  .dj-photo{ height:160px; border-right:none; border-bottom:1px solid var(--border); }
+  .dj-tiles{ grid-template-columns:repeat(2,1fr); gap:12px; }
+  .dj-detail-grid{ grid-template-columns:1fr; gap:18px; }
+  .dj-detail-img{ max-width:220px; }
+  .dj-detail-name{ font-size:22px; }
   .show-row{ grid-template-columns:76px 1fr auto; gap:8px; }
+  .btn, .dj-back, .airplay-btn{ min-height:40px; }
 
   /* Mobile: no free-drag window chrome, plain stacked cards */
   .resize-handle{ display:none !important; }
@@ -852,14 +895,14 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         </div>
         <div class="win-body" id="body-on-air" onclick="show('schedule', document.querySelector('nav a:nth-child(2)'))">
         <div id="gcFlagOnAir"><canvas id="gcFlagCanvas"></canvas></div>
-        <div class="on-air-main">
-          <div id="miniShowImg"></div>
-          <div>
+        <div class="on-air-layout">
+          <div class="on-air-text">
             <div id="miniShowName">-</div>
             <div id="miniShowTime"></div>
+            <div class="on-air-hint">tap to view schedule →</div>
           </div>
+          <div id="miniShowImg"></div>
         </div>
-        <div class="on-air-hint">tap to view schedule →</div>
         </div>
       </div>
 
@@ -1011,12 +1054,12 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 
   <!-- ═══ DJS ═══ -->
   <div id="djs" class="section">
-    <div style="position:relative;">
-      <div style="filter:blur(6px);pointer-events:none;opacity:0.35;padding:0;" id="djsGrid"></div>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
-        <div style="font-family:'IBM Plex Mono','Courier New',monospace;font-size:9px;color:var(--muted);letter-spacing:0.3em;text-transform:uppercase;">Under Construction</div>
-        <div style="font-family:'IBM Plex Mono','Courier New',monospace;font-size:11px;color:var(--dim);letter-spacing:0.12em;">Coming soon</div>
-      </div>
+    <div id="djsListView">
+      <div id="djsGrid"></div>
+    </div>
+    <div id="djsDetailView" class="dj-detail">
+      <button class="dj-back" onclick="closeDjDetail()">← Back to team</button>
+      <div id="djsDetailBody"></div>
     </div>
   </div>
 
@@ -1027,6 +1070,14 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         <div class="about-block">
           <div class="about-label">Studio</div>
           <div class="about-text">Nairobi, Kenya</div>
+        </div>
+        <div class="about-block">
+          <div class="about-label">Team</div>
+          <div class="about-people" id="aboutTeamList"></div>
+        </div>
+        <div class="about-block">
+          <div class="about-label">Residents</div>
+          <div class="about-people" id="aboutResidentsList"></div>
         </div>
         <div class="about-block">
           <div class="about-label">Contact</div>
@@ -1041,15 +1092,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         <div class="about-block">
           <div class="about-label">About</div>
           <div class="about-text">
-            July Radio is a personal 24/7 internet radio station. Running curated playlists, new music discovery, focused listening blocks, and live open air sets around the clock.
+            July Radio is a 24/7 internet radio station. Running curated playlists, new music discovery, focused listening blocks, and live open air sets around the clock.
           </div>
           <div class="about-text">
             Alongside the station, July also streams a 24/7 music video TV channel running in parallel with the audio broadcast. July Radio is also a visual studio, starting with editing work and progressing into music videos and other related productions.
           </div>
-        </div>
-        <div class="about-block">
-          <div class="about-label">Team</div>
-          <div class="about-text">desksob, fziwe, fiscia, pmuhav, azarinthecut, sewn, neetcamp</div>
         </div>
       </div>
     </div>
@@ -1346,6 +1393,8 @@ function togglePlay() {
     audio.src = streamUrl;
     audio.setAttribute('playsinline', '');
     audio.preload = 'none';
+    audio.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(audio);
     audio.volume = document.getElementById('volSlider').value / 100;
     initAirplaySupport(audio);
     audio.play().then(() => {
@@ -1362,7 +1411,9 @@ function togglePlay() {
       document.getElementById('statusMsg').textContent = '· could not connect';
     });
   } else {
-    audio.pause(); audio = null; playing = false;
+    audio.pause();
+    if (audio.parentNode) audio.remove();
+    audio = null; playing = false;
     btn.innerHTML = '<span class="play-live-icon">▶</span> Play Live';
     btn.classList.remove('playing');
     document.getElementById('statusMsg').textContent = '· paused';
@@ -1391,7 +1442,7 @@ function initAirplaySupport(audioEl) {
   const btn = document.getElementById('airplayBtn');
   if (!btn || !airplaySupported || !audioEl) return;
   btn.style.display = 'inline-flex';
-  audioEl.addEventListener('webkitplaybacktargetavailabilitydidchange', function(e) {
+  audioEl.addEventListener('webkitplaybacktargetavailabilitychanged', function(e) {
     btn.classList.toggle('available', e.availability === 'available');
   });
 }
@@ -1690,9 +1741,10 @@ function toggleTheme() {
 function show(id, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  if (id !== 'djs') closeDjDetail();
   const sec = document.getElementById(id);
   sec.classList.add('active');
-  sec.querySelectorAll('.now-playing-card,.on-air-card,.artist-card,.dj-block,.history-item,.show-row,.day-label,.watch-card').forEach(el2 => {
+  sec.querySelectorAll('.now-playing-card,.on-air-card,.artist-card,.dj-tile,.history-item,.show-row,.day-label,.watch-card').forEach(el2 => {
     el2.style.animation = 'none';
     el2.offsetHeight;
     el2.style.animation = '';
@@ -2099,59 +2151,126 @@ try {
   console.warn('BroadcastChannel unavailable in this context, skipping cross-tab sync:', e);
 }
 
-// ── DJS ──
+// ── DJS / TEAM ──
+// Both rosters (Team and Residents) are stored via the same generic
+// profile-save endpoint under reserved ids, so both can be managed from
+// the admin panel without needing a dedicated backend route.
+const ROSTER_KEYS = { team: '_roster', resident: '_residentRoster' };
+const DEFAULT_ROSTERS = {
+  team: ['desksob','fziwe','fiscia','pmuhav','azarinthecut','sewn','neetcamp'],
+  resident: ['shujaa'],
+};
+const KNOWN_DEFAULTS = {
+  fziwe:   { name:'Diogo', photo:'diogo.gif' },
+  fiscia:  { photo:'fiscia.jpeg' },
+  desksob: { name:'Christian', tagline:'Head & Founder' },
+  shujaa:  { name:'Shujaa' },
+};
+
+let peopleData = {};
+let rosters = { team: [], resident: [] };
+
+function titleCase(id) { return id.charAt(0).toUpperCase() + id.slice(1); }
+
+function buildPerson(id, kv, def) {
+  def = def || {};
+  return {
+    id: id,
+    name:       (kv&&kv.name)       || def.name       || titleCase(id),
+    shows:      (kv&&kv.shows)      || def.shows      || 'Coming soon',
+    tagline:    (kv&&kv.tagline)    || def.tagline    || '',
+    bio:        (kv&&kv.bio)        || def.bio        || '',
+    photo:      (kv&&kv.photo)      || def.photo      || '',
+    instagram:  (kv&&kv.instagram)  || def.instagram  || '',
+    soundcloud: (kv&&kv.soundcloud) || def.soundcloud || '',
+    links:      (kv&&Array.isArray(kv.links)) ? kv.links : (def.links || []),
+  };
+}
+
+function djTileHtml(p) {
+  const img = p.photo
+    ? '<img src="'+p.photo+'" alt="'+p.name+'">'
+    : '<div class="dj-tile-ph">'+p.name[0]+'</div>';
+  return '<div class="dj-tile" onclick="openDjDetail(\''+p.id+'\')">'
+    + '<div class="dj-tile-img">'+img+'</div>'
+    + '<div class="dj-tile-name">'+p.name+'</div>'
+    + (p.shows ? '<div class="dj-tile-sub">'+p.shows+'</div>' : '')
+    + '</div>';
+}
+
 async function loadHosts() {
+  let profiles = {};
   try {
     const res = await fetch(WORKER+'/profiles');
     const data = await res.json();
-    const grid = document.getElementById('djsGrid');
-    if (!grid) return;
-
-    // Grayscale accent set: tonal distinction without color
-    const defaults = {
-      c:      { name:'C.',     shows:'Playlist · Open Air · di:scovery · Shuffle+ · in:focus', tagline:'taste over everything.', photo:'julyhost1.png', accent:'#ffffff' },
-      fziwe:  { name:'Fziwe',  shows:'Coming soon', tagline:'-', photo:'diogo.gif', accent:'#c0c0c0' },
-      fiscia: { name:'Fiscia', shows:'Coming soon', tagline:'-', photo:'fiscia.jpeg', accent:'#808080' },
-    };
-
-    const hosts = ['c','fziwe','fiscia'];
-    grid.innerHTML = hosts.map(id => {
-      const kv = data.profiles && data.profiles[id];
-      const def = defaults[id];
-      const name    = (kv&&kv.name)    || def.name;
-      const shows   = (kv&&kv.shows)   || def.shows;
-      const tagline = (kv&&kv.tagline) || def.tagline;
-      const bio     = (kv&&kv.bio)     || '';
-      const photo   = (kv&&kv.photo)   || def.photo;
-      const ig      = (kv&&kv.instagram) || '';
-      const sc      = (kv&&kv.soundcloud) || '';
-      const accent  = def.accent;
-
-      const imgHtml = photo
-        ? '<img src="'+photo+'" alt="'+name+'">'
-        : '<div class="dj-photo-placeholder">'+name[0]+'</div>';
-
-      const socials = [
-        ig ? '<a href="https://instagram.com/'+ig.replace('@','')+'" target="_blank">Instagram</a>' : '',
-        sc ? '<a href="'+sc+'" target="_blank">SoundCloud</a>' : '',
-      ].filter(Boolean).join('');
-
-      return '<div class="dj-block">'
-        + '<div class="dj-grid">'
-          + '<div class="dj-photo" style="border-color:'+accent+';">'+imgHtml+'</div>'
-          + '<div class="dj-info">'
-            + '<div>'
-              + '<div class="dj-name" style="color:'+accent+'">'+name+'</div>'
-              + '<div class="dj-shows">'+shows+'</div>'
-              + (tagline ? '<div style="font-family:\'IBM Plex Mono\',\'Courier New\',monospace;font-size:11px;color:var(--dim);font-style:italic;margin-bottom:14px;">'+tagline+'</div>' : '')
-              + (bio ? '<div class="dj-bio">'+bio+'</div>' : '')
-            + '</div>'
-            + (socials ? '<div class="dj-socials">'+socials+'</div>' : '')
-          + '</div>'
-        + '</div>'
-      + '</div>';
-    }).join('');
+    profiles = data.profiles || {};
   } catch(e) {}
+
+  for (const group in ROSTER_KEYS) {
+    const key = ROSTER_KEYS[group];
+    if (profiles[key] && Array.isArray(profiles[key].ids) && profiles[key].ids.length) {
+      rosters[group] = profiles[key].ids;
+    } else {
+      rosters[group] = DEFAULT_ROSTERS[group];
+    }
+  }
+
+  peopleData = {};
+  rosters.team.forEach(id => { peopleData[id] = buildPerson(id, profiles[id], KNOWN_DEFAULTS[id]); });
+  rosters.resident.forEach(id => { peopleData[id] = buildPerson(id, profiles[id], KNOWN_DEFAULTS[id]); });
+
+  const grid = document.getElementById('djsGrid');
+  if (grid) {
+    grid.innerHTML =
+      '<div class="dj-group"><div class="dj-group-label">Team</div>'
+        + '<div class="dj-tiles">' + rosters.team.map(id => djTileHtml(peopleData[id])).join('') + '</div></div>'
+      + '<div class="dj-group"><div class="dj-group-label">Residents</div>'
+        + '<div class="dj-tiles">' + rosters.resident.map(id => djTileHtml(peopleData[id])).join('') + '</div></div>';
+  }
+
+  // About page name lists
+  const teamList = document.getElementById('aboutTeamList');
+  const resList  = document.getElementById('aboutResidentsList');
+  if (teamList) teamList.innerHTML = rosters.team.map(id => '<div class="about-person">'+peopleData[id].name+'</div>').join('');
+  if (resList)  resList.innerHTML  = rosters.resident.map(id => '<div class="about-person">'+peopleData[id].name+'</div>').join('');
+}
+
+
+function openDjDetail(id) {
+  const p = peopleData[id];
+  if (!p) return;
+  const img = p.photo
+    ? '<div class="dj-detail-img"><img src="'+p.photo+'" alt="'+p.name+'"></div>'
+    : '<div class="dj-detail-img"><div class="dj-tile-ph">'+p.name[0]+'</div></div>';
+  const extraLinks = (Array.isArray(p.links) ? p.links : [])
+    .filter(l => l && l.label && l.url)
+    .map(l => '<a href="'+l.url+'" target="_blank">'+l.label+'</a>')
+    .join('');
+  const socials = [
+    p.instagram  ? '<a href="https://instagram.com/'+p.instagram.replace('@','')+'" target="_blank">Instagram</a>' : '',
+    p.soundcloud ? '<a href="'+p.soundcloud+'" target="_blank">SoundCloud</a>' : '',
+    extraLinks,
+  ].filter(Boolean).join('');
+
+  document.getElementById('djsDetailBody').innerHTML =
+    '<div class="dj-detail-grid">'
+      + img
+      + '<div>'
+        + '<div class="dj-detail-name">'+p.name+'</div>'
+        + (p.shows ? '<div class="dj-detail-shows">'+p.shows+'</div>' : '')
+        + (p.tagline ? '<div class="dj-detail-tagline">'+p.tagline+'</div>' : '')
+        + (p.bio ? '<div class="dj-detail-bio">'+p.bio+'</div>' : '')
+        + (socials ? '<div class="dj-socials">'+socials+'</div>' : '')
+      + '</div>'
+    + '</div>';
+
+  document.getElementById('djsListView').style.display = 'none';
+  document.getElementById('djsDetailView').classList.add('active');
+}
+
+function closeDjDetail() {
+  document.getElementById('djsDetailView').classList.remove('active');
+  document.getElementById('djsListView').style.display = 'block';
 }
 
 loadHosts();
