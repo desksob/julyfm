@@ -580,6 +580,19 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .viz-btn{ font-size:9px; letter-spacing:0.12em; border:1px solid var(--border); background:transparent; color:var(--ink); padding:6px 14px; cursor:pointer; text-transform:uppercase; transition:all .12s; }
 .viz-btn:hover, .viz-btn.active{ background:var(--ink); color:var(--bg); }
 
+/* EVENTS PAGE */
+.event-page-card{ border:1px solid var(--border); clip-path:polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%); }
+.event-page-img{ width:100%; aspect-ratio:1.6; overflow:hidden; border-bottom:1px solid var(--border); }
+.event-page-img img{ width:100%; height:100%; object-fit:cover; display:block; filter:grayscale(1) contrast(1.1); }
+.event-page-body{ padding:26px; }
+.event-page-label{ font-size:9px; letter-spacing:0.25em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+.event-page-name{ font-size:26px; text-transform:uppercase; color:var(--ink); margin-bottom:10px; line-height:1.25; }
+.event-page-date{ font-size:12px; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:16px; }
+.event-page-desc{ font-size:13px; color:var(--muted); line-height:1.9; margin-bottom:22px; }
+.event-page-link{ font-size:10px; letter-spacing:0.1em; text-transform:uppercase; text-decoration:none; border:1px solid var(--border); padding:11px 20px; color:var(--ink); display:inline-block; transition:background .12s,color .12s; }
+.event-page-link:hover{ background:var(--ink); color:var(--bg); }
+.event-page-empty{ font-size:11px; color:var(--dim); letter-spacing:0.08em; padding:40px 0; text-align:center; }
+
 /* EVENT POPUP */
 .event-popup-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:300; align-items:center; justify-content:center; padding:20px; }
 .event-popup-overlay.visible{ display:flex; }
@@ -809,6 +822,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   <nav>
     <a class="active" onclick="show('listen',this)">Listen</a>
     <a onclick="show('schedule',this)">Schedule</a>
+    <a onclick="show('events',this)">Events</a>
     <a onclick="show('djs',this)">Team</a>
     <a onclick="show('about',this)">About</a>
   </nav>
@@ -929,7 +943,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       <div class="artist-card win-card" id="artistCard" data-card-id="artist" style="display:none;">
         <div class="resize-handle" title="Resize"></div>
         <div class="win-titlebar">
-          <span class="win-title">About This Artist</span>
+          <span class="win-title" id="artistCardTitle">About This Artist</span>
           <div class="win-controls">
             <button class="win-btn win-min" onclick="minimizeCard('artist',event)" title="Minimize">–</button>
             <button class="win-btn win-close" onclick="closeCard('artist',event)" title="Close">×</button>
@@ -1069,6 +1083,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   <!-- ═══ SCHEDULE ═══ -->
   <div id="schedule" class="section">
     <div id="scheduleGrid" style="padding:0;"></div>
+  </div>
+
+  <!-- ═══ EVENTS ═══ -->
+  <div id="events" class="section">
+    <div id="eventsGrid"></div>
   </div>
 
   <!-- ═══ DJS ═══ -->
@@ -1259,6 +1278,7 @@ function openLastfm() {
 }
 
 function openLastfmArtist() {
+  if (artistCardMode === 'dj') return; // no Last.fm page to open for a manually-entered DJ/guest card
   const name = document.getElementById('artistCardName').textContent;
   if (name && name !== '-') window.open('https://www.last.fm/music/' + encodeURIComponent(name), '_blank');
 }
@@ -1781,7 +1801,7 @@ function show(id, el) {
   if (id !== 'djs') closeDjDetail();
   const sec = document.getElementById(id);
   sec.classList.add('active');
-  sec.querySelectorAll('.now-playing-card,.on-air-card,.artist-card,.dj-tile,.history-item,.show-row,.day-label,.watch-card').forEach(el2 => {
+  sec.querySelectorAll('.now-playing-card,.on-air-card,.artist-card,.dj-tile,.history-item,.show-row,.day-label,.watch-card,.event-page-card').forEach(el2 => {
     el2.style.animation = 'none';
     el2.offsetHeight;
     el2.style.animation = '';
@@ -1854,7 +1874,55 @@ async function renderDjSetNowPlaying() {
   titleEl.classList.remove('fading'); artistEl.classList.remove('fading'); artEl.classList.remove('fading');
 
   if (playing) updateMediaSession(djsetData.title, djsetData.djName || 'July Radio', djsetData.image || null);
+  renderDjAboutCard();
   syncTvModeContent();
+}
+
+// Populates the same "About This Artist" card used in Last.fm mode, but from
+// the manually-entered DJ Set fields (role, name, bio, tags, image) instead
+// of an automatic Last.fm/Deezer lookup — this is the "About This DJ" switch,
+// driven entirely by which broadcast mode is active rather than a separate toggle.
+async function renderDjAboutCard() {
+  const key = 'dj:' + (djsetData.djName || '') + '|' + (djsetData.role || '') + '|' + (djsetData.bio || '');
+  if (key === lastDjAboutKey) return;
+  lastDjAboutKey = key;
+  lastArtistFetched = ''; // leaving Last.fm mode's card state behind
+  artistCardMode = 'dj';
+
+  const card = document.getElementById('artistCard');
+  const titleEl = document.getElementById('artistCardTitle');
+  const nameEl = document.getElementById('artistCardName');
+  const tagsEl = document.getElementById('artistCardTags');
+  const bioEl = document.getElementById('artistCardBio');
+  const listenersEl = document.getElementById('artistCardListeners');
+  const imgWrap = document.getElementById('artistCardImg');
+  if (!card) return;
+  if (card.classList.contains('win-closed')) return;
+
+  const wasVisible = card.style.display !== 'none';
+  if (wasVisible) {
+    card.classList.add('fading');
+    await new Promise(r => setTimeout(r, 380));
+  }
+
+  const role = djsetData.role || 'DJ';
+  const name = djsetData.djName || role;
+  titleEl.textContent = 'About This ' + role;
+  nameEl.textContent = name;
+  tagsEl.innerHTML = (djsetData.tags || []).slice(0,4).map(t =>
+    '<span class="artist-card-tag">'+t+'</span>'
+  ).join('');
+  bioEl.textContent = djsetData.bio || '';
+  listenersEl.textContent = '';
+  if (djsetData.image) {
+    imgWrap.innerHTML = '<img class="artist-card-img" src="'+djsetData.image+'" alt="'+name+'">';
+  } else {
+    imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+name+'</div>';
+  }
+
+  card.style.display = 'block';
+  card.classList.remove('fading');
+  if (!wasVisible) positionCardLate('artist');
 }
 
 // ── LAST.FM ──
@@ -2319,49 +2387,85 @@ setInterval(loadHosts, 60000);
 // and stops showing on its own once the event's date has passed.
 let eventPopupSeenKey = null;
 
-async function checkEventPopup() {
+async function fetchEventData() {
   try {
     const res = await fetch(WORKER+'/profile?host=_event', { cache: 'no-store' });
     const data = await res.json();
     const ev = data.profile;
-    if (!ev || !ev.name || !ev.date) return;
-
+    if (!ev || !ev.name || !ev.date) return null;
     const eventEnd = new Date(ev.date + 'T23:59:59');
-    if (eventEnd < new Date()) return;
+    if (eventEnd < new Date()) return null; // past events just don't show anywhere, popup or page
+    return ev;
+  } catch(e) { return null; }
+}
 
-    const seenKey = 'july_event_seen_' + ev.name + '_' + ev.date;
-    try { if (localStorage.getItem(seenKey)) return; } catch(e) {}
-    eventPopupSeenKey = seenKey;
+function formatEventDate(ev) {
+  const dateObj = new Date(ev.date + 'T00:00:00');
+  const dateStr = dateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  return dateStr + (ev.time ? ' · ' + ev.time : '');
+}
 
-    document.getElementById('eventPopupName').textContent = ev.name;
-    const dateObj = new Date(ev.date + 'T00:00:00');
-    const dateStr = dateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-    document.getElementById('eventPopupDate').textContent = dateStr + (ev.time ? ' · ' + ev.time : '');
+function showEventPopup(ev) {
+  const seenKey = 'july_event_seen_' + ev.name + '_' + ev.date;
+  try { if (localStorage.getItem(seenKey)) return; } catch(e) {}
+  eventPopupSeenKey = seenKey;
 
-    const descEl = document.getElementById('eventPopupDesc');
-    descEl.textContent = ev.description || '';
-    descEl.style.display = ev.description ? 'block' : 'none';
+  document.getElementById('eventPopupName').textContent = ev.name;
+  document.getElementById('eventPopupDate').textContent = formatEventDate(ev);
 
-    const imgWrap = document.getElementById('eventPopupImgWrap');
-    if (ev.image) {
-      imgWrap.innerHTML = '<img src="'+ev.image+'" alt="">';
-      imgWrap.style.display = 'block';
-    } else {
-      imgWrap.innerHTML = '';
-      imgWrap.style.display = 'none';
-    }
+  const descEl = document.getElementById('eventPopupDesc');
+  descEl.textContent = ev.description || '';
+  descEl.style.display = ev.description ? 'block' : 'none';
 
-    const linkBtn = document.getElementById('eventPopupLink');
-    if (ev.linkUrl) {
-      linkBtn.href = ev.linkUrl;
-      linkBtn.textContent = ev.linkLabel || 'Learn More';
-      linkBtn.style.display = 'inline-block';
-    } else {
-      linkBtn.style.display = 'none';
-    }
+  const imgWrap = document.getElementById('eventPopupImgWrap');
+  if (ev.image) {
+    imgWrap.innerHTML = '<img src="'+ev.image+'" alt="">';
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.innerHTML = '';
+    imgWrap.style.display = 'none';
+  }
 
-    document.getElementById('eventPopupOverlay').classList.add('visible');
-  } catch(e) {}
+  const linkBtn = document.getElementById('eventPopupLink');
+  if (ev.linkUrl) {
+    linkBtn.href = ev.linkUrl;
+    linkBtn.textContent = ev.linkLabel || 'Learn More';
+    linkBtn.style.display = 'inline-block';
+  } else {
+    linkBtn.style.display = 'none';
+  }
+
+  document.getElementById('eventPopupOverlay').classList.add('visible');
+}
+
+// The persistent Events tab — unlike the popup, this always shows the event
+// (dismissing the popup only marks the popup as seen, not the page).
+function renderEventsPage(ev) {
+  const grid = document.getElementById('eventsGrid');
+  if (!grid) return;
+  if (!ev) {
+    grid.innerHTML = '<div class="event-page-empty">No upcoming events right now — check back soon.</div>';
+    return;
+  }
+  const img = ev.image ? '<div class="event-page-img"><img src="'+ev.image+'" alt="'+ev.name+'"></div>' : '';
+  const link = ev.linkUrl ? '<a class="event-page-link" href="'+ev.linkUrl+'" target="_blank">'+(ev.linkLabel || 'Learn More')+'</a>' : '';
+  grid.innerHTML =
+    '<div class="event-page-card">'
+      + img
+      + '<div class="event-page-body">'
+        + '<div class="event-page-label">Upcoming Event</div>'
+        + '<div class="event-page-name">'+ev.name+'</div>'
+        + '<div class="event-page-date">'+formatEventDate(ev)+'</div>'
+        + (ev.description ? '<div class="event-page-desc">'+ev.description+'</div>' : '')
+        + link
+      + '</div>'
+    + '</div>';
+}
+
+async function checkEventPopup() {
+  const ev = await fetchEventData();
+  renderEventsPage(ev);
+  if (ev) showEventPopup(ev);
 }
 
 function closeEventPopup() {
@@ -2395,10 +2499,14 @@ setInterval(checkAlert, 30000);
 // ── ARTIST CARD ──
 const LASTFM_API = 'https://ws.audioscrobbler.com/2.0/';
 let lastArtistFetched = '';
+let lastDjAboutKey = '';
+let artistCardMode = 'lastfm'; // 'lastfm' | 'dj' — tracks which source last populated the About card
 
 async function fetchArtistInfo(artistName) {
   if (!artistName || artistName === '-' || artistName === lastArtistFetched) return;
   lastArtistFetched = artistName;
+  lastDjAboutKey = ''; // leaving DJ mode's card state behind, allow it to re-render if DJ mode resumes
+  artistCardMode = 'lastfm';
 
   const card = document.getElementById('artistCard');
   const nameEl = document.getElementById('artistCardName');
@@ -2416,6 +2524,8 @@ async function fetchArtistInfo(artistName) {
     await new Promise(r => setTimeout(r, 380));
   }
 
+  const titleEl = document.getElementById('artistCardTitle');
+  if (titleEl) titleEl.textContent = 'About This Artist';
   nameEl.textContent = artistName;
   tagsEl.innerHTML = '';
   bioEl.textContent = '';
