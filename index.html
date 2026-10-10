@@ -90,6 +90,23 @@ header img{ height:56px; width:auto; object-fit:contain; filter: var(--logo-filt
 html[data-theme="dark"] header img{ filter:invert(1); }
 
 .header-right{ display:flex; align-items:center; gap:12px; }
+
+/* SUPPORT PAGE */
+.sup-head{ margin:28px 0 22px; }
+.sup-title{ font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); font-weight:600; margin-bottom:10px; }
+.sup-intro{ font-size:12px; line-height:1.7; color:var(--muted); white-space:pre-line; }
+.sup-card{ border:1px solid var(--border); padding:18px 18px 16px; margin-bottom:14px; }
+.sup-label{ font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+.sup-big{ font-size:26px; letter-spacing:.06em; color:var(--ink); font-weight:600; word-break:break-all; }
+.sup-meta{ font-size:11px; color:var(--muted); margin-top:6px; line-height:1.6; }
+.sup-meta b{ color:var(--ink); font-weight:600; }
+.sup-row{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+.sup-btn{ display:inline-block; border:1px solid var(--ink); background:none; color:var(--ink); cursor:pointer;
+  font-family:'IBM Plex Mono','Courier New',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  padding:9px 14px; text-decoration:none; }
+.sup-btn:hover{ background:var(--ink); color:var(--bg); }
+.sup-empty{ font-size:12px; color:var(--dim); padding:30px 0; text-align:center; }
+
 /* HOLIDAY FLAG (Kenyan public holidays) */
 .header-brand{ display:flex; align-items:center; gap:14px; min-width:0; }
 .holiday-flag{ display:inline-flex; flex:0 0 auto; height:26px; border:1px solid var(--border); line-height:0; transition:transform .15s, opacity .15s; }
@@ -804,6 +821,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
     <a onclick="show('schedule',this)">Schedule</a>
     <a onclick="show('events',this)">Events</a>
     <a onclick="show('djs',this)">Team</a>
+    <a onclick="show('support',this)">Support</a>
     <a onclick="show('about',this)">About</a>
   </nav>
 
@@ -1038,6 +1056,11 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   <!-- ═══ EVENTS ═══ -->
   <div id="events" class="section">
     <div id="eventsGrid"></div>
+  </div>
+
+  <!-- ═══ SUPPORT ═══ -->
+  <div id="support" class="section">
+    <div id="supportBody"></div>
   </div>
 
   <!-- ═══ DJS ═══ -->
@@ -3008,6 +3031,55 @@ function startFreeDragWhenReady() {
     .then(() => requestAnimationFrame(initFreeDrag));
 }
 window.addEventListener('load', startFreeDragWhenReady);
+
+// ── SUPPORT PAGE (config lives in the _support profile, edited in admin) ──
+function supEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function supSafeUrl(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; }
+let supportCopyVals = [];
+function copySupport(i, btn) {
+  const v = supportCopyVals[i] || '';
+  const done = () => { const o = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = o; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(done, done);
+  else { const t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t); done(); }
+}
+function renderSupport(cfg) {
+  const box = document.getElementById('supportBody');
+  if (!box) return;
+  const methods = (cfg && cfg.methods || []).filter(m => m && (m.number || supSafeUrl(m.url)));
+  if (!methods.length) { box.innerHTML = '<div class="sup-empty">Support options are coming soon.</div>'; return; }
+  supportCopyVals = [];
+  let html = '<div class="sup-head"><div class="sup-title">' + supEsc((cfg && cfg.title) || 'Support July Radio') + '</div>'
+    + ((cfg && cfg.intro) ? '<div class="sup-intro">' + supEsc(cfg.intro) + '</div>' : '') + '</div>';
+  methods.forEach(m => {
+    const url = supSafeUrl(m.url);
+    const label = m.label || (m.kind === 'paybill' ? 'M-Pesa Paybill' : m.kind === 'till' ? 'M-Pesa Till' : 'Support');
+    if ((m.kind === 'paybill' || m.kind === 'till') && m.number) {
+      const idx = supportCopyVals.push(String(m.number)) - 1;
+      let meta = '';
+      if (m.kind === 'paybill') {
+        meta = 'M-Pesa → Lipa na M-Pesa → <b>Paybill</b>' + (m.account ? ' → Account: <b>' + supEsc(m.account) + '</b>' : '');
+      } else meta = 'M-Pesa → Lipa na M-Pesa → <b>Buy Goods (Till)</b>';
+      html += '<div class="sup-card"><div class="sup-label">' + supEsc(label) + '</div>'
+        + '<div class="sup-big">' + supEsc(m.number) + '</div>'
+        + '<div class="sup-meta">' + meta + (m.note ? '<br>' + supEsc(m.note) : '') + '</div>'
+        + '<div class="sup-row"><button class="sup-btn" onclick="copySupport(' + idx + ',this)">Copy number</button>'
+        + (url ? '<a class="sup-btn" href="' + supEsc(url) + '" target="_blank" rel="noopener noreferrer">Open</a>' : '') + '</div></div>';
+    } else if (url) {
+      html += '<div class="sup-card"><div class="sup-label">' + supEsc(label) + '</div>'
+        + (m.note ? '<div class="sup-meta" style="margin-top:0">' + supEsc(m.note) + '</div>' : '')
+        + '<div class="sup-row"><a class="sup-btn" href="' + supEsc(url) + '" target="_blank" rel="noopener noreferrer">' + supEsc(m.buttonLabel || 'Open') + ' ↗</a></div></div>';
+    }
+  });
+  box.innerHTML = html;
+}
+async function loadSupport() {
+  try {
+    const res = await fetch(WORKER + '/profile?host=_support', { cache: 'no-store' });
+    const data = await res.json();
+    renderSupport(data.profile || null);
+  } catch (e) { renderSupport(null); }
+}
+loadSupport();
 
 // ── KENYAN PUBLIC HOLIDAY FLAG ──
 // Shows a small Kenyan flag next to the logo from 10 days before a public
