@@ -47,78 +47,6 @@
     width: auto;
   }
 
-  /* TOP LEFT (below logo) — July+ launch countdown */
-  #launchCountdown {
-    position: absolute;
-    top: 116px;
-    left: 60px;
-    width: 210px;
-    height: 92px;
-    background: #000;
-    border: 2px solid #fff;
-    overflow: hidden;
-    z-index: 3;
-  }
-
-  #launchCountdown .lc-card {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    opacity: 0;
-    transform: scale(1.04);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    padding: 8px;
-  }
-
-  #launchCountdown .lc-card.active {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  #launchCountdown .lc-eyebrow {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-weight: 900;
-    transform: scaleX(0.82);
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: #ffe600;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  #launchCountdown .lc-main {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-weight: 900;
-    transform: scaleX(0.82);
-    font-size: 24px;
-    line-height: 0.95;
-    letter-spacing: -0.01em;
-    color: #fff;
-    text-transform: uppercase;
-  }
-
-  #launchCountdown .lc-sub {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-weight: 700;
-    transform: scaleX(0.85);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    color: #999;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  #launchCountdown .lc-timer {
-    font-family: 'DM Mono', monospace;
-    font-size: 18px;
-    letter-spacing: 0.08em;
-    color: #ffe600;
-  }
-
   #timezones {
     position: absolute;
     top: 48px;
@@ -244,6 +172,19 @@
     0%, 100% { box-shadow: 0 0 0 1px rgba(255,58,58,0.15), 0 0 18px rgba(255,58,58,0.2), inset 0 0 12px rgba(255,58,58,0.04); border-color: rgba(255,58,58,0.5); }
     50% { box-shadow: 0 0 0 1px rgba(255,58,58,0.3), 0 0 32px rgba(255,58,58,0.35), inset 0 0 16px rgba(255,58,58,0.08); border-color: rgba(255,58,58,0.8); }
   }
+
+  #showInfo { display: flex; align-items: center; gap: 20px; }
+  #showText { text-align: right; }
+  #showCover {
+    width: 72px; height: 72px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,58,58,0.35);
+    background: #111;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: none;
+  }
+  #showCover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   .show-label { font-size: 10px; color: #ff3a3a; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; }
   #showName { font-size: 20px; color: #e0d9cc; letter-spacing: 0.05em; }
@@ -377,52 +318,6 @@
   .recent-track { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; max-width: 300px; }
   .recent-artist { font-size: 11px; color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
 
-  /* BOTTOM — ticker */
-  #ticker {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 36px;
-    background: rgba(10,10,10,0.92);
-    border-top: 1px solid rgba(255,255,255,0.08);
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-  }
-
-  #tickerLabel {
-    font-size: 10px;
-    color: #c8a96e;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 0 20px;
-    white-space: nowrap;
-    border-right: 1px solid #333;
-    flex-shrink: 0;
-  }
-
-  #tickerTrack {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-    height: 100%;
-  }
-
-  #tickerInner {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    will-change: transform;
-  }
-
-  .ticker-msg {
-    font-size: 11px;
-    color: #ffffff;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
   /* BOTTOM CENTER — clock */
   #clock {
     position: absolute;
@@ -441,19 +336,7 @@
 <div id="darkOverlay"></div>
 
 <div id="ui">
-  <img src="july-logo.png" alt="July Radio" id="logo">
-
-  <div id="launchCountdown">
-    <div class="lc-card active" id="lcCard0">
-      <div class="lc-eyebrow">Launching</div>
-      <div class="lc-timer" id="lcTimer">00:00:00:00</div>
-      <div class="lc-sub">Until July+</div>
-    </div>
-    <div class="lc-card" id="lcCard1">
-      <div class="lc-main">JULY+</div>
-      <div class="lc-sub">24/7 Music Television</div>
-    </div>
-  </div>
+  <img src="data:image/png;base64,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" alt="July Radio" id="logo">
 
   <div id="timezones">
     <div class="tz-item" id="tzSlot0"><div class="tz-face active"><div class="tz-label">—</div><div class="tz-time">—</div></div></div>
@@ -490,10 +373,13 @@
   </div>
 
   <div id="showInfo">
-    <div class="show-label">On Air</div>
-    <div id="showName">—</div>
-    <div id="showTime">—</div>
-    <div id="showDesc"></div>
+    <div id="showText">
+      <div class="show-label">On Air</div>
+      <div id="showName">—</div>
+      <div id="showTime">—</div>
+      <div id="showDesc"></div>
+    </div>
+    <div id="showCover"><img id="showCoverImg" src="" alt=""></div>
   </div>
 
   <div id="clock">—</div>
@@ -502,14 +388,6 @@
     <div style="font-size:10px;color:#2a2a2a;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px;">Recently played</div>
   </div>
 
-  <div id="ticker">
-    <div id="tickerLabel">July Radio</div>
-    <div id="tickerTrack">
-      <div id="tickerInner">
-        <span class="ticker-msg">Welcome to July Radio &nbsp;·&nbsp; Live 24/7 &nbsp;·&nbsp; Now streaming</span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -535,6 +413,7 @@ async function fetchSchedule() {
           allSlots.push({
             name: slot.name,
             description: slot.description || '',
+            cover: slot.cover || slot.coverImage || slot.cover_url || slot.coverUrl || slot.image || slot.imageUrl || slot.img || slot.art || slot.artwork || slot.thumbnail || '',
             startMins: parseInt(sp[0]) * 60 + parseInt(sp[1] || 0),
             endMins: endMins,
             startStr: slot.start || '00:00',
@@ -645,12 +524,32 @@ function updateShow() {
     document.getElementById('showTime').textContent = show.startStr + ' – ' + show.endStr;
     const descEl = document.getElementById('showDesc');
     if (descEl) descEl.textContent = show.description || '';
+    setShowCover(show.cover);
   } else {
     document.getElementById('showName').textContent = '—';
     document.getElementById('showTime').textContent = '';
     const descEl = document.getElementById('showDesc');
     if (descEl) descEl.textContent = '';
+    setShowCover('');
   }
+}
+
+var currentShowCover = null;
+function setShowCover(url) {
+  url = url || '';
+  if (url === currentShowCover) return;
+  currentShowCover = url;
+  var box = document.getElementById('showCover');
+  var img = document.getElementById('showCoverImg');
+  if (!url) { box.style.display = 'none'; img.removeAttribute('src'); return; }
+  var pre = new Image();
+  pre.onload = function() {
+    if (currentShowCover !== url) return;
+    img.src = url;
+    box.style.display = 'block';
+  };
+  pre.onerror = function() { if (currentShowCover === url) box.style.display = 'none'; };
+  pre.src = url;
 }
 
 async function getItunesArt(artist, track) {
@@ -866,91 +765,9 @@ async function fetchArtistInfo(artist) {
 }
 
 
-// Ticker — JS RAF scroll, auto-sizes to content
-var tickerX = 0;
-var tickerSpeed = 0.5;
-var tickerRAF = null;
-var tickerSingleWidth = 0;
-var tickerSep = '     ·     ';
-
-function setTickerText(messages) {
-  var inner = document.getElementById('tickerInner');
-  if (!inner) return;
-  var text = messages.join(tickerSep);
-  inner.innerHTML =
-    '<span class="ticker-msg">' + text + tickerSep + '</span>' +
-    '<span class="ticker-msg">' + text + tickerSep + '</span>';
-  tickerX = 0;
-  inner.style.transform = 'translateY(-50%) translateX(0px)';
-  requestAnimationFrame(function() {
-    var spans = inner.querySelectorAll('.ticker-msg');
-    tickerSingleWidth = spans[0] ? spans[0].offsetWidth : 0;
-    if (tickerRAF) cancelAnimationFrame(tickerRAF);
-    tickerLoop();
-  });
-}
-
-function tickerLoop() {
-  var inner = document.getElementById('tickerInner');
-  if (!inner || tickerSingleWidth === 0) return;
-  tickerX -= tickerSpeed;
-  if (tickerX <= -tickerSingleWidth) tickerX += tickerSingleWidth;
-  inner.style.transform = 'translateY(-50%) translateX(' + tickerX + 'px)';
-  tickerRAF = requestAnimationFrame(tickerLoop);
-}
-
-async function fetchTicker() {
-  try {
-    const res = await fetch('https://julyimages.sxrsq1.workers.dev/ticker');
-    const data = await res.json();
-    if (data.messages && data.messages.length) {
-      setTickerText(data.messages);
-    }
-  } catch(e) {}
-}
-
-// July+ Launch Countdown
-var LAUNCH_TARGET = new Date('2026-07-03T03:33:00+03:00'); // Fri 3 Jul 2026, 03:33 EAT
-var lcCardIndex = 0;
-
-function pad2(n) { return String(n).padStart(2, '0'); }
-
-function updateLaunchCountdown() {
-  var now = new Date();
-  var diff = LAUNCH_TARGET - now;
-  var timerEl = document.getElementById('lcTimer');
-  if (!timerEl) return;
-
-  if (diff <= 0) {
-    timerEl.textContent = "IT'S LIVE";
-    return;
-  }
-
-  var totalSeconds = Math.floor(diff / 1000);
-  var days = Math.floor(totalSeconds / 86400);
-  var hours = Math.floor((totalSeconds % 86400) / 3600);
-  var mins = Math.floor((totalSeconds % 3600) / 60);
-  var secs = totalSeconds % 60;
-
-  timerEl.textContent = pad2(days) + ':' + pad2(hours) + ':' + pad2(mins) + ':' + pad2(secs);
-}
-
-function rotateLaunchCard() {
-  var cards = document.querySelectorAll('#launchCountdown .lc-card');
-  if (!cards.length) return;
-  cards[lcCardIndex].classList.remove('active');
-  lcCardIndex = (lcCardIndex + 1) % cards.length;
-  cards[lcCardIndex].classList.add('active');
-}
-
-updateLaunchCountdown();
-setInterval(updateLaunchCountdown, 1000);
-setInterval(rotateLaunchCard, 3000);
-
 updateClock();
 fetchSchedule();
 fetchNowPlaying();
-fetchTicker();
 fetchRecentTracks();
 
 setInterval(updateClock, 1000);
@@ -960,10 +777,8 @@ setInterval(fetchSchedule, 30000);
 var bc = new BroadcastChannel('july');
 bc.onmessage = function(e) {
   if (e.data && e.data.type === 'scheduleUpdate') fetchSchedule();
-  if (e.data && e.data.type === 'tickerUpdate') fetchTicker();
 };
 setInterval(fetchNowPlaying, 15000);
-setInterval(fetchTicker, 60000);
 setInterval(fetchRecentTracks, 20000);
 </script>
 </body>
