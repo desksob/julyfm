@@ -3,7 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>July Radio</title>
+<title>July Radio | 24/7 Independent Internet Radio from Nairobi</title>
+<meta name="description" content="July Radio is a 24/7 independent internet radio station from Nairobi, Kenya. Live DJ sets, resident shows and new music, streaming around the clock.">
+<link rel="canonical" href="https://july.rip/">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="application-name" content="July Radio">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="July Radio">
+<meta property="og:title" content="July Radio | 24/7 Independent Internet Radio from Nairobi">
+<meta property="og:description" content="July Radio is a 24/7 independent internet radio station from Nairobi, Kenya. Live DJ sets, resident shows and new music, streaming around the clock.">
+<meta property="og:url" content="https://july.rip/">
+<meta property="og:image" content="https://july.rip/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_KE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="July Radio | 24/7 Independent Internet Radio from Nairobi">
+<meta name="twitter:description" content="July Radio is a 24/7 independent internet radio station from Nairobi, Kenya. Live DJ sets, resident shows and new music, streaming around the clock.">
+<meta name="twitter:image" content="https://july.rip/og-image.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"RadioStation","name":"July Radio","alternateName":"July","url":"https://july.rip/","logo":"https://july.rip/og-image.png","image":"https://july.rip/og-image.png","description":"July Radio is a 24/7 independent internet radio station from Nairobi, Kenya. Live DJ sets, resident shows and new music, streaming around the clock.","slogan":"24/7 independent internet radio from Nairobi","address":{"@type":"PostalAddress","addressLocality":"Nairobi","addressCountry":"KE"},"areaServed":"Worldwide","inLanguage":"en"}
+</script>
 <script>
 (function(){
   try {
@@ -106,6 +126,29 @@ html[data-theme="dark"] header img{ filter:invert(1); }
   padding:9px 14px; text-decoration:none; }
 .sup-btn:hover{ background:var(--ink); color:var(--bg); }
 .sup-empty{ font-size:12px; color:var(--dim); padding:30px 0; text-align:center; }
+
+
+/* ═══ FESTIVE THEME: HALLOWEEN (html[data-festive="halloween"]) ═══ */
+html[data-festive="halloween"]{
+  --bg:#f6eee1; --surface:#f6eee1; --ink:#1b1024; --border:#1b1024;
+  --muted:#7a6a85; --dim:#bfb2c7; --hair:#e6dac9; --accent:#d4530a;
+}
+html[data-festive="halloween"][data-theme="dark"]{
+  --bg:#0c0812; --surface:#0c0812; --ink:#f4ead9; --border:#f4ead9;
+  --muted:#a193ae; --dim:#5d4d6b; --hair:#2a1d38; --accent:#ff7a1a;
+}
+html[data-festive="halloween"] ::selection{ background:var(--accent); color:#0c0812; }
+html[data-festive="halloween"] header{ border-bottom-color:var(--accent); }
+html[data-festive="halloween"] nav{ border-bottom-color:var(--accent); }
+.fest-pumpkin{ height:30px; width:auto; flex:0 0 auto; display:block; filter:drop-shadow(0 0 6px rgba(255,122,26,.45)); animation:festGlow 3.2s ease-in-out infinite; }
+@keyframes festGlow{ 0%,100%{ filter:drop-shadow(0 0 4px rgba(255,122,26,.35)); } 50%{ filter:drop-shadow(0 0 10px rgba(255,122,26,.75)); } }
+.fest-spider{ position:fixed; top:0; left:7%; z-index:8; pointer-events:none; transform-origin:50% 0; animation:festSway 5s ease-in-out infinite; }
+.fest-spider svg{ display:block; width:34px; height:auto; }
+@keyframes festSway{ 0%,100%{ transform:rotate(-4deg); } 50%{ transform:rotate(4deg); } }
+.fest-bat{ position:fixed; top:90px; left:-60px; z-index:8; pointer-events:none; width:34px; opacity:.85; animation:festBat 22s linear infinite; animation-delay:4s; }
+@keyframes festBat{ 0%{ transform:translate(0,0) scale(1); } 45%{ transform:translate(55vw,-30px) scale(1.1); } 100%{ transform:translate(calc(100vw + 120px),40px) scale(.9); } }
+@media (max-width:640px){ .fest-pumpkin{ height:24px; } .fest-spider{ left:52%; } .fest-spider svg{ width:26px; } }
+@media (prefers-reduced-motion:reduce){ .fest-pumpkin,.fest-spider,.fest-bat{ animation:none; } .fest-bat{ display:none; } }
 
 /* HOLIDAY FLAG (Kenyan public holidays) */
 .header-brand{ display:flex; align-items:center; gap:14px; min-width:0; }
@@ -817,12 +860,12 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   </header>
 
   <nav>
-    <a class="active" onclick="show('listen',this)">Listen</a>
-    <a onclick="show('schedule',this)">Schedule</a>
-    <a onclick="show('events',this)">Events</a>
-    <a onclick="show('djs',this)">Team</a>
-    <a onclick="show('support',this)">Support</a>
-    <a onclick="show('about',this)">About</a>
+    <a class="active" href="/" data-sec="listen" onclick="show('listen',this);return false">Listen</a>
+    <a href="/schedule" data-sec="schedule" onclick="show('schedule',this);return false">Schedule</a>
+    <a href="/events" data-sec="events" onclick="show('events',this);return false">Events</a>
+    <a href="/team" data-sec="djs" onclick="show('djs',this);return false">Team</a>
+    <a href="/support" data-sec="support" onclick="show('support',this);return false">Support</a>
+    <a href="/about" data-sec="about" onclick="show('about',this);return false">About</a>
   </nav>
 
   <!-- ═══ LISTEN: vertical stack ═══ -->
@@ -1069,7 +1112,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       <div id="djsGrid"></div>
     </div>
     <div id="djsDetailView" class="dj-detail">
-      <button class="dj-back" onclick="closeDjDetail()">← Back to team</button>
+      <button class="dj-back" onclick="backToTeam()">← Back to team</button>
       <div id="djsDetailBody"></div>
     </div>
   </div>
@@ -1768,10 +1811,11 @@ function toggleTheme() {
 })();
 
 // ── NAV ──
-function show(id, el) {
+function show(id, el, noPush) {
+  if (!el) el = document.querySelector('nav a[data-sec="'+id+'"]');
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-  if (id !== 'djs') closeDjDetail();
+  if (id !== 'djs' || !noPush) closeDjDetail();
   const sec = document.getElementById(id);
   sec.classList.add('active');
   sec.querySelectorAll('.now-playing-card,.on-air-card,.artist-card,.dj-tile,.history-item,.show-row,.day-label,.watch-card,.event-page-card').forEach(el2 => {
@@ -1779,7 +1823,9 @@ function show(id, el) {
     el2.offsetHeight;
     el2.style.animation = '';
   });
-  el.classList.add('active');
+  if (el) el.classList.add('active');
+  if (!noPush) setRoute(SECTION_PATHS[id] || '/');
+  setSectionMeta(id);
 }
 
 // ── HELPERS ──
@@ -2229,6 +2275,77 @@ try {
   console.warn('BroadcastChannel unavailable in this context, skipping cross-tab sync:', e);
 }
 
+// ── ROUTING (real URLs: /schedule, /events, /team, /team/<name>, /support, /about) ──
+// Cloudflare serves this same page for each address and fills in the right
+// title/description for search engines; this code handles the in-page part.
+const SECTION_PATHS = { listen:'/', schedule:'/schedule', events:'/events', djs:'/team', support:'/support', about:'/about' };
+const PATH_SECTIONS = {}; Object.keys(SECTION_PATHS).forEach(k => { PATH_SECTIONS[SECTION_PATHS[k]] = k; });
+const SECTION_META = {
+  listen:   { t:'July Radio | 24/7 Independent Internet Radio from Nairobi', d:'July Radio is a 24/7 independent internet radio station from Nairobi, Kenya. Live DJ sets, resident shows and new music, streaming around the clock.' },
+  schedule: { t:'Schedule | July Radio', d:'The weekly programme on July Radio: every show, every day, in East Africa Time (EAT). 24/7 independent internet radio from Nairobi.' },
+  events:   { t:'Events | July Radio', d:'Upcoming July Radio events, parties and live broadcasts from Nairobi.' },
+  djs:      { t:'Team & Residents | July Radio', d:'Meet the team and resident DJs behind July Radio, independent internet radio from Nairobi.' },
+  support:  { t:'Support July Radio', d:'Support July Radio, the independent, listener-supported internet radio station from Nairobi. Donate by M-Pesa or online.' },
+  about:    { t:'About July Radio', d:'About July Radio: a 24/7 independent internet radio station from Nairobi, Kenya, run by DJs and music lovers.' },
+};
+let routeBase = '';
+function slugify(t) {
+  return String(t || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function personSlug(p) { return slugify(p.name) || slugify(p.id) || p.id; }
+function setRoute(path) {
+  try { if (location.pathname.replace(/\/+$/, '') !== path.replace(/\/+$/, '')) history.pushState({}, '', path); } catch (e) {}
+}
+function setMeta(title, desc, path) {
+  document.title = title;
+  const set = (sel, attr, val) => { const el = document.querySelector(sel); if (el && val) el.setAttribute(attr, val); };
+  set('meta[name="description"]', 'content', desc);
+  set('meta[property="og:title"]', 'content', title);
+  set('meta[property="og:description"]', 'content', desc);
+  set('meta[name="twitter:title"]', 'content', title);
+  set('meta[name="twitter:description"]', 'content', desc);
+  if (path) {
+    set('link[rel="canonical"]', 'href', 'https://july.rip' + (path === '/' ? '/' : path));
+    set('meta[property="og:url"]', 'content', 'https://july.rip' + (path === '/' ? '/' : path));
+  }
+}
+function setSectionMeta(id) {
+  const m = SECTION_META[id] || SECTION_META.listen;
+  setMeta(m.t, m.d, SECTION_PATHS[id] || '/');
+}
+let pendingPersonSlug = null;
+function findPersonBySlug(slug) {
+  slug = slugify(slug);
+  const ids = Object.keys(peopleData);
+  for (let i = 0; i < ids.length; i++) { if (personSlug(peopleData[ids[i]]) === slug) return peopleData[ids[i]]; }
+  for (let i = 0; i < ids.length; i++) { if (slugify(ids[i]) === slug) return peopleData[ids[i]]; }
+  return null;
+}
+function applyRoute() {
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+  const m = path.match(/^\/team\/([^\/]+)$/);
+  if (m) {
+    show('djs', null, true);
+    pendingPersonSlug = decodeURIComponent(m[1]);
+    tryOpenPendingPerson();
+    return;
+  }
+  pendingPersonSlug = null;
+  const sec = PATH_SECTIONS[path] || 'listen';
+  show(sec, null, true);
+  if (sec === 'djs') closeDjDetail();
+}
+function tryOpenPendingPerson() {
+  if (!pendingPersonSlug) return;
+  const p = findPersonBySlug(pendingPersonSlug);
+  if (p) { pendingPersonSlug = null; openDjDetail(p.id, true); }
+}
+window.addEventListener('popstate', applyRoute);
+window.addEventListener('DOMContentLoaded', () => {
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+  if (path !== '/') applyRoute();
+});
+
 // ── DJS / TEAM ──
 // Both rosters (Team and Residents) are stored via the same generic
 // profile-save endpoint under reserved ids, so both can be managed from
@@ -2250,6 +2367,8 @@ let rosters = { team: [], resident: [] };
 
 function titleCase(id) { return id.charAt(0).toUpperCase() + id.slice(1); }
 
+function absPhoto(u) { return (u && !/^([a-z]+:)?\/\//i.test(u) && !/^(data|blob):/i.test(u) && u.charAt(0) !== '/') ? '/' + u : u; }
+
 function buildPerson(id, kv, def) {
   def = def || {};
   return {
@@ -2258,7 +2377,7 @@ function buildPerson(id, kv, def) {
     shows:      (kv&&kv.shows)      || def.shows      || 'Coming soon',
     tagline:    (kv&&kv.tagline)    || def.tagline    || '',
     bio:        (kv&&kv.bio)        || def.bio        || '',
-    photo:      (kv&&kv.photo)      || def.photo      || '',
+    photo:      absPhoto((kv&&kv.photo) || def.photo || ''),
     instagram:  (kv&&kv.instagram)  || def.instagram  || '',
     soundcloud: (kv&&kv.soundcloud) || def.soundcloud || '',
     links:      (kv&&Array.isArray(kv.links)) ? kv.links : (def.links || []),
@@ -2311,10 +2430,11 @@ async function loadHosts() {
   const resList  = document.getElementById('aboutResidentsList');
   if (teamList) teamList.innerHTML = rosters.team.map(id => '<div class="about-person">'+peopleData[id].name+'</div>').join('');
   if (resList)  resList.innerHTML  = rosters.resident.map(id => '<div class="about-person">'+peopleData[id].name+'</div>').join('');
+  tryOpenPendingPerson();
 }
 
 
-function openDjDetail(id) {
+function openDjDetail(id, noPush) {
   const p = peopleData[id];
   if (!p) return;
   const img = p.photo
@@ -2344,6 +2464,16 @@ function openDjDetail(id) {
 
   document.getElementById('djsListView').style.display = 'none';
   document.getElementById('djsDetailView').classList.add('active');
+  const path = '/team/' + personSlug(p);
+  if (!noPush) setRoute(path);
+  const desc = (p.bio ? String(p.bio).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 155) : p.name + ' on July Radio, independent internet radio from Nairobi.');
+  setMeta(p.name + (p.tagline ? ' — ' + p.tagline : '') + ' | July Radio', desc, path);
+}
+
+function backToTeam() {
+  closeDjDetail();
+  setRoute('/team');
+  setSectionMeta('djs');
 }
 
 function closeDjDetail() {
@@ -3080,6 +3210,90 @@ async function loadSupport() {
   } catch (e) { renderSupport(null); }
 }
 loadSupport();
+
+// ── FESTIVE THEMES (Halloween now; others can plug into FESTIVE_THEMES later) ──
+// Modes: 'auto' = on by date, 'halloween' = forced on, 'off' = never.
+// Admin sets the mode (stored in the _theme profile). Preview any time with ?theme=halloween (or ?theme=off).
+const FESTIVE_THEMES = {
+  halloween: {
+    // auto window (month/day, EAT): 17 Oct – 1 Nov
+    inWindow: (m, d) => (m === 10 && d >= 17) || (m === 11 && d <= 1),
+    meta: '#0c0812',
+    greeting: 'Happy Halloween',
+    decorate() {
+      const brand = document.querySelector('.header-brand');
+      if (brand && !brand.querySelector('.fest-pumpkin')) {
+        const w = document.createElement('span');
+        w.innerHTML = '<svg class="fest-pumpkin" viewBox="0 0 48 44" role="img" aria-label="Happy Halloween"><title>Happy Halloween</title>'
+          + '<path d="M24 11 C24 6 26 3 30 2" stroke="#4f8a2b" stroke-width="3" fill="none" stroke-linecap="round"/>'
+          + '<ellipse cx="14" cy="27" rx="11" ry="14" fill="#e8620c"/><ellipse cx="34" cy="27" rx="11" ry="14" fill="#e8620c"/>'
+          + '<ellipse cx="24" cy="27" rx="10" ry="15" fill="#ff7a1a"/>'
+          + '<path d="M15 23 L21 23 L18 17Z M27 23 L33 23 L30 17Z" fill="#1b1024"/>'
+          + '<path d="M14 31 L19 35 L22 31 L26 35 L29 31 L34 31 L30 38 L24 35 L18 38Z" fill="#1b1024"/></svg>';
+        brand.appendChild(w.firstChild);
+      }
+      if (!document.querySelector('.fest-spider')) {
+        const sp = document.createElement('div');
+        sp.className = 'fest-spider'; sp.setAttribute('aria-hidden', 'true');
+        sp.innerHTML = '<svg viewBox="0 0 34 120"><line x1="17" y1="0" x2="17" y2="84" stroke="currentColor" stroke-width="1" opacity=".55"/>'
+          + '<g fill="currentColor" stroke="currentColor"><ellipse cx="17" cy="97" rx="7" ry="8.5" stroke="none"/><circle cx="17" cy="86" r="4.5" stroke="none"/>'
+          + '<path d="M11 93 L2 86 L1 96 M11 98 L2 100 L3 110 M12 102 L6 113 M23 93 L32 86 L33 96 M23 98 L32 100 L31 110 M22 102 L28 113" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></g></svg>';
+        sp.style.color = 'var(--ink)';
+        document.body.appendChild(sp);
+      }
+      if (!document.querySelector('.fest-bat')) {
+        const b = document.createElement('div');
+        b.className = 'fest-bat'; b.setAttribute('aria-hidden', 'true');
+        b.innerHTML = '<svg viewBox="0 0 60 28" fill="currentColor"><path d="M30 8 C27 8 26 3 24 1 C23 5 22 7 19 8 C14 5 7 6 1 12 C6 12 10 13 12 17 C14 14 18 14 21 17 C23 21 27 24 30 28 C33 24 37 21 39 17 C42 14 46 14 48 17 C50 13 54 12 59 12 C53 6 46 5 41 8 C38 7 37 5 36 1 C34 3 33 8 30 8Z"/></svg>';
+        b.style.color = 'var(--accent)';
+        document.body.appendChild(b);
+      }
+    },
+    undecorate() {
+      document.querySelectorAll('.fest-pumpkin,.fest-spider,.fest-bat').forEach(el => el.remove());
+    }
+  }
+};
+
+function applyFestive(name) {
+  const root = document.documentElement;
+  Object.keys(FESTIVE_THEMES).forEach(k => { if (k !== name) FESTIVE_THEMES[k].undecorate(); });
+  if (name && FESTIVE_THEMES[name]) {
+    root.setAttribute('data-festive', name);
+    FESTIVE_THEMES[name].decorate();
+    const tc = document.querySelector('meta[name="theme-color"]');
+    if (tc && FESTIVE_THEMES[name].meta) tc.setAttribute('content', FESTIVE_THEMES[name].meta);
+  } else {
+    root.removeAttribute('data-festive');
+  }
+}
+function festiveFromDate() {
+  let m, d;
+  try {
+    const parts = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Nairobi' }).split('-').map(Number);
+    m = parts[1]; d = parts[2];
+  } catch (e) { const n = new Date(); m = n.getMonth() + 1; d = n.getDate(); }
+  const names = Object.keys(FESTIVE_THEMES);
+  for (let i = 0; i < names.length; i++) { if (FESTIVE_THEMES[names[i]].inWindow(m, d)) return names[i]; }
+  return null;
+}
+function festiveForMode(mode) {
+  if (mode === 'off') return null;
+  if (mode && FESTIVE_THEMES[mode]) return mode;
+  return festiveFromDate(); // 'auto' or unknown
+}
+async function initFestive() {
+  let preview = null;
+  try { preview = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+  if (preview) { applyFestive(festiveForMode(preview)); return; }
+  applyFestive(festiveFromDate()); // instant, by date
+  try {
+    const res = await fetch(WORKER + '/profile?host=_theme', { cache: 'no-store' });
+    const data = await res.json();
+    if (data && data.profile && data.profile.mode) applyFestive(festiveForMode(data.profile.mode));
+  } catch (e) {}
+}
+window.addEventListener('DOMContentLoaded', initFestive);
 
 // ── KENYAN PUBLIC HOLIDAY FLAG ──
 // Shows a small Kenyan flag next to the logo from 10 days before a public
