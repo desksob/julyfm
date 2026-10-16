@@ -150,6 +150,15 @@ html[data-festive="halloween"] nav{ border-bottom-color:var(--accent); }
 @media (max-width:640px){ .fest-pumpkin{ height:24px; } .fest-spider{ left:52%; } .fest-spider svg{ width:26px; } }
 @media (prefers-reduced-motion:reduce){ .fest-pumpkin,.fest-spider,.fest-bat{ animation:none; } .fest-bat{ display:none; } }
 
+
+/* ═══ APRIL FOOLS (opt-in game bar) ═══ */
+.fool-bar{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; padding:9px 12px; margin:0 0 0; border-bottom:1px dashed var(--ink); font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+.fool-bar-msg{ color:var(--ink); animation:foolFlicker 3.4s steps(1) infinite; }
+.fool-bar button{ font:inherit; letter-spacing:.14em; text-transform:uppercase; background:var(--ink); color:var(--bg); border:1px solid var(--ink); padding:6px 12px; cursor:pointer; }
+.fool-bar button:hover{ opacity:.8; }
+@keyframes foolFlicker{ 0%,92%,100%{ opacity:1; } 93%{ opacity:.2; } 95%{ opacity:1; } 97%{ opacity:.35; } }
+@media (prefers-reduced-motion:reduce){ .fool-bar-msg{ animation:none; } }
+
 /* HOLIDAY FLAG (Kenyan public holidays) */
 .header-brand{ display:flex; align-items:center; gap:14px; min-width:0; }
 .holiday-flag{ display:inline-flex; flex:0 0 auto; height:26px; border:1px solid var(--border); line-height:0; transition:transform .15s, opacity .15s; }
@@ -3252,8 +3261,43 @@ const FESTIVE_THEMES = {
     undecorate() {
       document.querySelectorAll('.fest-pumpkin,.fest-spider,.fest-bat').forEach(el => el.remove());
     }
+  },
+  aprilfools: {
+    // auto: 1 April (EAT). Opt-in: the site stays normal until a visitor clicks the bar.
+    inWindow: (m, d) => m === 4 && d === 1,
+    meta: null,
+    greeting: '',
+    decorate() {
+      if (document.getElementById('foolBar')) return;
+      const nav = document.querySelector('nav');
+      if (!nav || !nav.parentNode) return;
+      let won = false;
+      try { won = localStorage.getItem('july_fool_won') === '1'; } catch (e) {}
+      const bar = document.createElement('div');
+      bar.className = 'fool-bar'; bar.id = 'foolBar';
+      bar.innerHTML = '<span class="fool-bar-msg">' + (won ? '✔ You saved the site. The dog says thanks.' : '⚠ Something is wrong with the site…') + '</span>'
+        + '<button type="button">' + (won ? 'Play again' : 'Investigate') + '</button>';
+      bar.querySelector('button').addEventListener('click', startFoolGame);
+      nav.parentNode.insertBefore(bar, nav);
+    },
+    undecorate() {
+      const b = document.getElementById('foolBar'); if (b) b.remove();
+    }
   }
 };
+
+function startFoolGame() {
+  const go = () => { if (window.JulyFool) window.JulyFool.start(); };
+  if (window.JulyFool) return go();
+  const sc = document.createElement('script');
+  sc.src = '/fool.js?v=1'; sc.onload = go;
+  sc.onerror = () => { const m = document.querySelector('#foolBar .fool-bar-msg'); if (m) m.textContent = 'The game could not load. Try again later.'; };
+  document.head.appendChild(sc);
+}
+document.addEventListener('julyfool:end', () => {
+  const b = document.getElementById('foolBar');
+  if (b) { b.remove(); const t = FESTIVE_THEMES.aprilfools; if (document.documentElement.getAttribute('data-festive') === 'aprilfools') t.decorate(); }
+});
 
 function applyFestive(name) {
   const root = document.documentElement;
