@@ -263,6 +263,7 @@
 
   <div class="dash-nav">
     <div class="dash-nav-item active" onclick="showPanel('broadcast',this)">Broadcast</div>
+    <div class="dash-nav-item" onclick="showPanel('offline',this)">Server Status</div>
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
     <div class="dash-nav-item" onclick="showPanel('team',this)">Team</div>
@@ -443,15 +444,36 @@
       </div>
     </div>
 
+    <!-- SERVER STATUS -->
+    <div class="dash-panel" id="panel-offline">
+      <div class="section-title">Broadcast Server Status</div>
+      <div class="msg" id="offlineMsg"></div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Switch to Offline before server maintenance. The website shows a maintenance notice at the top of every page and the Play button is paused until you switch back to Online. Listeners see the change within about 30 seconds. Preview any time on the site by adding ?offline=1 to the address.</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btnOnline" onclick="selectOffline(false)">Online</button>
+        <button class="mode-btn" id="btnOffline" onclick="selectOffline(true)">Offline (maintenance)</button>
+      </div>
+      <div class="field">
+        <label class="field-label">Message to listeners (optional)</label>
+        <textarea id="offlineText" maxlength="240" placeholder="We're currently working on July Radio's broadcast server. The stream will be back soon."></textarea>
+        <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Leave empty to use the message shown above. Max 240 characters.</div>
+      </div>
+      <div class="field"><label class="field-label">Expected back (optional)</label><input type="text" id="offlineBack" maxlength="60" placeholder="e.g. Around 6PM EAT"></div>
+      <div class="btn-row"><button class="btn" onclick="saveOffline()">Save</button></div>
+    </div>
+
     <!-- FESTIVE THEME -->
     <div class="dash-panel" id="panel-festive">
       <div class="section-title">Festive Theme</div>
       <div class="msg" id="festiveMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Changes the colours and adds small decorations on the website. Auto switches Halloween on by itself from 17 Oct to 1 Nov (Nairobi time). Preview any time on the site by adding ?theme=halloween to the address.</div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Changes the colours and adds small decorations on the website. Auto switches Halloween on by itself from 17 Oct to 1 Nov, the Christmas logo ribbon from 1 Dec to 1 Jan, and the April Fools game bar on 1 April, and the Pride logo for all of June (Nairobi time). Preview any time on the site by adding ?theme=halloween or ?theme=aprilfools or ?theme=pride to the address.</div>
       <div class="field"><label class="field-label">Mode</label>
         <select id="festiveMode">
           <option value="auto">Auto (by date)</option>
           <option value="halloween">Halloween: always on</option>
+          <option value="aprilfools">April Fools game: always on</option>
+          <option value="christmas">Christmas ribbon: always on</option>
+          <option value="pride">Pride logo: always on</option>
           <option value="off">Off: normal site</option>
         </select>
       </div>
@@ -691,6 +713,7 @@ async function loadDashboard() {
     loadEvent(),
     loadSupport(),
     loadFestive(),
+    loadOffline(),
   ]);
 }
 
@@ -2171,6 +2194,44 @@ async function saveEvent() {
   } catch(e) { showMsg('eventMsg', 'error', 'Connection error'); }
 }
 
+
+// ── SERVER STATUS (OFFLINE SWITCH) ────────────────────────────────────────────
+// Stored under the reserved '_offline' profile id, like _event and _theme, so
+// it reuses the generic /profile endpoint and needs no Worker change.
+var offlineOn = false;
+function selectOffline(on) {
+  offlineOn = !!on;
+  document.getElementById('btnOnline').classList.toggle('active', !offlineOn);
+  document.getElementById('btnOffline').classList.toggle('active', offlineOn);
+}
+async function loadOffline() {
+  try {
+    var res = await fetch(WORKER + '/profile?host=_offline', { cache: 'no-store' });
+    var data = await res.json();
+    var p = data.profile || {};
+    selectOffline(p.on);
+    document.getElementById('offlineText').value = p.message || '';
+    document.getElementById('offlineBack').value = p.backAt || '';
+  } catch(e) {}
+}
+async function saveOffline() {
+  var cfg = {
+    on: offlineOn,
+    message: document.getElementById('offlineText').value.trim(),
+    backAt: document.getElementById('offlineBack').value.trim(),
+    since: offlineOn ? new Date().toISOString() : null,
+  };
+  try {
+    var res = await fetch(WORKER + '/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: currentPassword, host: '_offline', profile: cfg })
+    });
+    var data = await res.json();
+    if (data.ok) showMsg('offlineMsg', 'success', offlineOn ? 'Station marked OFFLINE. Listeners see the maintenance notice within 30 seconds' : 'Station back ONLINE. The notice disappears within 30 seconds');
+    else showMsg('offlineMsg', 'error', data.error || 'Failed to save');
+  } catch(e) { showMsg('offlineMsg', 'error', 'Connection error'); }
+}
 
 // ── FESTIVE THEME ─────────────────────────────────────────────────────────────
 async function loadFestive() {

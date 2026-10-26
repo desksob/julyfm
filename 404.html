@@ -660,6 +660,22 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 .alert-banner.visible{ transform:translateX(-50%) translateY(0); }
 .alert-dot{ width:6px; height:6px; border-radius:50%; background:var(--bg); flex-shrink:0; animation:pulse 1.4s ease-in-out infinite; }
 
+/* SERVER OFFLINE NOTICE (switched in admin > Server Status) */
+.offline-banner{
+  display:flex; gap:12px; align-items:flex-start;
+  margin:0 0 16px; padding:14px 16px;
+  background:var(--ink); color:var(--bg); border:1px solid var(--border);
+  font-size:11px; line-height:1.55; letter-spacing:0.03em;
+}
+.offline-banner[hidden]{ display:none; }
+.offline-banner .alert-dot{ margin-top:5px; }
+.offline-title{ font-size:10px; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:4px; }
+.offline-back{ margin-top:6px; opacity:0.75; }
+.offline-banner.flash{ animation:offlineFlash .6s ease 2; }
+@keyframes offlineFlash{ 50%{ opacity:0.35; } }
+.play-live-btn.offline{ opacity:0.45; cursor:not-allowed; }
+.play-live-btn.offline:hover{ opacity:0.45; }
+
 /* WEBGL ACCELERATION HELP MODAL */
 .viz-help-overlay{
   position:fixed; inset:0; z-index:500;
@@ -856,6 +872,15 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">Dark</button>
     </div>
   </header>
+
+  <div class="offline-banner" id="offlineBanner" role="status" aria-live="polite" hidden>
+    <div class="alert-dot"></div>
+    <div>
+      <div class="offline-title">Server maintenance</div>
+      <div id="offlineMsg"></div>
+      <div class="offline-back" id="offlineBack" hidden></div>
+    </div>
+  </div>
 
   <nav>
     <a class="active" href="/" data-sec="listen" onclick="show('listen',this);return false">Listen</a>
@@ -1458,6 +1483,7 @@ function updateGlobalConnectFlag(showName) {
 // ── PLAY ──
 function togglePlay() {
   const btn = document.getElementById('playBtn');
+  if (!playing && stationOffline) { flashOfflineNotice(); return; }
   if (!playing) {
     audio = new Audio();
     audio.crossOrigin = 'anonymous';
@@ -1469,6 +1495,7 @@ function togglePlay() {
     audio.volume = document.getElementById('volSlider').value / 100;
     initAirplaySupport(audio);
     audio.play().then(() => {
+      if (!audio) return; // cancelled (station went offline while connecting)
       playing = true;
       btn.innerHTML = '<span class="play-live-icon">■</span> Stop';
       btn.classList.add('playing');
@@ -1479,6 +1506,7 @@ function togglePlay() {
       syncTvModeContent();
       connectVisualizer(audio);
     }).catch(() => {
+      if (stationOffline) return;
       document.getElementById('statusMsg').textContent = '· could not connect';
     });
   } else {
@@ -2596,6 +2624,59 @@ async function checkAlert() {
 }
 checkAlert();
 setInterval(checkAlert, 30000);
+
+// ── SERVER OFFLINE NOTICE (config lives in the _offline profile, switched in admin) ──
+// Preview any time with ?offline=1 (or ?offline=6PM%20EAT to also show a return time).
+let stationOffline = false;
+const OFFLINE_DEFAULT_MSG = "We're currently working on July Radio's broadcast server. The stream will be back soon.";
+function applyOffline(cfg) {
+  const on = !!(cfg && cfg.on);
+  const btn = document.getElementById('playBtn');
+  const status = document.getElementById('statusMsg');
+  const banner = document.getElementById('offlineBanner');
+  stationOffline = on;
+  document.documentElement.toggleAttribute('data-offline', on);
+  banner.hidden = !on;
+  if (on) {
+    document.getElementById('offlineMsg').textContent = String(cfg.message || '').trim() || OFFLINE_DEFAULT_MSG;
+    const back = String(cfg.backAt || '').trim();
+    const backEl = document.getElementById('offlineBack');
+    backEl.textContent = back ? 'Expected back: ' + back : '';
+    backEl.hidden = !back;
+    if (playing) togglePlay(); // stop the stream that is going down
+    else if (audio) { audio.pause(); if (audio.parentNode) audio.remove(); audio = null; } // still connecting
+    btn.classList.add('offline');
+    btn.setAttribute('aria-disabled', 'true');
+    btn.innerHTML = '<span class="play-live-icon">■</span> Offline';
+    status.textContent = '· broadcast server under maintenance';
+  } else if (btn.classList.contains('offline')) {
+    btn.classList.remove('offline');
+    btn.removeAttribute('aria-disabled');
+    btn.innerHTML = '<span class="play-live-icon">▶</span> Play Live';
+    status.textContent = '· PRESS PLAY TO TUNE IN';
+  }
+}
+function flashOfflineNotice() {
+  if (tvModeActive) exitTvMode();
+  const b = document.getElementById('offlineBanner');
+  b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+}
+async function checkOffline() {
+  let preview = null;
+  try { preview = new URLSearchParams(location.search).get('offline'); } catch (e) {}
+  if (preview !== null) {
+    applyOffline(preview === '0' || preview === 'off' ? null : { on: true, backAt: preview === '1' || preview === '' ? '' : preview });
+    return;
+  }
+  try {
+    const res = await fetch(WORKER + '/profile?host=_offline', { cache: 'no-store' });
+    const data = await res.json();
+    applyOffline(data && data.profile);
+  } catch (e) {}
+}
+checkOffline();
+setInterval(checkOffline, 30000);
 
 // ── ARTIST CARD ──
 const LASTFM_API = 'https://ws.audioscrobbler.com/2.0/';
