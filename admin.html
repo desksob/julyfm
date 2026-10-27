@@ -460,6 +460,21 @@
       </div>
       <div class="field"><label class="field-label">Expected back (optional)</label><input type="text" id="offlineBack" maxlength="60" placeholder="e.g. Around 6PM EAT"></div>
       <div class="btn-row"><button class="btn" onclick="saveOffline()">Save</button></div>
+
+      <div class="section-title" style="margin-top:40px;">Stream Server</div>
+      <div class="msg" id="streamMsg"></div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Pick which server the website's Play button connects to. Listeners already playing are moved over within about 30 seconds. Preview on the site by adding ?server=2 to the address.</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btnServer1" onclick="selectServer(1)">Server 1</button>
+        <button class="mode-btn" id="btnServer2" onclick="selectServer(2)">Server 2</button>
+      </div>
+      <div class="field"><label class="field-label">Server 1 stream address</label><input type="text" id="server1Url" maxlength="300" placeholder="https://radio.july.rip/listen/july_radio/radio.mp3"></div>
+      <div class="field">
+        <label class="field-label">Server 2 stream address</label>
+        <input type="text" id="server2Url" maxlength="300" placeholder="https://...">
+        <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Must start with https://. A localhost address only works on the computer running the server.</div>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="saveStream()">Save</button></div>
     </div>
 
     <!-- FESTIVE THEME -->
@@ -714,6 +729,7 @@ async function loadDashboard() {
     loadSupport(),
     loadFestive(),
     loadOffline(),
+    loadStream(),
   ]);
 }
 
@@ -2231,6 +2247,50 @@ async function saveOffline() {
     if (data.ok) showMsg('offlineMsg', 'success', offlineOn ? 'Station marked OFFLINE. Listeners see the maintenance notice within 30 seconds' : 'Station back ONLINE. The notice disappears within 30 seconds');
     else showMsg('offlineMsg', 'error', data.error || 'Failed to save');
   } catch(e) { showMsg('offlineMsg', 'error', 'Connection error'); }
+}
+
+// ── STREAM SERVER SWITCH ──────────────────────────────────────────────────────
+// Stored under the reserved '_stream' profile id: { active: 1|2, server1, server2 }.
+// The site falls back to its built-in Server 1 address when nothing is saved.
+var SERVER1_DEFAULT = 'https://radio.july.rip/listen/july_radio/radio.mp3';
+var activeServer = 1;
+function selectServer(n) {
+  activeServer = n === 2 ? 2 : 1;
+  document.getElementById('btnServer1').classList.toggle('active', activeServer === 1);
+  document.getElementById('btnServer2').classList.toggle('active', activeServer === 2);
+}
+async function loadStream() {
+  document.getElementById('server1Url').value = SERVER1_DEFAULT;
+  try {
+    var res = await fetch(WORKER + '/profile?host=_stream', { cache: 'no-store' });
+    var data = await res.json();
+    var p = data.profile || {};
+    selectServer(p.active);
+    if (p.server1) document.getElementById('server1Url').value = p.server1;
+    document.getElementById('server2Url').value = p.server2 || '';
+  } catch(e) {}
+}
+async function saveStream() {
+  var cfg = {
+    active: activeServer,
+    server1: document.getElementById('server1Url').value.trim() || SERVER1_DEFAULT,
+    server2: document.getElementById('server2Url').value.trim(),
+  };
+  var chosen = activeServer === 2 ? cfg.server2 : cfg.server1;
+  if (!/^https:\/\//i.test(chosen)) {
+    showMsg('streamMsg', 'error', 'Server ' + activeServer + ' needs a stream address starting with https://');
+    return;
+  }
+  try {
+    var res = await fetch(WORKER + '/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: currentPassword, host: '_stream', profile: cfg })
+    });
+    var data = await res.json();
+    if (data.ok) showMsg('streamMsg', 'success', 'Website now uses Server ' + activeServer + '. Listeners switch over within 30 seconds');
+    else showMsg('streamMsg', 'error', data.error || 'Failed to save');
+  } catch(e) { showMsg('streamMsg', 'error', 'Connection error'); }
 }
 
 // ── FESTIVE THEME ─────────────────────────────────────────────────────────────
