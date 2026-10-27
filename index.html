@@ -1307,7 +1307,11 @@ const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
 const LASTFM_USER = 'injeton';
 const WORKER = 'https://julyimages.sxrsq1.workers.dev';
 const LASTFM_SCROBBLE_KEY = 'b32ec79d8c7167c20ab00af991bd5531'; // public app key, safe client-side — the secret never leaves the Worker
-const streamUrl = 'https://radio.july.rip/listen/july_radio/radio.mp3';
+const SERVER1_URL = 'https://radio.july.rip/listen/july_radio/radio.mp3';
+const SERVER2_URL = 'https://broadcast.july.rip/listen/july_fm_server_2/radio.mp3'; // backup AzuraCast on the studio Mac
+let streamUrl = SERVER1_URL;    // switched between Server 1 and 2 by checkStream
+let streamBackup = SERVER2_URL; // the other server, tried automatically if streamUrl won't play
+let usingBackup = false;
 
 let playing = false, audio = null, lastTrack = '', lastfmTrackUrl = '';
 
@@ -1487,7 +1491,11 @@ function togglePlay() {
   if (!playing) {
     audio = new Audio();
     audio.crossOrigin = 'anonymous';
-    audio.src = streamUrl;
+    audio.src = usingBackup ? streamBackup : streamUrl;
+    const thisAudio = audio;
+    const onDrop = () => { if (audio === thisAudio && playing) tryBackupStream(); }; // stream died mid-play
+    audio.addEventListener('error', onDrop);
+    audio.addEventListener('ended', onDrop);
     audio.setAttribute('playsinline', '');
     audio.preload = 'none';
     audio.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
@@ -1505,11 +1513,14 @@ function togglePlay() {
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
       syncTvModeContent();
       connectVisualizer(audio);
-    }).catch(() => {
+    }).catch(err => {
       if (stationOffline) return;
+      if (!(err && err.name === 'NotAllowedError') && tryBackupStream()) return; // blocked autoplay isn't a dead server
+      usingBackup = false;
       document.getElementById('statusMsg').textContent = '· could not connect';
     });
   } else {
+    usingBackup = false; // next Play tries the main server again
     audio.pause();
     if (audio.parentNode) audio.remove();
     audio = null; playing = false;
@@ -1523,6 +1534,17 @@ function togglePlay() {
     const airplayBtn = document.getElementById('airplayBtn');
     if (airplayBtn) { airplayBtn.style.display = 'none'; airplayBtn.classList.remove('available'); }
   }
+}
+
+// Main server won't connect or dropped: switch once to the other server.
+function tryBackupStream() {
+  if (usingBackup || stationOffline || !streamBackup || streamBackup === streamUrl) return false;
+  if (playing) togglePlay(); // stop the dead stream
+  else if (audio) { audio.pause(); if (audio.parentNode) audio.remove(); audio = null; }
+  usingBackup = true;
+  document.getElementById('statusMsg').textContent = '· switching to backup server';
+  togglePlay();
+  return true;
 }
 
 function setVol(v) { if (audio) audio.volume = v / 100; }
@@ -2677,6 +2699,32 @@ async function checkOffline() {
 }
 checkOffline();
 setInterval(checkOffline, 30000);
+
+// ── STREAM SERVER SWITCH (config lives in the _stream profile, switched in admin) ──
+// { active: 1|2, server1, server2 }. Preview with ?server=2 (or ?server=1).
+// The server not chosen becomes streamBackup, used automatically by tryBackupStream.
+function applyStream(cfg) {
+  let preview = null;
+  try { preview = new URLSearchParams(location.search).get('server'); } catch (e) {}
+  const active = preview === '1' || preview === '2' ? Number(preview) : (cfg && cfg.active);
+  const https = u => /^https:\/\//i.test(u || '');
+  const s1 = https(cfg && cfg.server1) ? cfg.server1 : SERVER1_URL;
+  const s2 = https(cfg && cfg.server2) ? cfg.server2 : SERVER2_URL;
+  const next = active === 2 ? s2 : s1;
+  streamBackup = active === 2 ? s1 : s2;
+  if (next === streamUrl) return;
+  streamUrl = next;
+  if (playing) { togglePlay(); togglePlay(); } // reconnect listeners to the new server
+}
+async function checkStream() {
+  try {
+    const res = await fetch(WORKER + '/profile?host=_stream', { cache: 'no-store' });
+    const data = await res.json();
+    applyStream(data && data.profile);
+  } catch (e) { applyStream(null); }
+}
+checkStream();
+setInterval(checkStream, 30000);
 
 // ── ARTIST CARD ──
 const LASTFM_API = 'https://ws.audioscrobbler.com/2.0/';
