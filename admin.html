@@ -626,9 +626,9 @@ const STREAM_URL = 'https://radio.nitro-server.uk/listen/ulyadio/radio.mp3';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 const HOSTS = {
-  c:      { name: 'C.',     accent: '#c8a96e', photo: 'julyhost1.png', password: 'julyat2025' },
-  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', photo: 'diogo.gif',     password: 'fziwe2025'  },
-  fiscia: { name: 'Fiscia', accent: '#c86e8a', photo: 'fiscia.jpeg',   password: 'fiscia2025' },
+  c:      { name: 'C.',     accent: '#c8a96e', photo: 'julyhost1.png' },
+  fziwe:  { name: 'Fziwe',  accent: '#6e8ac8', photo: 'diogo.gif' },
+  fiscia: { name: 'Fiscia', accent: '#c86e8a', photo: 'fiscia.jpeg' },
 };
 
 let currentHost = null;
@@ -685,7 +685,21 @@ async function login() {
   var pw = document.getElementById('passwordInput').value;
   if (!pw) return;
 
-  if (pw !== HOSTS[currentHost].password) {
+  // The Worker checks the password (it is never stored in this page).
+  var ok = false;
+  try {
+    var res = await fetch(WORKER + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host: currentHost, password: pw })
+    });
+    ok = res.ok;
+    if (res.status === 429) { showMsg('loginMsg', 'error', 'Too many tries. Wait 15 minutes.'); return; }
+  } catch (e) {
+    showMsg('loginMsg', 'error', 'Could not reach the server. Try again.');
+    return;
+  }
+  if (!ok) {
     showMsg('loginMsg', 'error', 'Wrong password');
     return;
   }
