@@ -1284,6 +1284,16 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 <script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/lib/isSupported.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js"></script>
 <script>
+// ── SAFETY HELPERS: everything saved through the admin (names, bios, links, pictures) goes through these before it is put on the page ──
+function escH(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Only web links (https, http) and site paths are allowed; anything else (javascript:, data: and so on) becomes ''.
+function safeUrl(u) {
+  u = String(u == null ? '' : u).trim();
+  if (!u) return '';
+  if (/^https?:\/\//i.test(u) || /^\/(?!\/)/.test(u) || /^[\w.-]+\.(png|jpe?g|gif|webp|svg)$/i.test(u)) return escH(u);
+  if (/^data:image\/(png|jpe?g|gif|webp);/i.test(u)) return u.replace(/"/g, '%22');
+  return '';
+}
 const TV_STREAM_URL = 'https://tv.july.rip/iptv/channel/10.m3u8';
 let tvPlayer = null, tvPlaying = false;
 
@@ -1992,7 +2002,7 @@ async function renderDjSetNowPlaying() {
   artistEl.textContent = djsetData.djName ? ('DJ Set — ' + djsetData.djName) : 'Live DJ Set';
   albumEl.textContent = '';
   if (djsetData.image) {
-    artEl.innerHTML = '<img src="'+djsetData.image+'" alt="">';
+    artEl.innerHTML = '<img src="'+safeUrl(djsetData.image)+'" alt="">';
     updateBg(djsetData.image);
   } else {
     artEl.innerHTML = '<div class="art-placeholder">art</div>';
@@ -2036,14 +2046,14 @@ async function renderDjAboutCard() {
   titleEl.textContent = 'About This ' + role;
   nameEl.textContent = name;
   tagsEl.innerHTML = (djsetData.tags || []).slice(0,4).map(t =>
-    '<span class="artist-card-tag">'+t+'</span>'
+    '<span class="artist-card-tag">'+escH(t)+'</span>'
   ).join('');
   bioEl.textContent = djsetData.bio || '';
   listenersEl.textContent = '';
   if (djsetData.image) {
-    imgWrap.innerHTML = '<img class="artist-card-img" src="'+djsetData.image+'" alt="'+name+'">';
+    imgWrap.innerHTML = '<img class="artist-card-img" src="'+safeUrl(djsetData.image)+'" alt="'+escH(name)+'">';
   } else {
-    imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+name+'</div>';
+    imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+escH(name)+'</div>';
   }
 
   card.style.display = 'block';
@@ -2087,7 +2097,7 @@ async function fetchNowPlaying() {
       artistEl.textContent = artist;
       albumEl.textContent = album || '-';
       if (img) {
-        artEl.innerHTML = '<img src="'+img+'" alt="">';
+        artEl.innerHTML = '<img src="'+safeUrl(img)+'" alt="">';
         updateBg(img);
       } else {
         artEl.innerHTML = '<div class="art-placeholder">art</div>';
@@ -2155,7 +2165,7 @@ function updateScrobbleUI() {
   if (!el) return;
   const session = getScrobbleSession();
   if (session) {
-    el.innerHTML = 'Scrobbling as ' + session.username + ' · <a href="#" onclick="disconnectLastfm();return false;">Disconnect</a>';
+    el.innerHTML = 'Scrobbling as ' + escH(session.username) + ' · <a href="#" onclick="disconnectLastfm();return false;">Disconnect</a>';
   } else {
     el.innerHTML = '<a href="#" onclick="connectLastfm();return false;">Connect Last.fm to scrobble</a>';
   }
@@ -2332,18 +2342,18 @@ function renderSchedule() {
           const localStart = showTimeToLocal(show.startStr);
           const localEnd = showTimeToLocal(show.endStr);
           const sameAsEAT = localStart === show.startStr && localEnd === show.endStr;
-          return '<div class="show-time">'+localStart+' – '+localEnd
-            + (sameAsEAT ? '' : '<div style="font-size:9px;color:var(--dim);margin-top:2px;">'+show.startStr+' – '+show.endStr+' EAT</div>')
+          return '<div class="show-time">'+escH(localStart)+' – '+escH(localEnd)
+            + (sameAsEAT ? '' : '<div style="font-size:9px;color:var(--dim);margin-top:2px;">'+escH(show.startStr)+' – '+escH(show.endStr)+' EAT</div>')
             + '</div>';
         })() +
         '<div style="display:flex;align-items:center;">'+
-          (show.image?'<img src="'+show.image+'" class="show-img" alt="">':'')+
+          (show.image?'<img src="'+safeUrl(show.image)+'" class="show-img" alt="">':'')+
           (isLive?'<div class="live-dot-inline"></div>':'')+
-          '<div><div class="show-name">'+show.name+'</div>'+
-          (show.description?'<div class="show-desc">'+show.description+'</div>':'')+
+          '<div><div class="show-name">'+escH(show.name)+'</div>'+
+          (show.description?'<div class="show-desc">'+escH(show.description)+'</div>':'')+
           '</div></div>'+
         (function(){ const f=getGlobalConnectFlag(show.name); return f ? '<img src="'+f+'" style="height:16px;filter:grayscale(1) contrast(1.3);opacity:0.8;margin-right:4px;vertical-align:middle;" alt="">' : ''; })() +
-        '<div class="show-tag'+(isLive?' on-air':'')+'">'+(isLive?'ON AIR':show.tag)+'</div>'+
+        '<div class="show-tag'+(isLive?' on-air':'')+'">'+(isLive?'ON AIR':escH(show.tag))+'</div>'+
         '</div>';
     });
   });
@@ -2360,7 +2370,7 @@ function updateMiniWidget() {
   if (el) el.textContent = cur ? cur.name : '-';
   if (tel) tel.textContent = cur ? showTimeToLocal(cur.startStr)+' – '+showTimeToLocal(cur.endStr) : '';
   if (imgEl) {
-    if (cur && cur.image) { imgEl.innerHTML = '<img src="'+cur.image+'" alt="">'; imgEl.style.display = 'block'; }
+    if (cur && cur.image) { imgEl.innerHTML = '<img src="'+safeUrl(cur.image)+'" alt="">'; imgEl.style.display = 'block'; }
     else { imgEl.innerHTML = ''; imgEl.style.display = 'none'; }
   }
   updateGlobalConnectFlag(cur ? cur.name : '');
@@ -2493,12 +2503,12 @@ function buildPerson(id, kv, def) {
 
 function djTileHtml(p) {
   const img = p.photo
-    ? '<img src="'+p.photo+'" alt="'+p.name+'">'
-    : '<div class="dj-tile-ph">'+p.name[0]+'</div>';
-  return '<div class="dj-tile" onclick="openDjDetail(\''+p.id+'\')">'
+    ? '<img src="'+safeUrl(p.photo)+'" alt="'+escH(p.name)+'">'
+    : '<div class="dj-tile-ph">'+escH(p.name[0])+'</div>';
+  return '<div class="dj-tile" onclick="openDjDetail(\''+String(p.id).replace(/[^\w-]/g, '')+'\')">'
     + '<div class="dj-tile-img">'+img+'</div>'
-    + '<div class="dj-tile-name">'+p.name+'</div>'
-    + (p.shows ? '<div class="dj-tile-sub">'+p.shows+'</div>' : '')
+    + '<div class="dj-tile-name">'+escH(p.name)+'</div>'
+    + (p.shows ? '<div class="dj-tile-sub">'+escH(p.shows)+'</div>' : '')
     + '</div>';
 }
 
@@ -2535,8 +2545,8 @@ async function loadHosts() {
   // About page name lists
   const teamList = document.getElementById('aboutTeamList');
   const resList  = document.getElementById('aboutResidentsList');
-  if (teamList) teamList.innerHTML = rosters.team.map(id => '<div class="about-person">'+peopleData[id].name+'</div>').join('');
-  if (resList)  resList.innerHTML  = rosters.resident.map(id => '<div class="about-person">'+peopleData[id].name+'</div>').join('');
+  if (teamList) teamList.innerHTML = rosters.team.map(id => '<div class="about-person">'+escH(peopleData[id].name)+'</div>').join('');
+  if (resList)  resList.innerHTML  = rosters.resident.map(id => '<div class="about-person">'+escH(peopleData[id].name)+'</div>').join('');
   tryOpenPendingPerson();
 }
 
@@ -2545,15 +2555,15 @@ function openDjDetail(id, noPush) {
   const p = peopleData[id];
   if (!p) return;
   const img = p.photo
-    ? '<div class="dj-detail-img"><img src="'+p.photo+'" alt="'+p.name+'"></div>'
-    : '<div class="dj-detail-img"><div class="dj-tile-ph">'+p.name[0]+'</div></div>';
+    ? '<div class="dj-detail-img"><img src="'+safeUrl(p.photo)+'" alt="'+escH(p.name)+'"></div>'
+    : '<div class="dj-detail-img"><div class="dj-tile-ph">'+escH(p.name[0])+'</div></div>';
   const extraLinks = (Array.isArray(p.links) ? p.links : [])
-    .filter(l => l && l.label && l.url)
-    .map(l => '<a href="'+l.url+'" target="_blank">'+l.label+'</a>')
+    .filter(l => l && l.label && safeUrl(l.url))
+    .map(l => '<a href="'+safeUrl(l.url)+'" target="_blank" rel="noopener">'+escH(l.label)+'</a>')
     .join('');
   const socials = [
-    p.instagram  ? '<a href="https://instagram.com/'+p.instagram.replace('@','')+'" target="_blank">Instagram</a>' : '',
-    p.soundcloud ? '<a href="'+p.soundcloud+'" target="_blank">SoundCloud</a>' : '',
+    p.instagram  ? '<a href="https://instagram.com/'+encodeURIComponent(String(p.instagram).replace('@','').trim())+'" target="_blank" rel="noopener">Instagram</a>' : '',
+    safeUrl(p.soundcloud) ? '<a href="'+safeUrl(p.soundcloud)+'" target="_blank" rel="noopener">SoundCloud</a>' : '',
     extraLinks,
   ].filter(Boolean).join('');
 
@@ -2561,10 +2571,10 @@ function openDjDetail(id, noPush) {
     '<div class="dj-detail-grid">'
       + img
       + '<div>'
-        + '<div class="dj-detail-name">'+p.name+'</div>'
-        + (p.shows ? '<div class="dj-detail-shows">'+p.shows+'</div>' : '')
-        + (p.tagline ? '<div class="dj-detail-tagline">'+p.tagline+'</div>' : '')
-        + (p.bio ? '<div class="dj-detail-bio">'+p.bio+'</div>' : '')
+        + '<div class="dj-detail-name">'+escH(p.name)+'</div>'
+        + (p.shows ? '<div class="dj-detail-shows">'+escH(p.shows)+'</div>' : '')
+        + (p.tagline ? '<div class="dj-detail-tagline">'+escH(p.tagline)+'</div>' : '')
+        + (p.bio ? '<div class="dj-detail-bio">'+escH(p.bio)+'</div>' : '')
         + (socials ? '<div class="dj-socials">'+socials+'</div>' : '')
       + '</div>'
     + '</div>';
@@ -2629,7 +2639,7 @@ function showEventPopup(ev) {
 
   const imgWrap = document.getElementById('eventPopupImgWrap');
   if (ev.image) {
-    imgWrap.innerHTML = '<img src="'+ev.image+'" alt="">';
+    imgWrap.innerHTML = '<img src="'+safeUrl(ev.image)+'" alt="">';
     imgWrap.style.display = 'block';
   } else {
     imgWrap.innerHTML = '';
@@ -2637,8 +2647,8 @@ function showEventPopup(ev) {
   }
 
   const linkBtn = document.getElementById('eventPopupLink');
-  if (ev.linkUrl) {
-    linkBtn.href = ev.linkUrl;
+  if (safeUrl(ev.linkUrl)) {
+    linkBtn.href = safeUrl(ev.linkUrl);
     linkBtn.textContent = ev.linkLabel || 'Learn More';
     linkBtn.style.display = 'inline-block';
   } else {
@@ -2657,16 +2667,16 @@ function renderEventsPage(ev) {
     grid.innerHTML = '<div class="event-page-empty">No upcoming events right now — check back soon.</div>';
     return;
   }
-  const img = ev.image ? '<div class="event-page-img"><img src="'+ev.image+'" alt="'+ev.name+'"></div>' : '';
-  const link = ev.linkUrl ? '<a class="event-page-link" href="'+ev.linkUrl+'" target="_blank">'+(ev.linkLabel || 'Learn More')+'</a>' : '';
+  const img = ev.image ? '<div class="event-page-img"><img src="'+safeUrl(ev.image)+'" alt="'+escH(ev.name)+'"></div>' : '';
+  const link = safeUrl(ev.linkUrl) ? '<a class="event-page-link" href="'+safeUrl(ev.linkUrl)+'" target="_blank" rel="noopener">'+escH(ev.linkLabel || 'Learn More')+'</a>' : '';
   grid.innerHTML =
     '<div class="event-page-card">'
       + img
       + '<div class="event-page-body">'
         + '<div class="event-page-label">Upcoming Event</div>'
-        + '<div class="event-page-name">'+ev.name+'</div>'
-        + '<div class="event-page-date">'+formatEventDate(ev)+'</div>'
-        + (ev.description ? '<div class="event-page-desc">'+ev.description+'</div>' : '')
+        + '<div class="event-page-name">'+escH(ev.name)+'</div>'
+        + '<div class="event-page-date">'+escH(formatEventDate(ev))+'</div>'
+        + (ev.description ? '<div class="event-page-desc">'+escH(ev.description)+'</div>' : '')
         + link
       + '</div>'
     + '</div>';
@@ -2847,12 +2857,12 @@ async function fetchArtistInfo(artistName) {
     const imgRes = await fetch('https://julyimages.sxrsq1.workers.dev/?artist='+encodeURIComponent(artistName));
     const imgData = await imgRes.json();
     if (imgData.image) {
-      imgWrap.innerHTML = '<img class="artist-card-img" src="'+imgData.image+'" alt="'+artistName+'">';
+      imgWrap.innerHTML = '<img class="artist-card-img" src="'+safeUrl(imgData.image)+'" alt="'+escH(artistName)+'">';
     } else {
-      imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+artistName+'</div>';
+      imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+escH(artistName)+'</div>';
     }
   } catch(e) {
-    imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+artistName+'</div>';
+    imgWrap.innerHTML = '<div class="artist-card-img-placeholder">'+escH(artistName)+'</div>';
   }
   if (!wasVisible) positionCardLate('artist');
   syncTvModeContent();
