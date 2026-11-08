@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,11 +13,11 @@
   JULY RADIO STUDIO DISPLAY (8 Nov 2026, july.rip style)
   For the 65" studio TV (any 16:9 screen). Sized in rem: 1rem = 1/192 of the screen width.
   Windows like july.rip (black title bar, 1px border), with show covers from the schedule.
-  Options: ?theme=dark (the site's dark mode), ?tv=0 (hide the TV window).
+  Options: ?theme=light (the site's white look), ?tv=0 (hide the TV window).
 -->
 <style>
-:root{ --bg:#ffffff; --ink:#0a0a0a; --border:#0a0a0a; --muted:#6e6e6e; --dim:#b0b0b0; --hair:#e2e2e2; --logo-filter:none; }
-html[data-theme="dark"]{ --bg:#0a0a0a; --ink:#f5f5f5; --border:#f5f5f5; --muted:#8a8a8a; --dim:#555; --hair:#262626; --logo-filter:invert(1); }
+:root{ --bg:#ffffff; --ink:#0a0a0a; --border:#0a0a0a; --muted:#6e6e6e; --dim:#b0b0b0; --hair:#e2e2e2; --bar:#0a0a0a; --bar-ink:#ffffff; --logo-filter:none; }
+html[data-theme="dark"]{ --bg:#0a0a0a; --ink:#f5f5f5; --border:#333333; --muted:#8a8a8a; --dim:#555; --hair:#1f1f1f; --bar:#1a1a1a; --bar-ink:#f5f5f5; --logo-filter:invert(1); }
 *{ box-sizing:border-box; margin:0; padding:0; }
 html{ font-size:min(calc(100vw / 192), calc(100vh / 108)); background:var(--bg); }
 body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Mono','Courier New',monospace; height:100vh; overflow:hidden; cursor:none; display:flex; align-items:center; justify-content:center; }
@@ -47,7 +47,7 @@ header img{ height:10rem; margin:-1.6rem -1.9rem; filter:var(--logo-filter); }
 .row2{ display:grid; grid-template-columns:48rem 1fr; gap:3rem; flex:1; min-height:0; }
 .win{ border:1px solid var(--border); background:var(--bg); display:flex; flex-direction:column; min-height:0; overflow:hidden; }
 .win.fill{ flex:1; }
-.win-titlebar{ display:flex; align-items:center; gap:1rem; background:var(--ink); color:var(--bg); padding:1.1rem 1.8rem; flex-shrink:0; font-size:1.5rem; letter-spacing:.14em; text-transform:uppercase; white-space:nowrap; }
+.win-titlebar{ display:flex; align-items:center; gap:1rem; background:var(--bar); color:var(--bar-ink); border-bottom:1px solid var(--border); padding:1.1rem 1.8rem; flex-shrink:0; font-size:1.5rem; letter-spacing:.14em; text-transform:uppercase; white-space:nowrap; }
 .win-body{ padding:2.4rem; flex:1; min-height:0; overflow:hidden; }
 
 /* NOW PLAYING */
@@ -69,7 +69,7 @@ header img{ height:10rem; margin:-1.6rem -1.9rem; filter:var(--logo-filter); }
 .onair-time{ font-size:1.6rem; color:var(--muted); margin-top:1.4rem; letter-spacing:.1em; text-transform:uppercase; }
 
 /* UP NEXT (as the schedule page, with show covers) */
-.day-label{ font-size:1.3rem; letter-spacing:.16em; text-transform:uppercase; color:var(--bg); background:var(--ink); padding:.6rem 1.4rem; margin:1.6rem 0 .2rem; }
+.day-label{ font-size:1.3rem; letter-spacing:.16em; text-transform:uppercase; color:var(--bar-ink); background:var(--bar); padding:.6rem 1.4rem; margin:1.6rem 0 .2rem; }
 .day-label:first-child{ margin-top:0; }
 .show-row{ display:flex; align-items:center; gap:1.8rem; padding:1rem 0; border-bottom:1px solid var(--hair); }
 .show-row .cover{ width:5.6rem; height:5.6rem; border:1px solid var(--border); }
@@ -160,7 +160,7 @@ const TV_URL = 'https://tv.july.rip/iptv/channel/10.m3u8';
 const HOSTS = ['c', 'fziwe', 'fiscia'];
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const params = new URLSearchParams(location.search);
-if (params.get('theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+if (params.get('theme') === 'light') document.documentElement.dataset.theme = 'light';
 if (params.get('tv') === '0') document.getElementById('tvWin').style.display = 'none';
 
 function escH(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
