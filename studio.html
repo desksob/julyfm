@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>July Radio · Studio Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<!--
+  JULY RADIO STUDIO DISPLAY (8 Nov 2026)
+  Made for the 65" studio TV (any 16:9 screen, 1080p or 4K). Everything is sized in rem,
+  and 1rem = 1/192 of the screen width, so the layout looks the same on any TV.
+  Shows: clock (EAT), now playing or the live DJ set, a small muted July Music Television preview,
+  the upcoming schedule and recently played tracks. Same data as july.rip.
+  Options: ?theme=light (white like the site), ?tv=0 (hide the TV preview).
+-->
+<style>
+:root{
+  --bg:#0a0a0a; --ink:#f5f5f5; --muted:#8a8a8a; --dim:#4a4a4a; --hair:#262626; --logo-filter:invert(1);
+}
+html[data-theme="light"]{ --bg:#ffffff; --ink:#0a0a0a; --muted:#6e6e6e; --dim:#b0b0b0; --hair:#e2e2e2; --logo-filter:none; }
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ font-size:min(calc(100vw / 192), calc(100vh / 108)); background:var(--bg); }
+body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Mono','Courier New',monospace; height:100vh; overflow:hidden; cursor:none; display:flex; align-items:center; justify-content:center; }
+.stage{ width:192rem; height:108rem; padding:5rem 6rem 4.5rem; display:grid; grid-template-rows:auto 1fr auto; gap:4rem; transition:transform 2s ease; }
+.label{ font-size:1.5rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+.bar-label{ display:inline-block; font-size:1.4rem; letter-spacing:.18em; text-transform:uppercase; background:var(--ink); color:var(--bg); padding:.8rem 1.6rem; }
+.live-dot{ width:1.4rem; height:1.4rem; border-radius:50%; background:var(--ink); animation:pulse 1.4s ease-in-out infinite; flex-shrink:0; }
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.2;} }
+.fade{ transition:opacity .6s ease; }
+.fading{ opacity:0; }
+
+/* TOP BAR */
+.top{ display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--ink); padding-bottom:3rem; }
+.brand{ display:flex; align-items:center; gap:3rem; }
+.brand img{ height:11rem; margin:-2rem -2.5rem; filter:var(--logo-filter); }
+.onair{ display:flex; align-items:center; gap:1.4rem; border:1px solid var(--ink); padding:1rem 2rem; font-size:1.8rem; letter-spacing:.2em; font-weight:600; }
+.onair.off{ opacity:.45; } .onair.off .live-dot{ animation:none; }
+.tagline{ font-size:1.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.clock{ text-align:right; }
+.clock-time{ font-size:7rem; font-weight:500; letter-spacing:.02em; line-height:1; font-variant-numeric:tabular-nums; }
+.clock-time small{ font-size:3.2rem; color:var(--muted); margin-left:.6rem; }
+.clock-date{ margin-top:1rem; font-size:1.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+
+/* MIDDLE */
+.middle{ display:grid; grid-template-columns:1fr 62rem; gap:6rem; min-height:0; }
+.now{ display:grid; grid-template-columns:56rem 1fr; gap:5rem; align-items:center; min-height:0; }
+.art{ width:56rem; height:56rem; border:1px solid var(--ink); background:var(--hair); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.art img{ width:100%; height:100%; object-fit:cover; display:block; }
+.art-ph{ font-size:2rem; letter-spacing:.2em; color:var(--muted); text-transform:uppercase; }
+.now-info{ min-width:0; display:flex; flex-direction:column; gap:2.4rem; }
+.now-title{ font-size:7.2rem; font-weight:600; line-height:1.05; letter-spacing:-.01em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; word-break:break-word; }
+.now-artist{ font-size:3.6rem; line-height:1.2; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.now-album{ font-size:2rem; color:var(--muted); letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tags{ display:flex; gap:1.2rem; flex-wrap:wrap; }
+.tag{ font-size:1.5rem; padding:.6rem 1.4rem; border:1px solid var(--ink); letter-spacing:.1em; text-transform:uppercase; }
+.show-now{ margin-top:1rem; padding-top:2.4rem; border-top:1px solid var(--hair); font-size:1.8rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+.show-now b{ color:var(--ink); font-weight:600; }
+
+.side{ display:flex; flex-direction:column; gap:3.2rem; min-height:0; }
+.tv{ border:1px solid var(--ink); }
+.tv-head{ display:flex; align-items:center; gap:1.2rem; padding:1rem 1.6rem; border-bottom:1px solid var(--ink); font-size:1.4rem; letter-spacing:.18em; text-transform:uppercase; }
+.tv-head .live-dot{ width:1rem; height:1rem; }
+.tv-box{ position:relative; width:100%; aspect-ratio:16/9; background:#000; }
+.tv-box video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.tv-msg{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.6rem; letter-spacing:.16em; text-transform:uppercase; color:#8a8a8a; }
+.sched{ flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+.sched-list{ margin-top:1.2rem; }
+.row{ display:grid; grid-template-columns:15rem 1fr auto; gap:2rem; align-items:center; padding:1.6rem 0; border-bottom:1px solid var(--hair); }
+.row-time{ font-size:1.8rem; font-variant-numeric:tabular-nums; }
+.row-name{ font-size:2.2rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row-desc{ font-size:1.4rem; color:var(--muted); margin-top:.4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row-tag{ font-size:1.3rem; padding:.5rem 1.2rem; border:1px solid var(--ink); letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
+.row.live .row-tag{ background:var(--ink); color:var(--bg); }
+.row-day{ font-size:1.3rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); padding:2rem 0 .4rem; }
+.empty{ font-size:1.8rem; color:var(--muted); padding:2rem 0; letter-spacing:.1em; }
+
+/* BOTTOM */
+.bottom{ border-top:1px solid var(--ink); padding-top:2.8rem; display:grid; grid-template-columns:auto 1fr; gap:4rem; align-items:center; }
+.recent{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:3rem; }
+.rec{ display:flex; gap:1.6rem; align-items:center; min-width:0; }
+.rec img, .rec .ph{ width:7rem; height:7rem; object-fit:cover; border:1px solid var(--hair); flex-shrink:0; background:var(--hair); }
+.rec-t{ font-size:1.7rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rec-a{ font-size:1.5rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:.3rem; }
+.rec-w{ font-size:1.2rem; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-top:.5rem; }
+.rec > div{ min-width:0; }
+
+/* OFFLINE (admin "Server Status") */
+.offline{ display:none; position:fixed; left:0; right:0; bottom:0; background:var(--ink); color:var(--bg); font-size:2rem; letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:1.6rem; }
+.offline.show{ display:block; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="top">
+    <div class="brand">
+      <img src="https://july.rip/july-radio-logo-header.png" alt="July Radio">
+      <div>
+        <div class="onair" id="onair"><span class="live-dot"></span><span id="onairText">ON AIR</span></div>
+      </div>
+      <div class="tagline">24/7 Independent Radio · Nairobi · july.rip</div>
+    </div>
+    <div class="clock">
+      <div class="clock-time" id="clockTime">--:--<small>:--</small></div>
+      <div class="clock-date" id="clockDate">Nairobi · EAT</div>
+    </div>
+  </div>
+
+  <div class="middle">
+    <div class="now">
+      <div class="art fade" id="art"><div class="art-ph">July Radio</div></div>
+      <div class="now-info">
+        <div><span class="bar-label" id="nowLabel">Now Playing</span></div>
+        <div class="now-title fade" id="nowTitle">-</div>
+        <div class="now-artist fade" id="nowArtist"></div>
+        <div class="now-album fade" id="nowAlbum"></div>
+        <div class="tags" id="nowTags"></div>
+        <div class="show-now" id="showNow"></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="tv" id="tvWrap">
+        <div class="tv-head"><span class="live-dot"></span>July Music Television</div>
+        <div class="tv-box"><video id="tvVideo" muted autoplay playsinline></video><div class="tv-msg" id="tvMsg">Connecting…</div></div>
+      </div>
+      <div class="sched">
+        <div><span class="bar-label">Up Next</span></div>
+        <div class="sched-list" id="schedList"><div class="empty">Loading schedule…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="label">Recently<br>Played</div>
+    <div class="recent" id="recent"></div>
+  </div>
+</div>
+<div class="offline" id="offline"></div>
+
+<script>
+const WORKER = 'https://julyimages.sxrsq1.workers.dev';
+const LASTFM_KEY = '1a71ac0b1d0df8175df73ee9ac362919';
+const LASTFM_USER = 'injeton';
+const TV_URL = 'https://tv.july.rip/iptv/channel/10.m3u8';
+const HOSTS = ['c', 'fziwe', 'fiscia'];
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const params = new URLSearchParams(location.search);
+if (params.get('theme') === 'light') document.documentElement.dataset.theme = 'light';
+if (params.get('tv') === '0') document.getElementById('tvWrap').style.display = 'none';
+
+function escH(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function safeUrl(u) { u = String(u == null ? '' : u).trim(); return /^https:\/\//i.test(u) ? escH(u) : ''; }
+const $ = id => document.getElementById(id);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+// ── CLOCK (Nairobi time) ──
+function eatParts() {
+  const p = {};
+  new Intl.DateTimeFormat('en-GB', { timeZone:'Africa/Nairobi', weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false })
+    .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  if (p.hour === '24') p.hour = '00';
+  return p;
+}
+function eatNow() {
+  const p = eatParts();
+  return { day: DAY_NAMES.indexOf(p.weekday), mins: parseInt(p.hour, 10) * 60 + parseInt(p.minute, 10) };
+}
+function tickClock() {
+  const p = eatParts();
+  $('clockTime').innerHTML = p.hour + ':' + p.minute + '<small>:' + p.second + '</small>';
+  $('clockDate').textContent = p.weekday + ' ' + p.day + ' ' + p.month + ' · EAT';
+}
+
+// ── NOW PLAYING (DJ set from the admin, otherwise Last.fm) ──
+let lastKey = '';
+async function setNow(key, d) {
+  if (key === lastKey) return;
+  lastKey = key;
+  const els = ['art','nowTitle','nowArtist','nowAlbum'].map($);
+  els.forEach(e => e.classList.add('fading'));
+  await wait(600);
+  $('nowLabel').textContent = d.label;
+  $('nowTitle').textContent = d.title || '-';
+  $('nowArtist').textContent = d.artist || '';
+  $('nowAlbum').textContent = d.album || '';
+  $('nowTags').innerHTML = (d.tags || []).slice(0, 4).map(t => '<span class="tag">' + escH(t) + '</span>').join('');
+  const img = safeUrl(d.image);
+  $('art').innerHTML = img ? '<img src="' + img + '" alt="">' : '<div class="art-ph">July Radio</div>';
+  els.forEach(e => e.classList.remove('fading'));
+}
+function timeAgo(u) {
+  const d = Math.floor(Date.now() / 1000) - u;
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d / 60) + ' min ago';
+  if (d < 86400) return Math.floor(d / 3600) + ' hr ago';
+  return Math.floor(d / 86400) + 'd ago';
+}
+function bestImage(imgs) {
+  for (const s of ['extralarge','large','medium','small']) { const i = (imgs || []).find(x => x.size === s); if (i && i['#text']) return i['#text']; }
+  return '';
+}
+async function refreshNow() {
+  let mode = 'lastfm', dj = null;
+  try { const m = await (await fetch(WORKER + '/mode', { cache:'no-store' })).json(); mode = m.mode || 'lastfm'; dj = m.djset; } catch (e) {}
+  let tracks = [];
+  try {
+    const r = await (await fetch('https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=' + LASTFM_USER + '&api_key=' + LASTFM_KEY + '&format=json&limit=7')).json();
+    tracks = (r.recenttracks && r.recenttracks.track) || [];
+  } catch (e) {}
+  if (mode === 'djset' && dj && dj.title) {
+    await setNow('dj:' + dj.title + '|' + (dj.djName || ''), {
+      label: 'Live DJ Set', title: dj.title, artist: dj.djName ? (dj.role || 'DJ') + ' · ' + dj.djName : 'Live DJ Set',
+      image: dj.image, tags: dj.tags
+    });
+  } else if (tracks.length) {
+    const c = tracks[0];
+    await setNow('lf:' + c.name + '|' + c.artist['#text'], {
+      label: 'Now Playing', title: c.name, artist: c.artist['#text'], album: (c.album && c.album['#text']) || '', image: bestImage(c.image)
+    });
+  }
+  const live = tracks[0] && tracks[0]['@attr'] && tracks[0]['@attr'].nowplaying === 'true';
+  const hist = tracks.slice(live ? 1 : 0, (live ? 1 : 0) + 5);
+  $('recent').innerHTML = hist.map(t => {
+    const img = safeUrl(bestImage(t.image));
+    return '<div class="rec">' + (img ? '<img src="' + img + '" alt="">' : '<div class="ph"></div>') +
+      '<div><div class="rec-t">' + escH(t.name) + '</div><div class="rec-a">' + escH(t.artist['#text']) + '</div>' +
+      '<div class="rec-w">' + (t.date ? timeAgo(parseInt(t.date.uts, 10)) : '') + '</div></div></div>';
+  }).join('');
+}
+
+// ── SCHEDULE (EAT, same data as july.rip/schedule) ──
+let slots = [];
+async function loadSchedule() {
+  const all = [];
+  for (const host of HOSTS) {
+    try {
+      const d = await (await fetch(WORKER + '/schedule?host=' + host, { cache:'no-store' })).json();
+      (d.slots || []).forEach(s => {
+        const sp = (s.start || '00:00').split(':'), ep = (s.end || '02:00').split(':');
+        let end = parseInt(ep[0], 10) * 60 + parseInt(ep[1] || 0, 10);
+        if (end === 0) end = 1440;
+        all.push({ day: parseInt(s.day, 10), start: parseInt(sp[0], 10) * 60 + parseInt(sp[1] || 0, 10), end,
+          startStr: s.start || '00:00', endStr: s.end || '02:00', name: s.name || '', desc: s.description || '' });
+      });
+    } catch (e) {}
+  }
+  slots = all;
+  renderSchedule();
+}
+function renderSchedule() {
+  const { day, mins } = eatNow();
+  const rows = [];
+  let current = null;
+  for (let off = 0; off < 2 && rows.length < 7; off++) {
+    const d = (day + off) % 7;
+    const list = slots.filter(s => s.day === d && (off > 0 || s.end > mins)).sort((a, b) => a.start - b.start);
+    if (!list.length) continue;
+    rows.push('<div class="row-day">' + (off === 0 ? 'Today' : 'Tomorrow') + ' · ' + DAY_NAMES[d] + '</div>');
+    list.forEach(s => {
+      if (rows.length >= 9) return;
+      const live = off === 0 && mins >= s.start && mins < s.end;
+      if (live) current = s;
+      rows.push('<div class="row' + (live ? ' live' : '') + '"><div class="row-time">' + (s.start === 0 && s.end === 1440 ? 'All day' : escH(s.startStr) + ' – ' + escH(s.endStr)) + '</div>' +
+        '<div style="min-width:0"><div class="row-name">' + escH(s.name) + '</div>' + (s.desc ? '<div class="row-desc">' + escH(s.desc) + '</div>' : '') + '</div>' +
+        '<div class="row-tag">' + (live ? 'On Air' : escH(s.name)) + '</div></div>');
+    });
+  }
+  $('schedList').innerHTML = rows.length ? rows.join('') : '<div class="empty">No shows scheduled.</div>';
+  // Drop rows from the bottom until the list fits its box (never a half-cut row on the TV)
+  const box = document.querySelector('.sched'), list = $('schedList');
+  while (list.children.length > 1 && box.scrollHeight > box.clientHeight) list.lastElementChild.remove();
+  if (list.lastElementChild && list.lastElementChild.classList.contains('row-day')) list.lastElementChild.remove();
+  $('showNow').innerHTML = current ? 'On air now · <b>' + escH(current.name) + '</b>' + (current.start === 0 && current.end === 1440 ? ' · all day' : ' · until ' + escH(current.endStr) + ' EAT') : '';
+}
+
+// ── STATION OFFLINE (admin "Server Status") ──
+async function checkOffline() {
+  try {
+    const d = await (await fetch(WORKER + '/profile?host=_offline', { cache:'no-store' })).json();
+    const on = !!(d && d.on);
+    $('onair').classList.toggle('off', on);
+    $('onairText').textContent = on ? 'OFF AIR' : 'ON AIR';
+    $('offline').classList.toggle('show', on);
+    $('offline').textContent = on ? ((d.message || 'Station offline') + (d.backAt ? ' · back ' + d.backAt : '')) : '';
+  } catch (e) {}
+}
+
+// ── JULY MUSIC TELEVISION PREVIEW (muted) ──
+let hls = null;
+function startTv() {
+  if (params.get('tv') === '0') return;
+  const v = $('tvVideo'), msg = $('tvMsg');
+  const ok = () => { msg.style.display = 'none'; };
+  const fail = () => { msg.style.display = 'flex'; msg.textContent = 'TV offline · retrying'; if (hls) { hls.destroy(); hls = null; } setTimeout(startTv, 60000); };
+  msg.style.display = 'flex'; msg.textContent = 'Connecting…';
+  v.onplaying = ok;
+  if (window.Hls && Hls.isSupported()) {
+    hls = new Hls({ liveSyncDurationCount: 3 });
+    hls.on(Hls.Events.ERROR, (e, data) => { if (data.fatal) fail(); });
+    hls.loadSource(TV_URL);
+    hls.attachMedia(v);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(() => {}));
+  } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+    v.src = TV_URL; v.onerror = fail; v.play().catch(() => {});
+  } else { msg.textContent = 'TV preview not supported'; }
+}
+
+// ── KEEP THE TV HAPPY: no sleep, slow drift against screen burn-in, daily refresh ──
+async function keepAwake() { try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) keepAwake(); });
+let drift = 0;
+setInterval(() => { drift = (drift + 1) % 4; const p = [[0,0],[6,4],[0,8],[-6,4]][drift]; $('stage').style.transform = 'translate(' + p[0] + 'px,' + p[1] + 'px)'; }, 120000);
+setTimeout(() => location.reload(), 6 * 3600 * 1000);
+
+tickClock(); setInterval(tickClock, 1000);
+refreshNow(); setInterval(refreshNow, 15000);
+loadSchedule(); setInterval(loadSchedule, 5 * 60000); setInterval(renderSchedule, 30000);
+checkOffline(); setInterval(checkOffline, 30000);
+startTv(); keepAwake();
+</script>
+</body>
+</html>
