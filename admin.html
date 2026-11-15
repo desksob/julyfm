@@ -74,6 +74,14 @@
   .msg { font-size: 11px; padding: 10px 14px; border-radius: 2px; margin-bottom: 16px; display: none; }
   .msg.success { background: #0a1a0a; border: 1px solid #1a3a1a; color: #4a8a4a; display: block; }
   .msg.error { background: #1a0a0a; border: 1px solid #3a1a1a; color: #8a4a4a; display: block; }
+  .chat-admin-box { --ink:#e0d9cc; --bg:#0a0a0a; --border:#2a2a2a; --dim:#666; height: 440px; display: flex; flex-direction: column; border: 1px solid #2a2a2a; background: #0a0a0a; }
+  .chat-admin-box #chatRoot { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .chat-admin-list { font-size: 12px; color: #999; }
+  .chat-admin-list .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #141414; }
+  .chat-admin-list .row b { color: #e0d9cc; font-weight: 500; }
+  .chat-admin-list .row span { flex: 1 1 auto; min-width: 0; }
+  .chat-admin-list .row button { flex: 0 0 auto; padding: 6px 12px; font-size: 10px; }
+  #chatCount { color: #888; margin-left: 8px; }
   .divider { height: 1px; background: #1a1a1a; margin: 24px 0; }
   .section-title { font-size: 10px; color: #555; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #1a1a1a; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -264,6 +272,7 @@
   <div class="dash-nav">
     <div class="dash-nav-item active" onclick="showPanel('broadcast',this)">Broadcast</div>
     <div class="dash-nav-item" onclick="showPanel('offline',this)">Server Status</div>
+    <div class="dash-nav-item" onclick="showPanel('chat',this)">Chat</div>
     <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
     <div class="dash-nav-item" onclick="showPanel('team',this)">Team</div>
@@ -475,6 +484,98 @@
         <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Must start with https://. A localhost address only works on the computer running the server.</div>
       </div>
       <div class="btn-row"><button class="btn" onclick="saveStream()">Save</button></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="dash-panel" id="panel-chat">
+      <div class="section-title">Chat <span id="chatCount"></span></div>
+      <div class="msg" id="chatMsg"></div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">This is the live chat from july.rip. You post here with your badge. Move your mouse over a message (or look next to it on a phone) to delete it, mute the person for 10 minutes, or ban them.</div>
+      <div class="chat-admin-box"><div id="chatRoot"></div></div>
+
+      <div class="divider"></div>
+      <div class="section-title">Chat settings</div>
+      <div class="field"><label class="field-label">Chat is</label>
+        <select id="chatOpen">
+          <option value="1">On: everyone can post</option>
+          <option value="0">Off: listeners can read, only staff can post</option>
+        </select>
+      </div>
+      <div class="field"><label class="field-label">Slow mode (wait between a listener's messages)</label>
+        <select id="chatSlow">
+          <option value="2">2 seconds (normal)</option>
+          <option value="5">5 seconds</option>
+          <option value="10">10 seconds</option>
+          <option value="30">30 seconds</option>
+          <option value="60">1 minute</option>
+          <option value="120">2 minutes</option>
+        </select>
+      </div>
+      <div class="field"><label class="field-label">Links from listeners</label>
+        <select id="chatLinks">
+          <option value="0">Blocked (safer)</option>
+          <option value="1">Allowed</option>
+        </select>
+      </div>
+      <div class="field"><label class="field-label">Blocked words (one per line; a message with any of these is refused)</label>
+        <textarea id="chatWords" rows="4" placeholder="one word or phrase per line"></textarea>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="saveChatSettings()">Save chat settings</button></div>
+
+      <div class="divider"></div>
+      <div class="section-title">July Bot</div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">The bot answers !song, !schedule, !support and !help in chat, welcomes each new chatter once (only they see it), and mutes someone for 10 minutes after 3 blocked messages in 5 minutes.</div>
+      <div class="field"><label class="field-label">July Bot is</label>
+        <select id="chatBot">
+          <option value="1">On</option>
+          <option value="0">Off</option>
+        </select>
+      </div>
+      <div class="field"><label class="field-label">Say when a show or DJ set starts</label>
+        <select id="chatBotShows">
+          <option value="1">Yes</option>
+          <option value="0">No</option>
+        </select>
+      </div>
+      <div class="field"><label class="field-label">Say every new song (can make the chat busy)</label>
+        <select id="chatBotSongs">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <div class="field"><label class="field-label">Welcome message (leave empty for the normal one)</label>
+        <input type="text" id="chatWelcome" maxlength="200" placeholder="Welcome to July Radio chat. Be kind. Type !help to see what I can do.">
+      </div>
+      <div class="btn-row"><button class="btn" onclick="saveChatSettings()">Save bot settings</button></div>
+      <div class="field" style="margin-top:16px"><label class="field-label">Say something as July Bot</label>
+        <input type="text" id="chatBotSay" maxlength="300" placeholder="for example: Live set starts in 10 minutes">
+      </div>
+      <div class="btn-row"><button class="btn" onclick="chatBotSay()">Send as July Bot</button></div>
+
+      <div class="divider"></div>
+      <div class="section-title">Saved names <span id="chatAcctTotal"></span></div>
+      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Listeners who kept their name with a password. Give someone the Supporter badge here. If a listener forgets their password, press Reset password and send them the new one.</div>
+      <div class="field"><label class="field-label">Find a name</label>
+        <input type="text" id="chatAcctSearch" maxlength="20" placeholder="type part of a name" oninput="chatAcctSearchSoon()">
+      </div>
+      <div class="msg" id="chatAcctMsg"></div>
+      <div id="chatAccounts" class="chat-admin-list"></div>
+
+      <div class="divider"></div>
+      <div class="section-title">Muted right now</div>
+      <div id="chatMutes" class="chat-admin-list"></div>
+      <div class="divider"></div>
+      <div class="section-title">Banned</div>
+      <div id="chatBans" class="chat-admin-list"></div>
+
+      <div class="divider"></div>
+      <div class="section-title">More</div>
+      <div class="btn-row">
+        <button class="btn" onclick="openSiteWithBadge()">Open july.rip with my badge</button>
+        <button class="btn" onclick="loadChatState()">Refresh lists</button>
+        <button class="btn" onclick="clearChat()">Clear all messages</button>
+        <button class="btn" id="chatSignoutBtn" style="display:none" onclick="signOutChatBadges()">Sign out all staff badges</button>
+      </div>
     </div>
 
     <!-- FESTIVE THEME -->
@@ -720,6 +821,8 @@ function logout() {
   document.getElementById('profileSelect').classList.add('active');
   document.getElementById('nowPlayingBar').classList.remove('visible');
   currentHost = null; currentPassword = null;
+  chatToken = null;
+  try { localStorage.removeItem('july_chat_key'); } catch (e) {}
   stopMonitor();
 }
 
@@ -730,6 +833,197 @@ function showPanel(id, el) {
   document.getElementById('panel-' + id).classList.add('active');
   el.classList.add('active');
   if (id === 'schedule') applyWeekScrollIfNeeded();
+  if (id === 'chat') openChatPanel();
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────
+// The chat lives in its own Worker (july-chat). Your admin password is checked
+// once and swapped for a badge token; the password is not kept by the chat.
+var CHAT_LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+var CHAT_HTTP = CHAT_LOCAL ? 'http://' + location.hostname + ':8787' : 'https://chat.july.rip';
+var chatToken = null;
+var chatLoaded = false;
+
+async function chatApi(path, body) {
+  var res = await fetch(CHAT_HTTP + path, {
+    method: body ? 'POST' : 'GET',
+    headers: Object.assign({ 'Authorization': 'Bearer ' + chatToken }, body ? { 'Content-Type': 'application/json' } : {}),
+    body: body ? JSON.stringify(body) : undefined,
+    cache: 'no-store'
+  });
+  var data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(data.error || 'The chat server said no.');
+  return data;
+}
+
+async function openChatPanel() {
+  if (!chatToken) {
+    try {
+      var res = await fetch(CHAT_HTTP + '/staff/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host: currentHost, password: currentPassword })
+      });
+      var data = await res.json();
+      if (!res.ok || !data.token) { showMsg('chatMsg', 'error', data.error || 'Could not open the chat.'); return; }
+      chatToken = data.token;
+      try { localStorage.setItem('july_chat_key', chatToken); } catch (e) {}
+    } catch (e) {
+      showMsg('chatMsg', 'error', 'Could not reach the chat server. Try again.');
+      return;
+    }
+  }
+  if (!chatLoaded) {
+    chatLoaded = true;
+    var sc = document.createElement('script');
+    sc.src = (CHAT_LOCAL ? '' : 'https://july.rip') + '/chat.js?v=3';
+    document.body.appendChild(sc);
+  }
+  loadChatState();
+}
+
+function chatWhen(t) {
+  var d = new Date(t);
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' +
+    d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function chatListRow(nameText, detail, btnText, fn) {
+  var row = document.createElement('div'); row.className = 'row';
+  var sp = document.createElement('span');
+  var b = document.createElement('b'); b.textContent = nameText;
+  sp.appendChild(b); sp.appendChild(document.createTextNode(' ' + detail));
+  var btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = btnText; btn.onclick = fn;
+  row.appendChild(sp); row.appendChild(btn);
+  return row;
+}
+
+var chatAcctTimer = null;
+function chatAcctSearchSoon() { clearTimeout(chatAcctTimer); chatAcctTimer = setTimeout(loadChatAccounts, 300); }
+
+async function loadChatAccounts() {
+  if (!chatToken) return;
+  var box = document.getElementById('chatAccounts');
+  try {
+    var q = document.getElementById('chatAcctSearch').value.trim();
+    var data = await chatApi('/mod/accounts?q=' + encodeURIComponent(q));
+    document.getElementById('chatAcctTotal').textContent = '(' + data.total + ')';
+    box.textContent = '';
+    if (!data.accounts.length) box.textContent = q ? 'No saved name matches that.' : 'Nobody has saved a name yet.';
+    data.accounts.forEach(function (acc) {
+      var row = document.createElement('div'); row.className = 'row';
+      var sp = document.createElement('span');
+      var b = document.createElement('b'); b.textContent = acc.name;
+      sp.appendChild(b);
+      sp.appendChild(document.createTextNode((acc.role === 'supporter' ? ' · SUPPORTER' : '') + (acc.banned ? ' · banned' : '') + ' · last here ' + chatWhen(acc.seen)));
+      row.appendChild(sp);
+      var act = function (label, a, ask) {
+        var btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = label;
+        btn.onclick = async function () {
+          if (ask && !confirm(ask)) return;
+          try {
+            var res = await chatApi('/mod/account', { id: acc.id, a: a });
+            if (a === 'reset') {
+              var m = document.getElementById('chatAcctMsg');
+              m.className = 'msg success'; m.style.display = 'block';
+              m.textContent = 'New password for ' + res.name + ': ' + res.password + '   (send it to them now; it is shown only once)';
+            }
+            loadChatAccounts();
+          } catch (e) { showMsg('chatAcctMsg', 'error', e.message); }
+        };
+        row.appendChild(btn);
+      };
+      if (acc.role === 'supporter') act('Remove Supporter', 'plain');
+      else act('Make Supporter', 'supporter');
+      act('Reset password', 'reset', 'Make a new password for ' + acc.name + '? Their old one stops working.');
+      act('Delete', 'delete', 'Delete the saved name ' + acc.name + '? Anyone can then take that name.');
+      box.appendChild(row);
+    });
+  } catch (e) {
+    showMsg('chatAcctMsg', 'error', e.message);
+  }
+}
+
+async function loadChatState() {
+  if (!chatToken) return;
+  loadChatAccounts();
+  try {
+    var st = await chatApi('/mod/state');
+    document.getElementById('chatOpen').value = st.cfg.open ? '1' : '0';
+    document.getElementById('chatSlow').value = String(st.cfg.slow);
+    document.getElementById('chatLinks').value = st.cfg.links ? '1' : '0';
+    document.getElementById('chatWords').value = (st.cfg.words || []).join('\n');
+    document.getElementById('chatBot').value = st.cfg.bot ? '1' : '0';
+    document.getElementById('chatBotShows').value = st.cfg.botShows ? '1' : '0';
+    document.getElementById('chatBotSongs').value = st.cfg.botSongs ? '1' : '0';
+    document.getElementById('chatWelcome').value = st.cfg.welcome || '';
+    document.getElementById('chatSignoutBtn').style.display = st.you.role === 'head' ? '' : 'none';
+
+    var mutes = document.getElementById('chatMutes'); mutes.textContent = '';
+    if (!st.mutes.length) mutes.textContent = 'Nobody is muted.';
+    st.mutes.forEach(function (m) {
+      mutes.appendChild(chatListRow(m.name || 'someone', 'until ' + chatWhen(m.until) + ', by ' + (m.by || '?'), 'Unmute', async function () {
+        try { await chatApi('/mod/unmute', { did: m.did }); loadChatState(); } catch (e) { showMsg('chatMsg', 'error', e.message); }
+      }));
+    });
+    var bans = document.getElementById('chatBans'); bans.textContent = '';
+    if (!st.bans.length) bans.textContent = 'Nobody is banned.';
+    st.bans.forEach(function (b) {
+      bans.appendChild(chatListRow(b.name || 'someone', 'since ' + chatWhen(b.t) + ', by ' + (b.by || '?'), 'Unban', async function () {
+        try { await chatApi('/mod/unban', { id: b.id }); loadChatState(); } catch (e) { showMsg('chatMsg', 'error', e.message); }
+      }));
+    });
+  } catch (e) {
+    showMsg('chatMsg', 'error', e.message);
+  }
+}
+
+async function saveChatSettings() {
+  var words = document.getElementById('chatWords').value.split(/[\n,]/).map(function (w) { return w.trim(); }).filter(Boolean);
+  try {
+    await chatApi('/mod/settings', {
+      open: document.getElementById('chatOpen').value === '1',
+      slow: Number(document.getElementById('chatSlow').value),
+      links: document.getElementById('chatLinks').value === '1',
+      words: words,
+      bot: document.getElementById('chatBot').value === '1',
+      botShows: document.getElementById('chatBotShows').value === '1',
+      botSongs: document.getElementById('chatBotSongs').value === '1',
+      welcome: document.getElementById('chatWelcome').value
+    });
+    showMsg('chatMsg', 'success', 'Chat settings saved.');
+  } catch (e) { showMsg('chatMsg', 'error', e.message); }
+}
+
+async function chatBotSay() {
+  var box = document.getElementById('chatBotSay');
+  var text = box.value.trim();
+  if (!text) return;
+  try { await chatApi('/mod/say', { text: text }); box.value = ''; }
+  catch (e) { showMsg('chatMsg', 'error', e.message); }
+}
+
+async function clearChat() {
+  if (!confirm('Remove every message from the chat for everyone?')) return;
+  try { await chatApi('/mod/clear', {}); showMsg('chatMsg', 'success', 'Chat cleared.'); }
+  catch (e) { showMsg('chatMsg', 'error', e.message); }
+}
+
+async function signOutChatBadges() {
+  if (!confirm('Remove the staff badge from every device? Each host gets it back by opening this Chat tab again.')) return;
+  try {
+    await chatApi('/mod/signout', {});
+    chatToken = null;
+    try { localStorage.removeItem('july_chat_key'); } catch (e) {}
+    showMsg('chatMsg', 'success', 'All staff badges signed out. Reload this page to get yours back.');
+  } catch (e) { showMsg('chatMsg', 'error', e.message); }
+}
+
+function openSiteWithBadge() {
+  if (!chatToken) return;
+  var site = CHAT_LOCAL ? 'http://' + location.hostname + ':' + location.port + '/' : 'https://july.rip/';
+  window.open(site + '#chatkey=' + encodeURIComponent(chatToken), '_blank', 'noopener');
 }
 
 async function loadDashboard() {

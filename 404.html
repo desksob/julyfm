@@ -427,6 +427,9 @@ nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
 
 .now-playing-card{ border:1px solid var(--border); container-type:inline-size; }
 .history-card{ border:1px solid var(--border); }
+.chat-card{ border:1px solid var(--border); height:480px; display:flex; flex-direction:column; }
+.chat-card .win-body{ padding:0; overflow:hidden; display:flex; flex-direction:column; }
+#chatRoot{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
 .card-label{
   font-size:10px; color:var(--bg); background:var(--ink);
   letter-spacing:0.14em; text-transform:uppercase;
@@ -967,6 +970,10 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         <span class="dock-status"></span>
         <span class="dock-icon-glyph">●</span><span class="dock-icon-label">On Air</span>
       </button>
+      <button class="dock-icon" data-dock-for="chat" onclick="openCard('chat')" title="Chat">
+        <span class="dock-status"></span>
+        <span class="dock-icon-glyph">#</span><span class="dock-icon-label">Chat</span>
+      </button>
       <button class="dock-icon" data-dock-for="artist" onclick="openCard('artist')" title="Artist Info">
         <span class="dock-status"></span>
         <span class="dock-icon-glyph">i</span><span class="dock-icon-label">Artist</span>
@@ -1062,6 +1069,19 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
           <div id="miniShowImg"></div>
         </div>
         </div>
+      </div>
+
+      <!-- Chat (logic lives in /chat.js) -->
+      <div class="chat-card win-card" data-card-id="chat">
+        <div class="resize-handle" title="Resize"></div>
+        <div class="win-titlebar">
+          <span class="win-title">Chat<span id="chatCount"></span></span>
+          <div class="win-controls">
+            <button class="win-btn win-min" onclick="minimizeCard('chat',event)" title="Minimize">–</button>
+            <button class="win-btn win-close" onclick="closeCard('chat',event)" title="Close">×</button>
+          </div>
+        </div>
+        <div class="win-body" id="body-chat"><div id="chatRoot"></div></div>
       </div>
 
       <!-- Now playing artist info -->
@@ -2976,6 +2996,24 @@ function initFreeDrag() {
     }
   }
 
+  // A window that is new to a returning visitor (they have a saved layout but
+  // nothing saved for it, e.g. Chat) goes under the existing windows instead
+  // of on top of them.
+  if (Object.keys(saved).length && !saved.chat) {
+    const cb = boxes.find(b => b.id === 'chat');
+    if (cb) {
+      const bottoms = [0, 0];
+      boxes.forEach(b => {
+        if (b === cb) return;
+        const col = (wide && b.left >= colWidth / 2) ? 1 : 0;
+        bottoms[col] = Math.max(bottoms[col], b.top + b.height + GAP);
+      });
+      const col = (wide && bottoms[1] < bottoms[0]) ? 1 : 0;
+      cb.left = col * (colWidth + GAP);
+      cb.top = wide ? bottoms[col] : Math.max(bottoms[0], bottoms[1]);
+    }
+  }
+
   // Pass 2: switch to absolute positioning mode FIRST, then apply coordinates:
   // so left/top are read as absolute placements, not relative offsets.
   stack.classList.add('free-drag');
@@ -3979,5 +4017,6 @@ function hideSplash() {
 window.addEventListener('load', hideSplash);
 setTimeout(hideSplash, 2500); // fallback in case load fires slowly
 </script>
+<script src="/chat.js?v=3" defer></script>
 </body>
 </html>
