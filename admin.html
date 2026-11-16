@@ -4,154 +4,181 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>July Radio — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('july-admin-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <style>
+  /* July admin: same look as july.rip (white, black title bars, 1px lines, IBM Plex Mono). */
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root { --accent: #c8a96e; }
-  body { background: #0a0a0a; color: #e0d9cc; font-family: 'DM Mono', monospace; min-height: 100vh; padding-bottom: 100px; }
+  :root { --bg:#ffffff; --ink:#0a0a0a; --border:#0a0a0a; --muted:#6e6e6e; --dim:#b0b0b0; --hair:#e2e2e2; --soft:#f6f6f6; --bar:#0a0a0a; --bar-ink:#ffffff; --logo-filter:none; --danger:#d0342c; }
+  html[data-theme="dark"] { --bg:#0a0a0a; --ink:#f5f5f5; --border:#f5f5f5; --muted:#9a9a9a; --dim:#555555; --hair:#262626; --soft:#131313; --bar:#f5f5f5; --bar-ink:#0a0a0a; --logo-filter:invert(1); --danger:#ff5a52; }
+  html { background: var(--bg); }
+  body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 12px; line-height: 1.5; min-height: 100vh; padding-bottom: 100px; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  ::selection { background: var(--ink); color: var(--bg); }
 
-  #adminBg { position: fixed; inset: -60px; background-size: cover; background-position: center; filter: blur(80px) saturate(0.25) brightness(0.12); transition: opacity 1s ease, background-image 2s ease; z-index: 0; pointer-events: none; opacity: 0; }
-  #adminBg.visible { opacity: 1; }
-  #profileSelect, #loginView, #dashView { position: relative; z-index: 1; }
+  #adminBg { display: none; }
+  .hint { font-size: 11px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+  .hint.sub { margin: 6px 0 0; }
+  .hint.warn { color: var(--danger); }
+  .box { border: 1px solid var(--hair); padding: 14px; margin-bottom: 12px; }
 
   /* PROFILE SELECT */
   #profileSelect { min-height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; }
   #profileSelect.active { display: flex; }
-  .ps-logo { height: 44px; margin-bottom: 48px; }
-  .ps-prompt { font-size: 10px; color: #333; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 48px; }
-  .ps-cards { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
-  .ps-card { width: 160px; cursor: pointer; text-align: center; }
-  .ps-img { width: 160px; height: 210px; border-radius: 4px; overflow: hidden; border: 2px solid transparent; background: #111; transition: border-color 0.3s, box-shadow 0.3s; position: relative; }
-  .ps-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform 0.4s; }
-  .ps-card:hover .ps-img img { transform: scale(1.04); }
-  .ps-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 44px; color: #2a2a2a; font-style: italic; }
-  .ps-name { font-size: 12px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 14px; transition: color 0.3s; }
-  .ps-card:hover .ps-name { color: #e0d9cc; }
+  .ps-logo { height: 96px; margin-bottom: 20px; filter: var(--logo-filter); }
+  .ps-prompt { font-size: 10px; color: var(--muted); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 36px; }
+  .ps-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .ps-card { width: 160px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); }
+  .ps-card:hover { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .ps-img { width: 100%; height: 200px; overflow: hidden; background: var(--soft); position: relative; filter: grayscale(1); }
+  .ps-card:hover .ps-img { filter: none; }
+  .ps-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .ps-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; color: var(--dim); }
+  .ps-name { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 10px; background: var(--bar); color: var(--bar-ink); text-align: left; }
 
   /* LOGIN */
-  #loginView { min-height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; }
-  #loginView.active { display: flex; }
-  .login-card { width: 100%; max-width: 380px; border: 1px solid #1a1a1a; border-radius: 4px; overflow: hidden; }
-  .login-header { padding: 20px 24px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 12px; }
-  .login-avatar { width: 36px; height: 36px; border-radius: 3px; overflow: hidden; border: 1px solid #1a1a1a; background: #111; flex-shrink: 0; }
-  .login-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .login-avatar-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 16px; color: #2a2a2a; font-style: italic; }
-  .login-name { font-size: 13px; color: #e0d9cc; }
-  .login-sub { font-size: 10px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
-  .login-body { padding: 24px; }
+  #loginView, #pwView { min-height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; }
+  #loginView.active, #pwView.active { display: flex; }
+  .perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; margin: 4px 0 12px; }
+  .perm-grid label { display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; }
+  .user-card { border: 1px solid var(--border); margin-bottom: 12px; }
+  .user-card-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid var(--hair); }
+  .user-card-head b { font-size: 13px; }
+  .user-card-head span { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .user-card-body { padding: 12px; }
+  .once-box { border: 1px solid var(--border); padding: 12px; margin-bottom: 16px; display: none; }
+  .once-box code { display: inline-block; font-family: inherit; font-size: 15px; font-weight: 600; background: var(--ink); color: var(--bg); padding: 4px 10px; margin: 6px 8px 6px 0; user-select: all; }
+  .login-card { width: 100%; max-width: 380px; border: 1px solid var(--border); background: var(--bg); }
+  .login-header { padding: 8px 12px; background: var(--bar); color: var(--bar-ink); display: flex; align-items: center; gap: 10px; }
+  .login-avatar { width: 28px; height: 28px; overflow: hidden; background: var(--soft); flex-shrink: 0; }
+  .login-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .login-avatar-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .login-name { font-size: 12px; font-weight: 600; }
+  .login-sub { font-size: 9px; opacity: 0.6; letter-spacing: 0.12em; text-transform: uppercase; }
+  .login-body { padding: 20px 16px 16px; }
 
   /* DASHBOARD */
-  #dashView { display: none; min-height: 100vh; }
+  #dashView { display: none; min-height: 100vh; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
   #dashView.active { display: block; }
-  .dash-header { padding: 24px 32px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; }
-  .dash-logo { height: 36px; }
-  .dash-host { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; }
-  .dash-host-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-  .dash-nav { display: flex; border-bottom: 1px solid #1a1a1a; padding: 0 32px; overflow-x: auto; }
-  .dash-nav-item { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #555; padding: 14px 20px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
-  .dash-nav-item.active { color: #e0d9cc; border-bottom-color: var(--accent); }
-  .dash-nav-item:hover { color: #888; }
-  .dash-content { padding: 32px; }
-  .dash-panel { display: none; }
+  .dash-header { padding: 28px 0 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .dash-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .dash-logo { height: 56px; width: auto; margin: -8px -10px; filter: var(--logo-filter); }
+  .dash-tag { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .dash-host { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--ink); letter-spacing: 0.1em; text-transform: uppercase; flex-wrap: wrap; justify-content: flex-end; }
+  .dash-host-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
+  .dash-nav { display: flex; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .dash-nav-item { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 14px 14px 12px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s, border-color .12s; white-space: nowrap; }
+  .dash-nav-item.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .dash-nav-item:hover { color: var(--ink); }
+  .dash-content { padding: 24px 0; }
+  .dash-panel { display: none; border: 1px solid var(--border); padding: 0 16px 16px; background: var(--bg); }
   .dash-panel.active { display: block; }
 
   /* FORMS */
-  .field { margin-bottom: 20px; }
-  .field-label { font-size: 10px; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; display: block; }
-  input[type=text], input[type=password], input[type=url], input[type=time], textarea, select { width: 100%; background: #111; border: 1px solid #1a1a1a; border-radius: 2px; color: #e0d9cc; font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
-  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  .field { margin-bottom: 18px; }
+  .field-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  input[type=text], input[type=password], input[type=url], input[type=time], input[type=number], input[type=date], input[type=datetime-local], textarea, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 0; color: var(--ink); font-family: inherit; font-size: 13px; padding: 9px 11px; outline: none; -webkit-appearance: none; appearance: none; }
+  select { background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
+  input:focus, textarea:focus, select:focus { box-shadow: inset 0 0 0 1px var(--border); }
   input:disabled { opacity: 0.45; cursor: not-allowed; }
+  input[type=checkbox], input[type=radio] { accent-color: var(--ink); }
   textarea { resize: vertical; min-height: 80px; }
-  .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; padding: 10px 20px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
-  .btn:hover { background: var(--accent); color: #0a0a0a; }
+  .btn { background: var(--ink); border: 1px solid var(--ink); color: var(--bg); font-family: inherit; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; padding: 9px 16px; border-radius: 0; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--bg); color: var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
   .btn.full { width: 100%; }
-  .btn.secondary { border-color: #2a2a2a; color: #555; }
-  .btn.secondary:hover { background: #2a2a2a; color: #e0d9cc; }
-  .btn.danger { border-color: #ff3a3a44; color: #ff3a3a; }
-  .btn.danger:hover { background: #ff3a3a; color: #fff; }
-  .btn.small { font-size: 10px; padding: 6px 12px; }
-  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .msg { font-size: 11px; padding: 10px 14px; border-radius: 2px; margin-bottom: 16px; display: none; }
-  .msg.success { background: #0a1a0a; border: 1px solid #1a3a1a; color: #4a8a4a; display: block; }
-  .msg.error { background: #1a0a0a; border: 1px solid #3a1a1a; color: #8a4a4a; display: block; }
-  .chat-admin-box { --ink:#e0d9cc; --bg:#0a0a0a; --border:#2a2a2a; --dim:#666; height: 440px; display: flex; flex-direction: column; border: 1px solid #2a2a2a; background: #0a0a0a; }
+  .btn.secondary { background: var(--bg); color: var(--ink); border-color: var(--border); }
+  .btn.secondary:hover { background: var(--ink); color: var(--bg); }
+  .btn.danger { background: var(--bg); border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+  .btn.small { font-size: 9px; padding: 6px 10px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .msg { font-size: 11px; padding: 9px 12px; margin-bottom: 16px; display: none; border: 1px solid var(--border); }
+  .msg.success { display: block; background: var(--ink); color: var(--bg); }
+  .msg.error { display: block; border-color: var(--danger); color: var(--danger); }
+  .chat-admin-box { height: 440px; display: flex; flex-direction: column; border: 1px solid var(--border); background: var(--bg); }
   .chat-admin-box #chatRoot { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  .chat-admin-list { font-size: 12px; color: #999; }
-  .chat-admin-list .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #141414; }
-  .chat-admin-list .row b { color: #e0d9cc; font-weight: 500; }
-  .chat-admin-list .row span { flex: 1 1 auto; min-width: 0; }
-  .chat-admin-list .row button { flex: 0 0 auto; padding: 6px 12px; font-size: 10px; }
-  #chatCount { color: #888; margin-left: 8px; }
-  .divider { height: 1px; background: #1a1a1a; margin: 24px 0; }
-  .section-title { font-size: 10px; color: #555; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #1a1a1a; }
+  .chat-admin-list { font-size: 12px; color: var(--muted); }
+  .chat-admin-list .row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--hair); flex-wrap: wrap; }
+  .chat-admin-list .row b { color: var(--ink); font-weight: 600; }
+  .chat-admin-list .row span { flex: 1 1 200px; min-width: 0; }
+  .chat-admin-list .row button { flex: 0 0 auto; padding: 6px 10px; font-size: 9px; background: var(--bg); color: var(--ink); }
+  .chat-admin-list .row button:hover { background: var(--ink); color: var(--bg); }
+  #chatCount, #chatAcctTotal { opacity: 0.6; margin-left: 6px; }
+  /* Each section title is a black title bar, like the windows on july.rip. */
+  .divider { height: 0; margin: 28px 0 0; }
+  .section-title { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; background: var(--bar); color: var(--bar-ink); padding: 8px 12px; margin: 0 -16px 16px; }
+  .divider + .section-title { border-top: 1px solid var(--border); }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .preview-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 2px; border: 1px solid #1a1a1a; margin-top: 8px; display: none; }
+  .preview-img { width: 100%; max-height: 200px; object-fit: cover; border: 1px solid var(--border); margin-top: 8px; display: none; }
 
   /* MODE TOGGLE */
-  .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1a1a1a; border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
-  .mode-btn { background: #0a0a0a; border: none; color: #555; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; cursor: pointer; transition: all 0.2s; }
-  .mode-btn.active { background: #111; color: #e0d9cc; }
+  .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); margin-bottom: 24px; }
+  .mode-btn { background: var(--bg); border: none; color: var(--muted); font-family: inherit; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; cursor: pointer; }
+  .mode-btn + .mode-btn { border-left: 1px solid var(--border); }
+  .mode-btn.active { background: var(--ink); color: var(--bg); }
 
   /* TEAM ROSTER */
-  .roster-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 12px; }
-  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
-  .team-card { border: 1px solid #1a1a1a; border-radius: 3px; padding: 10px; cursor: pointer; transition: border-color 0.2s; background: #0e0e0e; }
-  .team-card:hover { border-color: var(--accent); }
-  .team-card-img { width: 100%; aspect-ratio: 1; overflow: hidden; background: #161616; border-radius: 2px; margin-bottom: 8px; }
+  .roster-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+  .team-card { border: 1px solid var(--border); padding: 0; cursor: pointer; background: var(--bg); }
+  .team-card:hover { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .team-card-img { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--soft); }
   .team-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .team-card-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #333; }
-  .team-card-name { font-size: 11px; color: #e0d9cc; text-transform: uppercase; letter-spacing: 0.05em; }
-  .team-card-id { font-size: 9px; color: #444; letter-spacing: 0.06em; margin-top: 2px; }
+  .team-card-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: var(--dim); }
+  .team-card-name { font-size: 10px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 8px 0; font-weight: 600; }
+  .team-card-id { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; padding: 2px 8px 8px; }
 
   /* DAY EXPORT */
   .export-canvas-wrap{ margin-top:16px; display:none; }
-  .export-canvas-wrap canvas{ width:100%; max-width:220px; border:1px solid #1a1a1a; display:block; background:#000; }
-  .export-status{ font-size:10px; color:#555; margin-top:8px; letter-spacing:0.05em; }
+  .export-canvas-wrap canvas{ width:100%; max-width:220px; border:1px solid var(--border); display:block; background:#000; }
+  .export-status{ font-size:10px; color:var(--muted); margin-top:8px; letter-spacing:0.05em; }
   .export-download-link{ display:none; margin-top:10px; text-decoration:none; }
 
-  /* SCHEDULE — weekly time-axis grid */
-  .week-scroll { display: flex; max-height: min(720px, 72vh); overflow-y: auto; border: 1px solid #1a1a1a; border-radius: 2px; background: #0a0a0a; }
-  .week-gutter { width: 40px; flex-shrink: 0; border-right: 1px solid #1a1a1a; background: #0a0a0a; }
-  .week-gutter-header { height: 34px; position: sticky; top: 0; background: #111; z-index: 3; border-bottom: 1px solid #1a1a1a; }
+  /* SCHEDULE: weekly time-axis grid */
+  .week-scroll { display: flex; max-height: min(720px, 72vh); overflow-y: auto; border: 1px solid var(--border); background: var(--bg); }
+  .week-gutter { width: 40px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--bg); }
+  .week-gutter-header { height: 34px; position: sticky; top: 0; background: var(--bar); z-index: 3; }
   .week-gutter-times { position: relative; }
-  .week-time-label { position: absolute; right: 6px; transform: translateY(-50%); font-size: 8px; color: #3a3a3a; letter-spacing: 0.02em; }
+  .week-time-label { position: absolute; right: 6px; transform: translateY(-50%); font-size: 8px; color: var(--muted); letter-spacing: 0.02em; }
   .week-days { display: flex; flex: 1; }
-  .week-day-col { flex: 1; min-width: 92px; position: relative; border-right: 1px solid #1a1a1a; }
+  .week-day-col { flex: 1; min-width: 92px; position: relative; border-right: 1px solid var(--hair); }
   .week-day-col:last-child { border-right: none; }
-  .week-day-header { height: 34px; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; background: #111; position: sticky; top: 0; z-index: 2; border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: color 0.2s; }
-  .week-day-header:hover { color: var(--accent); }
-  .week-day-track { position: relative; background-image: repeating-linear-gradient(to bottom, #151515 0, #151515 1px, transparent 1px, transparent 48px); cursor: crosshair; }
-  .week-block { position: absolute; left: 2px; right: 2px; border: 1px solid #2a2a2a; border-radius: 2px; background: #161616; overflow: hidden; cursor: pointer; box-sizing: border-box; transition: border-color 0.15s; }
-  .week-block:hover { border-color: var(--accent); }
-  .week-block.dragging { border-color: var(--accent); z-index: 5; }
+  .week-day-header { height: 34px; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bar-ink); background: var(--bar); position: sticky; top: 0; z-index: 2; cursor: pointer; }
+  .week-day-header:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .week-day-track { position: relative; background-image: repeating-linear-gradient(to bottom, var(--hair) 0, var(--hair) 1px, transparent 1px, transparent 48px); cursor: crosshair; }
+  .week-block { position: absolute; left: 2px; right: 2px; border: 1px solid var(--border); background: var(--bg); overflow: hidden; cursor: pointer; box-sizing: border-box; }
+  .week-block:hover { background: var(--soft); box-shadow: inset 0 0 0 1px var(--border); }
+  .week-block.dragging { box-shadow: inset 0 0 0 1px var(--border); z-index: 5; }
   .week-block-inner { padding: 3px 6px; overflow: hidden; height: 100%; pointer-events: none; }
   .week-block-img { width: 100%; height: 22px; object-fit: cover; display: block; margin-bottom: 2px; }
-  .week-block-time { font-size: 8px; color: #666; letter-spacing: 0.02em; }
-  .week-block-name { font-size: 10px; color: #e0d9cc; text-transform: uppercase; line-height: 1.25; margin-top: 1px; }
+  .week-block-time { font-size: 8px; color: var(--muted); letter-spacing: 0.02em; }
+  .week-block-name { font-size: 10px; color: var(--ink); text-transform: uppercase; line-height: 1.25; margin-top: 1px; font-weight: 600; }
   .week-resize-handle { position: absolute; left: 0; right: 0; height: 10px; cursor: ns-resize; z-index: 4; }
   .week-resize-handle.top { top: -5px; }
   .week-resize-handle.bottom { bottom: -5px; }
-  .week-resize-handle:hover { background: var(--accent); opacity: 0.3; }
-  .week-hint { font-size: 9px; color: #444; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .week-resize-handle:hover { background: var(--ink); opacity: 0.25; }
+  .week-hint { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 10px; }
 
   /* SHOW EDIT MODAL */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
   .modal-overlay.active { display: flex; }
-  .modal-box { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; }
-  .modal-header { padding: 16px 20px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #e0d9cc; }
-  .modal-close { background: none; border: none; color: #555; font-size: 16px; cursor: pointer; line-height: 1; }
-  .modal-close:hover { color: #e0d9cc; }
-  .modal-body { padding: 20px; }
-  .modal-footer { padding: 16px 20px; border-top: 1px solid #1a1a1a; display: flex; gap: 10px; align-items: center; }
+  .modal-box { background: var(--bg); border: 1px solid var(--border); width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 8px 8px 8px 12px; background: var(--bar); color: var(--bar-ink); display: flex; align-items: center; justify-content: space-between; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; position: sticky; top: 0; z-index: 2; }
+  .modal-close { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: var(--bar-ink); border: none; color: var(--bar); font-size: 11px; cursor: pointer; line-height: 1; padding: 0; }
+  .modal-close:hover { opacity: 0.7; }
+  .modal-body { padding: 16px; }
+  .modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .time-group input[type=number] { width: 60px; text-align: center; -moz-appearance: textfield; }
 
   /* SCHEDULE (legacy list styles, still used elsewhere) */
-  .schedule-slot { border: 1px solid #1a1a1a; border-radius: 3px; padding: 14px; margin-bottom: 10px; }
+  .schedule-slot { border: 1px solid var(--border); padding: 14px; margin-bottom: 10px; }
   .slot-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px; }
   .slot-field { display: flex; flex-direction: column; gap: 4px; }
   .slot-field select { width: auto; }
   .time-group { display: flex; gap: 4px; }
-  .time-label { font-size: 9px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; }
+  .time-label { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
   .slot-name { flex: 1; min-width: 140px; }
   .slot-name input { width: 100%; }
   .slot-btns { display: flex; flex-direction: column; gap: 4px; align-self: flex-end; }
@@ -166,42 +193,46 @@
   .link-row input.link-url { flex: 1; }
 
   /* NOW PLAYING BAR */
-  #nowPlayingBar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); border-top: 1px solid #1a1a1a; padding: 12px 32px; display: flex; align-items: center; gap: 16px; transform: translateY(100%); transition: transform 0.4s ease; z-index: 100; backdrop-filter: blur(8px); }
+  #nowPlayingBar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 16px; transform: translateY(100%); transition: transform 0.4s ease; z-index: 100; }
   #nowPlayingBar.visible { transform: translateY(0); }
-  .np-art-mini { width: 44px; height: 44px; border-radius: 2px; border: 1px solid #1a1a1a; background: #111; flex-shrink: 0; overflow: hidden; }
+  .np-art-mini { width: 44px; height: 44px; border: 1px solid var(--border); background: var(--soft); flex-shrink: 0; overflow: hidden; }
   .np-art-mini img { width: 100%; height: 100%; object-fit: cover; display: none; }
   .np-info { flex: 1; min-width: 0; }
-  .np-title-mini { font-size: 12px; color: #e0d9cc; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .np-artist-mini { font-size: 11px; color: var(--accent); margin-top: 2px; text-transform: uppercase; }
-  .np-prev { display: flex; gap: 16px; align-items: center; border-left: 1px solid #1a1a1a; padding-left: 16px; max-width: 360px; overflow: hidden; }
-  .np-prev-item { font-size: 10px; color: #333; white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
-  .np-prev-item span { color: #555; }
-  .np-clocks { display: flex; flex-direction: column; gap: 2px; border-left: 1px solid #1a1a1a; padding-left: 16px; flex-shrink: 0; }
-  .np-clock-row { font-size: 10px; color: #333; letter-spacing: 0.1em; }
-  .np-clock-row b { color: #555; }
-  .np-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  .np-play-btn { width: 36px; height: 36px; border: 1px solid var(--accent); border-radius: 50%; background: transparent; color: var(--accent); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-  .np-play-btn:hover { background: var(--accent); color: #0a0a0a; }
-  .np-close-btn { background: none; border: none; color: #333; font-size: 16px; cursor: pointer; padding: 4px; transition: color 0.2s; }
-  .np-close-btn:hover { color: #888; }
+  .np-title-mini { font-size: 12px; font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np-artist-mini { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; }
+  .np-prev { display: flex; gap: 16px; align-items: center; border-left: 1px solid var(--hair); padding-left: 16px; max-width: 360px; overflow: hidden; }
+  .np-prev-item { font-size: 10px; color: var(--dim); white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
+  .np-prev-item span { color: var(--muted); }
+  .np-clocks { display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--hair); padding-left: 16px; flex-shrink: 0; }
+  .np-clock-row { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
+  .np-clock-row b { color: var(--ink); }
+  .np-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .np-play-btn { width: 36px; height: 36px; border: 1px solid var(--ink); border-radius: 0; background: var(--ink); color: var(--bg); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .np-play-btn:hover { background: var(--bg); color: var(--ink); }
+  .np-close-btn { background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer; padding: 4px; }
+  .np-close-btn:hover { color: var(--ink); }
 
   /* NOTIFICATION BAR */
-  .notif-bar { position: fixed; top: 0; left: 0; right: 0; background: #ff3a3a; color: #fff; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 32px; display: flex; align-items: center; justify-content: space-between; z-index: 200; transform: translateY(-100%); transition: transform 0.4s ease; }
+  .notif-bar { position: fixed; top: 0; left: 0; right: 0; background: var(--ink); color: var(--bg); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 200; transform: translateY(-100%); transition: transform 0.3s ease; }
   .notif-bar.visible { transform: translateY(0); }
-  .notif-close { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; }
+  .notif-close { background: none; border: none; color: var(--bg); cursor: pointer; font-size: 16px; }
 
   /* MOBILE */
   @media (max-width: 600px) {
-    .ps-cards { gap: 16px; }
+    .ps-cards { gap: 12px; }
     .ps-card { width: 120px; }
-    .ps-img { width: 120px; height: 160px; }
-    .dash-header { padding: 16px 20px; }
-    .dash-logo { height: 28px; }
-    .dash-nav { padding: 0 16px; }
-    .dash-nav-item { padding: 12px 12px; font-size: 9px; }
-    .dash-content { padding: 20px; }
+    .ps-img { height: 150px; }
+    .ps-logo { height: 72px; }
+    #dashView { padding: 0 14px; }
+    .dash-header { padding: 18px 0 12px; }
+    .dash-logo { height: 44px; }
+    .dash-tag { display: none; }
+    .dash-nav-item { padding: 12px 10px 10px; }
+    .dash-content { padding: 16px 0; }
+    .dash-panel { padding: 0 12px 12px; }
+    .section-title { margin: 0 -12px 14px; }
     .grid-2 { grid-template-columns: 1fr; }
-    #nowPlayingBar { padding: 10px 16px; gap: 10px; }
+    #nowPlayingBar { padding: 10px 14px; gap: 10px; }
     .np-prev, .np-clocks { display: none; }
     .btn-row { flex-direction: column; }
     .btn-row .btn { width: 100%; }
@@ -217,42 +248,46 @@
 <div class="notif-bar" id="notifBar"><span id="notifMsg">—</span><button class="notif-close" onclick="closeNotif()">✕</button></div>
 <div id="adminBg"></div>
 
-<!-- PROFILE SELECT -->
-<div id="profileSelect" class="active">
-  <img src="july-logo.png" alt="July Radio" class="ps-logo">
-  <div class="ps-prompt">Welcome — choose your profile</div>
-  <div class="ps-cards">
-    <div class="ps-card" onclick="selectHost('c')">
-      <div class="ps-img" id="ps-wrap-c"><img src="julyhost1.png" alt="C." id="ps-img-c"></div>
-      <div class="ps-name">C.</div>
-    </div>
-    <div class="ps-card" onclick="selectHost('fziwe')">
-      <div class="ps-img" id="ps-wrap-fziwe"><img src="diogo.gif" alt="Fziwe" id="ps-img-fziwe"></div>
-      <div class="ps-name">Fziwe</div>
-    </div>
-    <div class="ps-card" onclick="selectHost('fiscia')">
-      <div class="ps-img" id="ps-wrap-fiscia"><img src="fiscia.jpeg" alt="Fiscia" id="ps-img-fiscia"></div>
-      <div class="ps-name">Fiscia</div>
+<!-- LOGIN -->
+<div id="loginView" class="active">
+  <img src="july-radio-logo-header.png" alt="July Radio" class="ps-logo">
+  <div class="login-card">
+    <div class="login-header"><div class="login-name">July Radio Admin</div></div>
+    <div class="login-body">
+      <div class="field">
+        <label class="field-label" for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('passwordInput').focus()">
+      </div>
+      <div class="field">
+        <label class="field-label" for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+      </div>
+      <div class="msg" id="loginMsg"></div>
+      <button class="btn full" id="loginBtn" onclick="login()">Log in</button>
+      <div class="hint sub">Forgot your password? Ask C. to reset it.</div>
     </div>
   </div>
 </div>
 
-<!-- LOGIN -->
-<div id="loginView">
+<!-- FIRST LOGIN: choose your own password -->
+<div id="pwView">
+  <img src="july-radio-logo-header.png" alt="July Radio" class="ps-logo">
   <div class="login-card">
-    <div class="login-header">
-      <div class="login-avatar" id="loginAvatar"></div>
-      <div><div class="login-name" id="loginName">—</div><div class="login-sub">July Radio Admin</div></div>
-    </div>
+    <div class="login-header"><div class="login-name">Choose your own password</div></div>
     <div class="login-body">
+      <div class="hint">Welcome<span id="pwViewName"></span>. The password you were sent only works once. Choose your own now (8 or more characters).</div>
       <div class="field">
-        <label class="field-label">Password</label>
-        <input type="password" id="passwordInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()">
+        <label class="field-label" for="newPw1">New password</label>
+        <input type="password" id="newPw1" autocomplete="new-password">
       </div>
-      <div class="msg" id="loginMsg"></div>
+      <div class="field">
+        <label class="field-label" for="newPw2">Type it again</label>
+        <input type="password" id="newPw2" autocomplete="new-password" onkeydown="if(event.key==='Enter')saveFirstPassword()">
+      </div>
+      <div class="msg" id="pwViewMsg"></div>
       <div class="btn-row">
-        <button class="btn full" onclick="login()">Enter</button>
-        <button class="btn secondary" onclick="backToProfiles()">Back</button>
+        <button class="btn" onclick="saveFirstPassword()">Save and continue</button>
+        <button class="btn secondary" onclick="logout()">Log out</button>
       </div>
     </div>
   </div>
@@ -261,32 +296,37 @@
 <!-- DASHBOARD -->
 <div id="dashView">
   <div class="dash-header">
-    <img src="july-logo.png" alt="July Radio" class="dash-logo">
+    <div class="dash-brand">
+      <a href="https://july.rip" target="_blank" rel="noopener" title="Open july.rip"><img src="july-radio-logo-header.png" alt="July Radio" class="dash-logo"></a>
+      <span class="dash-tag">Admin</span>
+    </div>
     <div class="dash-host">
       <div class="dash-host-dot"></div>
       <span id="dashHostName">—</span>
-      <button class="btn secondary small" onclick="logout()" style="margin-left:8px;">Log out</button>
+      <button class="btn secondary small" id="themeBtn" onclick="toggleAdminTheme()">Dark</button>
+      <button class="btn secondary small" onclick="logout()">Log out</button>
     </div>
   </div>
 
   <div class="dash-nav">
-    <div class="dash-nav-item active" onclick="showPanel('broadcast',this)">Broadcast</div>
-    <div class="dash-nav-item" onclick="showPanel('offline',this)">Server Status</div>
-    <div class="dash-nav-item" onclick="showPanel('chat',this)">Chat</div>
-    <div class="dash-nav-item" onclick="showPanel('schedule',this)">Schedule</div>
+    <div class="dash-nav-item" data-perm="broadcast" onclick="showPanel('broadcast',this)">Broadcast</div>
+    <div class="dash-nav-item" data-perm="server" onclick="showPanel('offline',this)">Server Status</div>
+    <div class="dash-nav-item" data-perm="chat" onclick="showPanel('chat',this)">Chat</div>
+    <div class="dash-nav-item" data-perm="schedule" onclick="showPanel('schedule',this)">Schedule</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
-    <div class="dash-nav-item" onclick="showPanel('team',this)">Team</div>
-    <div class="dash-nav-item" onclick="showPanel('ticker',this)">Ticker</div>
-    <div class="dash-nav-item" onclick="showPanel('alerts',this)">Alerts</div>
-    <div class="dash-nav-item" onclick="showPanel('event',this)">Event</div>
-    <div class="dash-nav-item" onclick="showPanel('support',this)">Support</div>
-    <div class="dash-nav-item" onclick="showPanel('festive',this)">Festive Theme</div>
+    <div class="dash-nav-item" data-perm="team" onclick="showPanel('team',this)">Team</div>
+    <div class="dash-nav-item" data-perm="ticker" onclick="showPanel('ticker',this)">Ticker</div>
+    <div class="dash-nav-item" data-perm="alerts" onclick="showPanel('alerts',this)">Alerts</div>
+    <div class="dash-nav-item" data-perm="event" onclick="showPanel('event',this)">Event</div>
+    <div class="dash-nav-item" data-perm="support" onclick="showPanel('support',this)">Support</div>
+    <div class="dash-nav-item" data-perm="festive" onclick="showPanel('festive',this)">Festive Theme</div>
+    <div class="dash-nav-item" data-perm="users" onclick="showPanel('users',this)">Users</div>
   </div>
 
   <div class="dash-content">
 
     <!-- BROADCAST -->
-    <div class="dash-panel active" id="panel-broadcast">
+    <div class="dash-panel" id="panel-broadcast">
       <div class="section-title">Broadcast Mode</div>
       <div class="msg" id="broadcastMsg"></div>
       <div class="mode-toggle">
@@ -379,13 +419,22 @@
         <button class="btn secondary small" type="button" onclick="addProfileLinkRow()" style="margin-top:6px;">+ Add Link</button>
       </div>
       <button class="btn" onclick="saveProfile()">Save Profile</button>
+
+      <div class="divider"></div>
+      <div class="section-title">Your password</div>
+      <div class="msg" id="ownPwMsg"></div>
+      <div class="grid-2">
+        <div class="field"><label class="field-label">Current password</label><input type="password" id="ownPwCurrent" autocomplete="current-password"></div>
+        <div class="field"><label class="field-label">New password (8 or more characters)</label><input type="password" id="ownPwNew" autocomplete="new-password"></div>
+      </div>
+      <button class="btn" onclick="changeOwnPassword()">Change password</button>
     </div>
 
     <!-- TEAM -->
     <div class="dash-panel" id="panel-team">
       <div class="section-title">Team Roster</div>
       <div class="msg" id="teamMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Anyone on these lists appears on the website's Team page, grouped the same way. Click a card to edit, or add someone new — they don't need their own admin login.</div>
+      <div class="hint">Anyone on these lists appears on the website's Team page, grouped the same way. Click a card to edit, or add someone new — they don't need their own admin login.</div>
 
       <div class="roster-label">Team</div>
       <div class="team-grid" id="teamGrid"></div>
@@ -404,7 +453,7 @@
     <div class="dash-panel" id="panel-ticker">
       <div class="section-title">Ticker Messages</div>
       <div class="msg" id="tickerMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Messages scroll in the bottom bar on the site and overlay. Max 8. Drag to reorder.</div>
+      <div class="hint">Messages scroll in the bottom bar on the site and overlay. Max 8. Drag to reorder.</div>
       <div id="tickerList"></div>
       <div class="btn-row" style="margin-top:8px;">
         <button class="btn secondary" onclick="addTickerMsg()">+ Add Message</button>
@@ -419,7 +468,7 @@
       <div class="field">
         <label class="field-label">Alert Message</label>
         <input type="text" id="alertText" placeholder="e.g. Taking a 5 min break, back shortly..." maxlength="120">
-        <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Slides in on the website for 8 seconds. Max 120 characters.</div>
+        <div class="hint sub">Slides in on the website for 8 seconds. Max 120 characters.</div>
       </div>
       <div class="btn-row">
         <button class="btn" onclick="sendAlert()">Send Alert</button>
@@ -431,7 +480,7 @@
     <div class="dash-panel" id="panel-event">
       <div class="section-title">Upcoming Event Popup</div>
       <div class="msg" id="eventMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Shows once per visitor as a popup on the website until the event date passes or you clear it. Leave off to show no popup.</div>
+      <div class="hint">Shows once per visitor as a popup on the website until the event date passes or you clear it. Leave off to show no popup.</div>
       <div class="field"><label class="field-label">Event Name</label><input type="text" id="eventName" placeholder="e.g. July Radio: Live at The Alchemist"></div>
       <div class="grid-2">
         <div class="field"><label class="field-label">Date</label><input type="date" id="eventDate"></div>
@@ -457,7 +506,7 @@
     <div class="dash-panel" id="panel-offline">
       <div class="section-title">Broadcast Server Status</div>
       <div class="msg" id="offlineMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Switch to Offline before server maintenance. The website shows a maintenance notice at the top of every page and the Play button is paused until you switch back to Online. Listeners see the change within about 30 seconds. Preview any time on the site by adding ?offline=1 to the address.</div>
+      <div class="hint">Switch to Offline before server maintenance. The website shows a maintenance notice at the top of every page and the Play button is paused until you switch back to Online. Listeners see the change within about 30 seconds. Preview any time on the site by adding ?offline=1 to the address.</div>
       <div class="mode-toggle">
         <button class="mode-btn active" id="btnOnline" onclick="selectOffline(false)">Online</button>
         <button class="mode-btn" id="btnOffline" onclick="selectOffline(true)">Offline (maintenance)</button>
@@ -465,14 +514,14 @@
       <div class="field">
         <label class="field-label">Message to listeners (optional)</label>
         <textarea id="offlineText" maxlength="240" placeholder="We're currently working on July Radio's broadcast server. The stream will be back soon."></textarea>
-        <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Leave empty to use the message shown above. Max 240 characters.</div>
+        <div class="hint sub">Leave empty to use the message shown above. Max 240 characters.</div>
       </div>
       <div class="field"><label class="field-label">Expected back (optional)</label><input type="text" id="offlineBack" maxlength="60" placeholder="e.g. Around 6PM EAT"></div>
       <div class="btn-row"><button class="btn" onclick="saveOffline()">Save</button></div>
 
       <div class="section-title" style="margin-top:40px;">Stream Server</div>
       <div class="msg" id="streamMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Pick which server the website's Play button connects to. Listeners already playing are moved over within about 30 seconds. Preview on the site by adding ?server=2 to the address.</div>
+      <div class="hint">Pick which server the website's Play button connects to. Listeners already playing are moved over within about 30 seconds. Preview on the site by adding ?server=2 to the address.</div>
       <div class="mode-toggle">
         <button class="mode-btn active" id="btnServer1" onclick="selectServer(1)">Server 1</button>
         <button class="mode-btn" id="btnServer2" onclick="selectServer(2)">Server 2</button>
@@ -481,7 +530,7 @@
       <div class="field">
         <label class="field-label">Server 2 stream address</label>
         <input type="text" id="server2Url" maxlength="300" placeholder="https://...">
-        <div style="font-size:10px;color:#333;margin-top:6px;letter-spacing:0.08em;">Must start with https://. A localhost address only works on the computer running the server.</div>
+        <div class="hint sub">Must start with https://. A localhost address only works on the computer running the server.</div>
       </div>
       <div class="btn-row"><button class="btn" onclick="saveStream()">Save</button></div>
     </div>
@@ -490,7 +539,7 @@
     <div class="dash-panel" id="panel-chat">
       <div class="section-title">Chat <span id="chatCount"></span></div>
       <div class="msg" id="chatMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">This is the live chat from july.rip. You post here with your badge. Move your mouse over a message (or look next to it on a phone) to delete it, mute the person for 10 minutes, or ban them.</div>
+      <div class="hint">This is the live chat from july.rip. You post here with your badge. Move your mouse over a message (or look next to it on a phone) to delete it, mute the person for 10 minutes, or ban them.</div>
       <div class="chat-admin-box"><div id="chatRoot"></div></div>
 
       <div class="divider"></div>
@@ -524,7 +573,7 @@
 
       <div class="divider"></div>
       <div class="section-title">July Bot</div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">The bot answers !song, !schedule, !support and !help in chat, welcomes each new chatter once (only they see it), and mutes someone for 10 minutes after 3 blocked messages in 5 minutes.</div>
+      <div class="hint">The bot answers !song, !schedule, !support and !help in chat, welcomes each new chatter once (only they see it), and mutes someone for 10 minutes after 3 blocked messages in 5 minutes.</div>
       <div class="field"><label class="field-label">July Bot is</label>
         <select id="chatBot">
           <option value="1">On</option>
@@ -554,7 +603,7 @@
 
       <div class="divider"></div>
       <div class="section-title">Saved names <span id="chatAcctTotal"></span></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Listeners who kept their name with a password. Give someone the Supporter badge here. If a listener forgets their password, press Reset password and send them the new one.</div>
+      <div class="hint">Listeners who kept their name with a password. Give someone the Supporter badge here. If a listener forgets their password, press Reset password and send them the new one.</div>
       <div class="field"><label class="field-label">Find a name</label>
         <input type="text" id="chatAcctSearch" maxlength="20" placeholder="type part of a name" oninput="chatAcctSearchSoon()">
       </div>
@@ -574,15 +623,35 @@
         <button class="btn" onclick="openSiteWithBadge()">Open july.rip with my badge</button>
         <button class="btn" onclick="loadChatState()">Refresh lists</button>
         <button class="btn" onclick="clearChat()">Clear all messages</button>
-        <button class="btn" id="chatSignoutBtn" style="display:none" onclick="signOutChatBadges()">Sign out all staff badges</button>
+        <button class="btn" id="chatSignoutBtn" style="display:none" onclick="signOutChatBadges()">Sign out everyone</button>
       </div>
+    </div>
+
+    <!-- USERS (Head only) -->
+    <div class="dash-panel" id="panel-users">
+      <div class="section-title">Users <span id="usersTotal"></span></div>
+      <div class="hint">Everyone who can log in to this admin panel. Tick what each person may change; they only see those tabs. Everyone can always edit their own profile. Only you (C.) can open this tab.</div>
+      <div class="msg" id="usersMsg"></div>
+      <div class="once-box" id="usersOnce"></div>
+      <div id="usersList"></div>
+
+      <div class="divider"></div>
+      <div class="section-title">Add a person</div>
+      <div class="grid-2">
+        <div class="field"><label class="field-label">Username (what they type to log in)</label><input type="text" id="newUserId" maxlength="20" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="e.g. shujaa"></div>
+        <div class="field"><label class="field-label">Name (shown in the panel and in chat)</label><input type="text" id="newUserName" maxlength="30" placeholder="e.g. Shujaa"></div>
+      </div>
+      <label class="field-label">What they may change</label>
+      <div class="perm-grid" id="newUserPerms"></div>
+      <button class="btn" onclick="addUser()">Add person</button>
+      <div class="hint sub">You get a one-time password to send them. They must choose their own the first time they log in.</div>
     </div>
 
     <!-- FESTIVE THEME -->
     <div class="dash-panel" id="panel-festive">
       <div class="section-title">Festive Theme</div>
       <div class="msg" id="festiveMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Changes the colours and adds small decorations on the website. Auto switches Halloween on by itself from 17 Oct to 1 Nov, the Christmas logo ribbon from 1 Dec to 1 Jan, and the April Fools game bar on 1 April, the Pride logo for all of June, and the Earth Day facts screen on 22 April (Nairobi time). Preview any time on the site by adding ?theme=halloween or ?theme=aprilfools or ?theme=pride or ?theme=earthday to the address.</div>
+      <div class="hint">Changes the colours and adds small decorations on the website. Auto switches Halloween on by itself from 17 Oct to 1 Nov, the Christmas logo ribbon from 1 Dec to 1 Jan, and the April Fools game bar on 1 April, the Pride logo for all of June, and the Earth Day facts screen on 22 April (Nairobi time). Preview any time on the site by adding ?theme=halloween or ?theme=aprilfools or ?theme=pride or ?theme=earthday to the address.</div>
       <div class="field"><label class="field-label">Mode</label>
         <select id="festiveMode">
           <option value="auto">Auto (by date)</option>
@@ -601,7 +670,7 @@
     <div class="dash-panel" id="panel-support">
       <div class="section-title">Support Page</div>
       <div class="msg" id="supportMsg"></div>
-      <div style="font-size:10px;color:#444;letter-spacing:0.08em;margin-bottom:16px;">Appears on the website's Support tab. Add M-Pesa Paybill/Till numbers (with a Copy button) and links such as Ko-fi or Patreon. Rows with no number/link are hidden.</div>
+      <div class="hint">Appears on the website's Support tab. Add M-Pesa Paybill/Till numbers (with a Copy button) and links such as Ko-fi or Patreon. Rows with no number/link are hidden.</div>
       <div class="field"><label class="field-label">Page Title</label><input type="text" id="supportTitle" placeholder="Support July Radio"></div>
       <div class="field"><label class="field-label">Intro Text</label><textarea id="supportIntro" placeholder="July Radio is independent and listener-supported..."></textarea></div>
       <div id="supportRows"></div>
@@ -670,7 +739,7 @@
       <div class="field">
         <label class="field-label">Profile ID</label>
         <input type="text" id="tm-id" placeholder="e.g. desksob (lowercase, no spaces)">
-        <div id="tm-id-warning" style="display:none;font-size:9px;color:#8a4a4a;margin-top:6px;letter-spacing:0.05em;">Heads up: this ID has its own admin login. Renaming it here won't change their login or the personal Profile tab, which will keep editing the old ID separately.</div>
+        <div id="tm-id-warning" class="hint sub warn" style="display:none;">Heads up: this ID has its own admin login. Renaming it here won't change their login or the personal Profile tab, which will keep editing the old ID separately.</div>
       </div>
       <div class="field"><label class="field-label">Display Name</label><input type="text" id="tm-name" placeholder="e.g. Desksob"></div>
       <div class="field"><label class="field-label">Show Name(s)</label><input type="text" id="tm-shows" placeholder="e.g. Open Air · Playlist"></div>
@@ -733,7 +802,8 @@ const HOSTS = {
 };
 
 let currentHost = null;
-let currentPassword = null; // stored only in memory after server validates
+let adminToken = null;    // login token from the july-chat Worker; sent with every save
+let me = null;            // { id, name, perms, head, must }
 let selectedMode = 'lastfm';
 let monitorAudio = null;
 let monitorPlaying = false;
@@ -742,87 +812,236 @@ let silenceTimer = null;
 let scheduleSlots = [];
 let tickerMessages = [];
 
-// ── PROFILE SELECT ────────────────────────────────────────────────────────────
-(function setupHovers() {
-  Object.keys(HOSTS).forEach(function(id) {
-    var wrap = document.getElementById('ps-wrap-' + id);
-    var host = HOSTS[id];
-    if (!wrap) return;
-    wrap.addEventListener('mouseenter', function() {
-      wrap.style.borderColor = host.accent;
-      wrap.style.boxShadow = '0 0 28px ' + host.accent + '44';
-    });
-    wrap.addEventListener('mouseleave', function() {
-      wrap.style.borderColor = 'transparent';
-      wrap.style.boxShadow = 'none';
-    });
+// ── LOGIN (username + password, checked by the july-chat Worker) ────────────
+var ADMIN_TOKEN_KEY = 'july_admin_token';
+var PERM_LABELS = {
+  broadcast: 'Broadcast (Last.fm / DJ set)', server: 'Server Status', chat: 'Chat (moderate, Staff badge)',
+  schedule: 'Schedule', team: 'Team', ticker: 'Ticker', alerts: 'Alerts', event: 'Event',
+  support: 'Support page', festive: 'Festive Theme'
+};
+var SCHEDULE_LANES = ['c', 'fziwe', 'fiscia'];   // the schedules the website reads today
+
+function can(perm) { return !!me && (me.head || me.perms.indexOf(perm) >= 0); }
+// Whose schedule this person edits. New people share the main one until the schedule is rebuilt.
+function scheduleHost() { return SCHEDULE_LANES.indexOf(currentHost) >= 0 ? currentHost : 'c'; }
+
+function showView(id) {
+  ['loginView', 'pwView', 'dashView'].forEach(function (v) {
+    document.getElementById(v).classList.toggle('active', v === id);
   });
-})();
-
-function selectHost(id) {
-  currentHost = id;
-  var host = HOSTS[id];
-  document.documentElement.style.setProperty('--accent', host.accent);
-  var avatar = document.getElementById('loginAvatar');
-  avatar.innerHTML = host.photo
-    ? '<img src="' + host.photo + '" alt="' + host.name + '">'
-    : '<div class="login-avatar-ph">' + host.name[0] + '</div>';
-  document.getElementById('loginName').textContent = host.name;
-  document.getElementById('loginMsg').className = 'msg';
-  document.getElementById('passwordInput').value = '';
-  document.getElementById('profileSelect').classList.remove('active');
-  document.getElementById('loginView').classList.add('active');
-  setTimeout(function() { document.getElementById('passwordInput').focus(); }, 100);
 }
 
-function backToProfiles() {
-  document.getElementById('loginView').classList.remove('active');
-  document.getElementById('profileSelect').classList.add('active');
-  currentHost = null;
+async function authApi(path, body, token) {
+  var res = await fetch(CHAT_HTTP + path, {
+    method: body ? 'POST' : 'GET',
+    headers: Object.assign(token ? { 'Authorization': 'Bearer ' + token } : {}, body ? { 'Content-Type': 'application/json' } : {}),
+    body: body ? JSON.stringify(body) : undefined,
+    cache: 'no-store'
+  });
+  var data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) { var err = new Error(data.error || 'Something went wrong. Try again.'); err.status = res.status; throw err; }
+  return data;
 }
 
-// ── LOGIN — server-validated ──────────────────────────────────────────────────
 async function login() {
+  var username = document.getElementById('usernameInput').value.trim();
   var pw = document.getElementById('passwordInput').value;
-  if (!pw) return;
-
-  // The Worker checks the password (it is never stored in this page).
-  var ok = false;
+  if (!username || !pw) { showMsg('loginMsg', 'error', 'Type your username and password.'); return; }
+  var btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
   try {
-    var res = await fetch(WORKER + '/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ host: currentHost, password: pw })
-    });
-    ok = res.ok;
-    if (res.status === 429) { showMsg('loginMsg', 'error', 'Too many tries. Wait 15 minutes.'); return; }
+    var data = await authApi('/auth/login', { username: username, password: pw });
+    document.getElementById('passwordInput').value = '';
+    await startSession(data.token, data.user);
   } catch (e) {
-    showMsg('loginMsg', 'error', 'Could not reach the server. Try again.');
+    showMsg('loginMsg', 'error', e.status ? e.message : 'Could not reach the server. Try again.');
+  }
+  btn.disabled = false; btn.textContent = 'Log in';
+}
+
+async function startSession(token, user) {
+  adminToken = token; me = user; currentHost = user.id;
+  try { localStorage.setItem(ADMIN_TOKEN_KEY, token); } catch (e) {}
+  if (user.must) {
+    document.getElementById('pwViewName').textContent = ', ' + user.name;
+    showView('pwView');
+    setTimeout(function () { document.getElementById('newPw1').focus(); }, 100);
     return;
   }
-  if (!ok) {
-    showMsg('loginMsg', 'error', 'Wrong password');
-    return;
-  }
-
-  currentPassword = pw;
-  document.getElementById('loginView').classList.remove('active');
-  document.getElementById('dashView').classList.add('active');
-  document.getElementById('dashHostName').textContent = HOSTS[currentHost].name;
-
+  chatToken = can('chat') ? token : null;
+  try { if (chatToken) localStorage.setItem('july_chat_key', chatToken); else localStorage.removeItem('july_chat_key'); } catch (e) {}
+  document.getElementById('dashHostName').textContent = user.name;
+  applyPerms();
+  showView('dashView');
   await loadDashboard();
   document.getElementById('nowPlayingBar').classList.add('visible');
   startNowPlayingPoll();
   requestNotifPermission();
 }
 
+// Show only the tabs this person may use, and open the first one.
+function applyPerms() {
+  var first = null;
+  document.querySelectorAll('.dash-nav-item').forEach(function (n) {
+    var perm = n.getAttribute('data-perm');
+    var ok = !perm || (perm === 'users' ? me.head : can(perm));
+    n.style.display = ok ? '' : 'none';
+    if (ok && !first) first = n;
+  });
+  if (first) first.click();
+}
+
+async function saveFirstPassword() {
+  var a = document.getElementById('newPw1').value, b = document.getElementById('newPw2').value;
+  if (a.length < 8) { showMsg('pwViewMsg', 'error', 'The password needs at least 8 characters.'); return; }
+  if (a !== b) { showMsg('pwViewMsg', 'error', 'The two passwords are not the same.'); return; }
+  try {
+    var data = await authApi('/auth/password', { password: a }, adminToken);
+    document.getElementById('newPw1').value = ''; document.getElementById('newPw2').value = '';
+    await startSession(data.token, data.user);
+  } catch (e) { showMsg('pwViewMsg', 'error', e.message); }
+}
+
+async function changeOwnPassword() {
+  var cur = document.getElementById('ownPwCurrent').value, next = document.getElementById('ownPwNew').value;
+  if (next.length < 8) { showMsg('ownPwMsg', 'error', 'The new password needs at least 8 characters.'); return; }
+  try {
+    var data = await authApi('/auth/password', { current: cur, password: next }, adminToken);
+    adminToken = data.token; me = data.user;
+    try { localStorage.setItem(ADMIN_TOKEN_KEY, adminToken); } catch (e) {}
+    if (chatToken) { chatToken = adminToken; try { localStorage.setItem('july_chat_key', chatToken); } catch (e) {} }
+    document.getElementById('ownPwCurrent').value = ''; document.getElementById('ownPwNew').value = '';
+    showMsg('ownPwMsg', 'success', 'Password changed. Other devices have to log in again.');
+  } catch (e) { showMsg('ownPwMsg', 'error', e.message); }
+}
+
+// Stay logged in on this device until "Log out" (or 30 days).
+async function resumeSession() {
+  var saved = null;
+  try { saved = localStorage.getItem(ADMIN_TOKEN_KEY); } catch (e) {}
+  if (!saved) return;
+  try {
+    var data = await authApi('/auth/me', null, saved);
+    await startSession(saved, data.user);
+  } catch (e) {
+    if (e.status === 401) { try { localStorage.removeItem(ADMIN_TOKEN_KEY); } catch (e2) {} }
+  }
+}
+document.addEventListener('DOMContentLoaded', resumeSession);
+
+// ── USERS (Head only) ──────────────────────────────────────────────────────
+function permBoxes(box, picked, prefix) {
+  box.textContent = '';
+  Object.keys(PERM_LABELS).forEach(function (perm) {
+    var label = document.createElement('label');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = perm; cb.checked = picked.indexOf(perm) >= 0;
+    label.appendChild(cb); label.appendChild(document.createTextNode(PERM_LABELS[perm]));
+    box.appendChild(label);
+  });
+}
+function pickedPerms(box) {
+  return Array.prototype.filter.call(box.querySelectorAll('input[type=checkbox]'), function (c) { return c.checked; })
+    .map(function (c) { return c.value; });
+}
+function showOncePassword(username, password, isNew) {
+  var box = document.getElementById('usersOnce');
+  box.textContent = '';
+  box.appendChild(document.createTextNode((isNew ? 'Added. ' : 'Password reset. ') + 'Send this to them privately. It is shown only once, and they must choose their own password when they log in.'));
+  box.appendChild(document.createElement('br'));
+  box.appendChild(document.createTextNode('Username '));
+  var u = document.createElement('code'); u.textContent = username; box.appendChild(u);
+  box.appendChild(document.createTextNode('One-time password '));
+  var c = document.createElement('code'); c.textContent = password; box.appendChild(c);
+  var copy = document.createElement('button'); copy.className = 'btn secondary small'; copy.textContent = 'Copy password';
+  copy.onclick = function () { try { navigator.clipboard.writeText(password); copy.textContent = 'Copied'; } catch (e) {} };
+  box.appendChild(copy);
+  var done = document.createElement('button'); done.className = 'btn secondary small'; done.textContent = 'Done, hide it'; done.style.marginLeft = '8px';
+  done.onclick = function () { box.style.display = 'none'; box.textContent = ''; };
+  box.appendChild(done);
+  box.style.display = 'block';
+  box.scrollIntoView({ block: 'center' });
+}
+
+async function loadUsers() {
+  if (!me || !me.head) return;
+  permBoxes(document.getElementById('newUserPerms'), [], 'new');
+  var list = document.getElementById('usersList');
+  try {
+    var data = await authApi('/auth/users', null, adminToken);
+    document.getElementById('usersTotal').textContent = '(' + data.users.length + ')';
+    list.textContent = '';
+    data.users.forEach(function (u) {
+      var card = document.createElement('div'); card.className = 'user-card';
+      var head = document.createElement('div'); head.className = 'user-card-head';
+      var b = document.createElement('b'); b.textContent = u.name; head.appendChild(b);
+      var info = document.createElement('span');
+      info.textContent = 'username: ' + u.id + ' · ' + (u.head ? 'Head, can do everything' : u.waiting ? 'has not logged in with the one-time password yet' : u.seen ? 'last login ' + chatWhen(u.seen) : 'has not logged in yet');
+      head.appendChild(info);
+      card.appendChild(head);
+      if (!u.head) {
+        var body = document.createElement('div'); body.className = 'user-card-body';
+        var boxes = document.createElement('div'); boxes.className = 'perm-grid';
+        permBoxes(boxes, u.perms, u.id);
+        body.appendChild(boxes);
+        var row = document.createElement('div'); row.className = 'btn-row';
+        var act = function (label, cls, fn) {
+          var btn = document.createElement('button'); btn.className = 'btn small ' + cls; btn.textContent = label; btn.onclick = fn;
+          row.appendChild(btn);
+        };
+        act('Save what they may change', '', async function () {
+          try { await authApi('/auth/user', { a: 'perms', id: u.id, perms: pickedPerms(boxes) }, adminToken); showMsg('usersMsg', 'success', 'Saved for ' + u.name + '.'); loadUsers(); }
+          catch (e) { showMsg('usersMsg', 'error', e.message); }
+        });
+        act('Reset password', 'secondary', async function () {
+          if (!confirm('Make a new one-time password for ' + u.name + '? Their current password stops working.')) return;
+          try { var r = await authApi('/auth/user', { a: 'reset', id: u.id }, adminToken); showOncePassword(r.username, r.password, false); loadUsers(); }
+          catch (e) { showMsg('usersMsg', 'error', e.message); }
+        });
+        act('Remove', 'danger', async function () {
+          if (!confirm('Remove ' + u.name + '? They will not be able to log in any more.')) return;
+          try { await authApi('/auth/user', { a: 'remove', id: u.id }, adminToken); showMsg('usersMsg', 'success', u.name + ' was removed.'); loadUsers(); }
+          catch (e) { showMsg('usersMsg', 'error', e.message); }
+        });
+        body.appendChild(row);
+        card.appendChild(body);
+      }
+      list.appendChild(card);
+    });
+  } catch (e) { showMsg('usersMsg', 'error', e.message); }
+}
+
+async function addUser() {
+  var id = document.getElementById('newUserId').value.trim().toLowerCase();
+  var name = document.getElementById('newUserName').value.trim();
+  if (!id) { showMsg('usersMsg', 'error', 'Type a username.'); return; }
+  try {
+    var r = await authApi('/auth/user', { a: 'add', username: id, name: name, perms: pickedPerms(document.getElementById('newUserPerms')) }, adminToken);
+    document.getElementById('newUserId').value = ''; document.getElementById('newUserName').value = '';
+    showOncePassword(r.username, r.password, true);
+    loadUsers();
+  } catch (e) { showMsg('usersMsg', 'error', e.message); }
+}
+
+function toggleAdminTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+  if (dark) document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem('july-admin-theme', dark ? 'dark' : 'light'); } catch (e) {}
+  syncAdminThemeBtn();
+}
+function syncAdminThemeBtn() {
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark';
+}
+document.addEventListener('DOMContentLoaded', syncAdminThemeBtn);
+
 function logout() {
-  document.getElementById('dashView').classList.remove('active');
-  document.getElementById('profileSelect').classList.add('active');
+  showView('loginView');
   document.getElementById('nowPlayingBar').classList.remove('visible');
-  currentHost = null; currentPassword = null;
+  currentHost = null; adminToken = null; me = null;
   chatToken = null;
-  try { localStorage.removeItem('july_chat_key'); } catch (e) {}
+  try { localStorage.removeItem('july_chat_key'); localStorage.removeItem(ADMIN_TOKEN_KEY); } catch (e) {}
   stopMonitor();
 }
 
@@ -834,11 +1053,11 @@ function showPanel(id, el) {
   el.classList.add('active');
   if (id === 'schedule') applyWeekScrollIfNeeded();
   if (id === 'chat') openChatPanel();
+  if (id === 'users') loadUsers();
 }
 
 // ── CHAT ──────────────────────────────────────────────────────────────────
-// The chat lives in its own Worker (july-chat). Your admin password is checked
-// once and swapped for a badge token; the password is not kept by the chat.
+// The chat lives in its own Worker (july-chat). Your login token is also your chat badge.
 var CHAT_LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 var CHAT_HTTP = CHAT_LOCAL ? 'http://' + location.hostname + ':8787' : 'https://chat.july.rip';
 var chatToken = null;
@@ -858,22 +1077,7 @@ async function chatApi(path, body) {
 }
 
 async function openChatPanel() {
-  if (!chatToken) {
-    try {
-      var res = await fetch(CHAT_HTTP + '/staff/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host: currentHost, password: currentPassword })
-      });
-      var data = await res.json();
-      if (!res.ok || !data.token) { showMsg('chatMsg', 'error', data.error || 'Could not open the chat.'); return; }
-      chatToken = data.token;
-      try { localStorage.setItem('july_chat_key', chatToken); } catch (e) {}
-    } catch (e) {
-      showMsg('chatMsg', 'error', 'Could not reach the chat server. Try again.');
-      return;
-    }
-  }
+  if (!chatToken) { showMsg('chatMsg', 'error', 'You are not allowed to moderate the chat.'); return; }
   if (!chatLoaded) {
     chatLoaded = true;
     var sc = document.createElement('script');
@@ -1011,12 +1215,11 @@ async function clearChat() {
 }
 
 async function signOutChatBadges() {
-  if (!confirm('Remove the staff badge from every device? Each host gets it back by opening this Chat tab again.')) return;
+  if (!confirm('Log everyone out of the admin panel and remove every staff badge, on every device? You will have to log in again too.')) return;
   try {
     await chatApi('/mod/signout', {});
-    chatToken = null;
-    try { localStorage.removeItem('july_chat_key'); } catch (e) {}
-    showMsg('chatMsg', 'success', 'All staff badges signed out. Reload this page to get yours back.');
+    logout();
+    showMsg('loginMsg', 'success', 'Everyone was logged out. Log in again.');
   } catch (e) { showMsg('chatMsg', 'error', e.message); }
 }
 
@@ -1090,7 +1293,7 @@ function updateModeUI() {
 }
 
 async function saveBroadcast() {
-  var body = { password: currentPassword, mode: selectedMode };
+  var body = { token: adminToken, mode: selectedMode };
   if (selectedMode === 'djset') {
     var title = document.getElementById('djTitle').value.trim();
     if (!title) { showMsg('broadcastMsg', 'error', 'Please enter a mix title'); return; }
@@ -1099,7 +1302,7 @@ async function saveBroadcast() {
     var tags = document.getElementById('djTags').value.split(',').map(function(t){ return t.trim(); }).filter(Boolean);
     body.djset = {
       title: title,
-      djName: document.getElementById('djName').value.trim() || HOSTS[currentHost].name,
+      djName: document.getElementById('djName').value.trim() || me.name,
       image: document.getElementById('djImage').value.trim(),
       role: role,
       tags: tags,
@@ -1127,7 +1330,7 @@ function previewDjImg() {
 // ── SCHEDULE ──────────────────────────────────────────────────────────────────
 async function loadSchedule() {
   try {
-    var res = await fetch(WORKER + '/schedule?host=' + currentHost, { cache: 'no-store' });
+    var res = await fetch(WORKER + '/schedule?host=' + scheduleHost(), { cache: 'no-store' });
     var data = await res.json();
     scheduleSlots = (data.slots || []).map(function(s) {
       return {
@@ -1500,7 +1703,7 @@ function deleteShowFromModal() {
 }
 
 async function saveSchedule() {
-  scheduleSlots.forEach(function(s) { s.host = currentHost; });
+  scheduleSlots.forEach(function(s) { s.host = scheduleHost(); });
 
   if (!scheduleSlots.length) {
     showMsg('scheduleMsg', 'error', 'No shows to save — add at least one');
@@ -1511,7 +1714,7 @@ async function saveSchedule() {
     var res = await fetch(WORKER + '/schedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: currentHost, slots: scheduleSlots })
+      body: JSON.stringify({ token: adminToken, host: scheduleHost(), slots: scheduleSlots })
     });
     var data = await res.json();
     if (data.ok) {
@@ -2072,7 +2275,7 @@ async function loadProfile() {
     var data = await res.json();
     if (data.profile) {
       var p = data.profile;
-      document.getElementById('profileName').value      = p.name       || HOSTS[currentHost].name;
+      document.getElementById('profileName').value      = p.name       || me.name;
       document.getElementById('profileShows').value     = p.shows      || '';
       document.getElementById('profileTagline').value   = p.tagline    || '';
       document.getElementById('profileBio').value       = p.bio        || '';
@@ -2107,7 +2310,7 @@ async function saveProfile() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: currentHost, profile: profile })
+      body: JSON.stringify({ token: adminToken, host: currentHost, profile: profile })
     });
     var data = await res.json();
     if (data.ok) showMsg('profileMsg', 'success', 'Profile saved');
@@ -2164,7 +2367,7 @@ async function saveRoster(group) {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: ROSTER_KEYS[group], profile: { ids: rosters[group] } })
+      body: JSON.stringify({ token: adminToken, host: ROSTER_KEYS[group], profile: { ids: rosters[group] } })
     });
     var data = await res.json();
     return !!data.ok;
@@ -2311,7 +2514,7 @@ async function saveTeamProfile() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: id, profile: profile })
+      body: JSON.stringify({ token: adminToken, host: id, profile: profile })
     });
     var data = await res.json();
     if (!data.ok) { showMsg('teamModalMsg', 'error', data.error || 'Failed to save'); return; }
@@ -2424,7 +2627,7 @@ async function saveTicker() {
     var res = await fetch(WORKER + '/ticker', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, messages: clean })
+      body: JSON.stringify({ token: adminToken, messages: clean })
     });
     var data = await res.json();
     if (data.ok) showMsg('tickerMsg', 'success', 'Ticker saved — live within 60 seconds');
@@ -2441,8 +2644,8 @@ async function sendAlert() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        password: currentPassword,
-        alert: { text: text, id: Date.now().toString(), host: HOSTS[currentHost].name }
+        token: adminToken,
+        alert: { text: text, id: Date.now().toString(), host: me.name }
       })
     });
     var data = await res.json();
@@ -2458,7 +2661,7 @@ async function clearAlert() {
     var res = await fetch(WORKER + '/alert', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, alert: null })
+      body: JSON.stringify({ token: adminToken, alert: null })
     });
     var data = await res.json();
     if (data.ok) showMsg('alertsMsg', 'success', 'Alert cleared');
@@ -2511,7 +2714,7 @@ async function saveEvent() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: '_event', profile: event })
+      body: JSON.stringify({ token: adminToken, host: '_event', profile: event })
     });
     var data = await res.json();
     if (data.ok) showMsg('eventMsg', 'success', 'Event saved — live on the site within a minute');
@@ -2550,7 +2753,7 @@ async function saveOffline() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: '_offline', profile: cfg })
+      body: JSON.stringify({ token: adminToken, host: '_offline', profile: cfg })
     });
     var data = await res.json();
     if (data.ok) showMsg('offlineMsg', 'success', offlineOn ? 'Station marked OFFLINE. Listeners see the maintenance notice within 30 seconds' : 'Station back ONLINE. The notice disappears within 30 seconds');
@@ -2594,7 +2797,7 @@ async function saveStream() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: '_stream', profile: cfg })
+      body: JSON.stringify({ token: adminToken, host: '_stream', profile: cfg })
     });
     var data = await res.json();
     if (data.ok) showMsg('streamMsg', 'success', 'Website now uses Server ' + activeServer + '. Listeners switch over within 30 seconds');
@@ -2616,7 +2819,7 @@ async function saveFestive() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: '_theme', profile: { mode: mode } })
+      body: JSON.stringify({ token: adminToken, host: '_theme', profile: { mode: mode } })
     });
     var data = await res.json();
     if (data.ok) showMsg('festiveMsg', 'success', 'Saved. Live on the site within a minute');
@@ -2632,7 +2835,7 @@ function renderSupportRows() {
   if (!box) return;
   box.innerHTML = supportData.map(function(m, i) {
     var isMpesa = m.kind === 'paybill' || m.kind === 'till';
-    return '<div class="field" style="border:1px solid #222;padding:14px;margin-bottom:12px;">'
+    return '<div class="field box">'
       + '<div class="grid-2">'
       + '<div class="field"><label class="field-label">Type</label><select onchange="setSupport('+i+',\'kind\',this.value);renderSupportRows()">'
       + '<option value="paybill"'+(m.kind==='paybill'?' selected':'')+'>M-Pesa Paybill</option>'
@@ -2673,7 +2876,7 @@ async function saveSupport() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: '_support', profile: profile })
+      body: JSON.stringify({ token: adminToken, host: '_support', profile: profile })
     });
     var data = await res.json();
     if (data.ok) showMsg('supportMsg', 'success', 'Support page saved — live on the site within a minute');
@@ -2686,7 +2889,7 @@ async function clearEvent() {
     var res = await fetch(WORKER + '/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: currentPassword, host: '_event', profile: null })
+      body: JSON.stringify({ token: adminToken, host: '_event', profile: null })
     });
     var data = await res.json();
     if (data.ok) {
@@ -2797,7 +3000,7 @@ function showNotif(msg) {
   document.getElementById('notifMsg').textContent = msg;
   document.getElementById('notifBar').classList.add('visible');
   setTimeout(closeNotif, 8000);
-  if (Notification.permission === 'granted') new Notification('July Radio', { body: msg, icon: 'july-logo.png' });
+  if (Notification.permission === 'granted') new Notification('July Radio', { body: msg, icon: 'july-radio-logo-header.png' });
 }
 
 function closeNotif() {
