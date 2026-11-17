@@ -131,9 +131,19 @@
   .team-card-id { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; padding: 2px 8px 8px; }
 
   /* DAY EXPORT */
-  .export-canvas-wrap{ margin-top:16px; display:none; }
-  .export-canvas-wrap canvas{ width:100%; max-width:220px; border:1px solid var(--border); display:block; background:#000; }
+  .export-layout{ display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+  .export-side{ flex:1; min-width:260px; }
+  .export-canvas-wrap{ width:270px; max-width:100%; }
+  .export-canvas-wrap canvas{ width:100%; border:1px solid var(--border); display:block; background:#e9e5db; }
   .export-status{ font-size:10px; color:var(--muted); margin-top:8px; letter-spacing:0.05em; }
+  .bg-strip{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; max-height:236px; overflow-y:auto; align-items:center; }
+  .bg-tile{ position:relative; width:54px; height:96px; border:1px solid var(--border); padding:0; background:var(--soft); cursor:pointer; overflow:hidden; font:inherit; font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
+  .bg-tile.on{ outline:3px solid var(--ink); outline-offset:-3px; color:var(--ink); }
+  .bg-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .bg-tile button{ position:absolute; top:2px; right:2px; width:16px; height:16px; border:none; background:var(--bar); color:var(--bar-ink); font-size:9px; line-height:16px; padding:0; cursor:pointer; display:none; }
+  .bg-tile:hover button{ display:block; }
+  .bg-empty{ font-size:11px; color:var(--muted); margin-left:6px; }
+  .bg-note{ font-size:10px; color:var(--muted); line-height:1.5; min-height:14px; }
   .export-download-link{ display:none; margin-top:10px; text-decoration:none; }
 
   /* SCHEDULE: weekly time-axis grid */
@@ -159,6 +169,20 @@
   .week-resize-handle.top { top: -5px; }
   .week-resize-handle.bottom { bottom: -5px; }
   .week-resize-handle:hover { background: var(--ink); opacity: 0.25; }
+  .onnow { border: 1px solid var(--border); padding: 12px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .onnow img { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--border); display: none; }
+  .onnow-text { flex: 1; min-width: 180px; font-size: 12px; line-height: 1.5; }
+  .onnow-text b { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .onnow-text span { color: var(--muted); font-size: 11px; }
+  .saved-shows { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .saved-show { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); padding: 4px 4px 4px 4px; font-size: 11px; max-width: 100%; }
+  .saved-show img { width: 28px; height: 28px; object-fit: cover; }
+  .saved-show .ss-name { text-transform: uppercase; letter-spacing: 0.04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+  .saved-show button { border: none; background: none; color: var(--muted); cursor: pointer; font: inherit; padding: 4px 6px; }
+  .saved-show button:hover { color: var(--danger); }
+  .check-line { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 14px; cursor: pointer; }
+  .check-line input { width: auto; margin: 0; }
+  .draft-note { font-size: 10px; color: var(--muted); margin-bottom: 12px; display: none; }
   .week-hint { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 10px; }
 
   /* SHOW EDIT MODAL */
@@ -329,6 +353,11 @@
     <div class="dash-panel" id="panel-broadcast">
       <div class="section-title">Broadcast Mode</div>
       <div class="msg" id="broadcastMsg"></div>
+      <div class="onnow" id="onNowBox">
+        <img id="onNowImg" alt="">
+        <div class="onnow-text"><b id="onNowTitle">Checking the schedule...</b><span id="onNowSub"></span></div>
+        <button class="btn" id="onNowBtn" style="display:none;"></button>
+      </div>
       <div class="mode-toggle">
         <button class="mode-btn active" id="btnLastfm" onclick="selectMode('lastfm')">Last.fm</button>
         <button class="mode-btn" id="btnDjset" onclick="selectMode('djset')">DJ Set</button>
@@ -368,29 +397,49 @@
 
     <!-- SCHEDULE -->
     <div class="dash-panel" id="panel-schedule">
-      <div class="section-title">Your Shows</div>
+      <div class="section-title">Saved Shows</div>
+      <div class="hint" id="savedShowsHint">Shows you have added before. When you add a show to the week, pick one of these and its details fill themselves in.</div>
+      <div class="saved-shows" id="savedShows"></div>
+
+      <div class="section-title">This Week</div>
       <div class="msg" id="scheduleMsg"></div>
-      <div class="week-hint">Click a show to edit it · click empty space to add one · drag a show's top/bottom edge to adjust its time</div>
+      <div class="week-hint">Click a show to edit it · click empty space to add one · drag a show's top/bottom edge to adjust its time · every change saves by itself</div>
       <div id="weekGrid"></div>
-      <div class="btn-row" style="margin-top:16px;">
-        <button class="btn" onclick="saveSchedule()">Save Schedule</button>
-      </div>
 
       <div class="divider"></div>
-      <div class="section-title">Export Day as Story</div>
+      <div class="section-title">Story for Instagram</div>
       <div class="msg" id="exportMsg"></div>
-      <div class="grid-2">
-        <div class="field"><label class="field-label">Day</label><select id="exportDaySelect"></select></div>
-        <div class="field"><label class="field-label">Website Link</label><input type="text" id="exportSiteText" value="julyfm.com"></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn secondary" onclick="exportDayImage()">Save as Image</button>
-        <button class="btn" id="exportVideoBtn" onclick="exportDayVideo()">Export Animated Video</button>
-      </div>
-      <div class="export-canvas-wrap" id="exportPreviewWrap">
-        <canvas id="exportCanvas" width="1080" height="1920"></canvas>
-        <div class="export-status" id="exportStatus"></div>
-        <a class="btn secondary small export-download-link" id="exportDownloadLink" download>Download</a>
+      <div class="export-layout">
+        <div class="export-side">
+          <div class="field"><label class="field-label">Day</label><select id="exportDaySelect" onchange="exportPage = 0; drawExportPreview()"></select></div>
+          <div class="field" id="bgDrop">
+            <label class="field-label">Background picture</label>
+            <div class="bg-strip" id="bgStrip"></div>
+            <input type="file" id="bgFile" accept="image/*" multiple style="display:none;" onchange="addBackgroundFiles(this.files); this.value='';">
+            <div class="btn-row">
+              <button class="btn secondary small" onclick="document.getElementById('bgFile').click()">+ Add my pictures</button>
+              <button class="btn secondary small" id="bgSurpriseBtn" onclick="surpriseMuseum()">Surprise me (museum)</button>
+              <button class="btn small" id="bgKeepBtn" style="display:none;" onclick="keepMuseumBackground()">Keep this one</button>
+            </div>
+            <div class="bg-note" id="bgNoteText"></div>
+            <div class="hint" style="margin:8px 0 0;">You can also drag pictures from your computer onto this box. Saved pictures are shared with everyone who can edit the schedule.</div>
+          </div>
+          <div class="field">
+            <label class="field-label">Blur the picture <span id="exportBlurVal" style="color:var(--muted);">off</span></label>
+            <input type="range" id="exportBlur" min="0" max="40" value="0" style="width:100%;padding:0;border:none;accent-color:var(--ink);" oninput="document.getElementById('exportBlurVal').textContent = this.value === '0' ? 'off' : this.value; drawExportPreview()">
+          </div>
+          <div class="field"><label class="field-label">Website Link</label><input type="text" id="exportSiteText" value="JULY.RIP" oninput="drawExportPreview()"></div>
+          <div class="btn-row">
+            <button class="btn secondary" onclick="exportDayImage()">Save as Image</button>
+            <button class="btn" id="exportVideoBtn" onclick="exportDayVideo()">Save as Video (8s)</button>
+          </div>
+          <div class="export-status" id="exportStatus"></div>
+          <a id="exportDownloadLink" download style="display:none;"></a>
+        </div>
+        <div class="export-canvas-wrap" id="exportPreviewWrap">
+          <div class="btn-row" id="exportParts" style="display:none;margin-bottom:8px;"></div>
+          <canvas id="exportCanvas" width="1080" height="1920"></canvas>
+        </div>
       </div>
     </div>
 
@@ -684,7 +733,7 @@
 </div>
 
 <!-- SHOW EDIT MODAL -->
-<div class="modal-overlay" id="showModalOverlay" onclick="if(event.target===this) closeShowModal()">
+<div class="modal-overlay" id="showModalOverlay">
   <div class="modal-box">
     <div class="modal-header">
       <span id="showModalTitle">Add Show</span>
@@ -692,6 +741,8 @@
     </div>
     <div class="modal-body">
       <div class="msg" id="showModalMsg"></div>
+      <div class="draft-note" id="sm-draft-note">Picked up where you left off. <a href="#" onclick="clearShowDraft(true);return false;">Start empty</a></div>
+      <div class="field" id="sm-pick-field"><label class="field-label">Saved Show</label><select id="sm-pick" onchange="pickSavedShow()"></select></div>
       <div class="field"><label class="field-label">Show Name</label><input type="text" id="sm-name" placeholder="e.g. Open Air"></div>
       <div class="grid-2">
         <div class="field">
@@ -717,6 +768,16 @@
         <img id="sm-image-preview" class="preview-img" alt="preview">
       </div>
       <div class="field"><label class="field-label">Description (optional)</label><input type="text" id="sm-desc" placeholder="e.g. tonight we go deep into 90s ambient"></div>
+      <div class="divider"></div>
+      <div class="field-label" style="margin-bottom:10px;">For going live (optional) — used by the "Go live" button on the Broadcast tab</div>
+      <div class="grid-2">
+        <div class="field"><label class="field-label">DJ / Host Name</label><input type="text" id="sm-dj" placeholder="e.g. C."></div>
+        <div class="field"><label class="field-label">Tags (comma separated)</label><input type="text" id="sm-tags" placeholder="e.g. house, disco"></div>
+      </div>
+      <div class="field"><label class="field-label">Bio</label><textarea id="sm-bio" placeholder="A short bio for the about card..."></textarea></div>
+      <label class="check-line"><input type="checkbox" id="sm-djset"> This is a DJ set (gets a star on the Instagram story)</label>
+      <label class="check-line"><input type="checkbox" id="sm-resident"> By a resident (the star is red)</label>
+      <label class="check-line"><input type="checkbox" id="sm-remember" checked> Keep this in Saved Shows for next time</label>
     </div>
     <div class="modal-footer">
       <button class="btn danger" id="sm-delete-btn" onclick="deleteShowFromModal()">Delete</button>
@@ -1234,6 +1295,9 @@ async function loadDashboard() {
   await Promise.all([
     loadBroadcastMode(),
     loadSchedule(),
+    loadSavedShows(),
+    loadBackgrounds(),
+    loadOnNow(),
     loadProfile(),
     loadTeamRoster(),
     loadTicker(),
@@ -1253,7 +1317,10 @@ async function loadBroadcastMode() {
     var res = await fetch(WORKER + '/mode', { cache: 'no-store' });
     var data = await res.json();
     selectedMode = data.mode || 'lastfm';
+    selectedModeLive = selectedMode;
+    liveDjTitle = (data.djset && data.djset.title) || '';
     updateModeUI();
+    renderOnNow();
     if (data.djset) {
       document.getElementById('djTitle').value = data.djset.title || '';
       document.getElementById('djName').value = data.djset.djName || '';
@@ -1275,6 +1342,76 @@ async function loadBroadcastMode() {
     }
   } catch(e) {}
 }
+
+// ── ON NOW: the scheduled show, one click to go live as it ──
+var onNowSlots = [];
+var liveDjTitle = '';
+async function loadOnNow() {
+  var all = [];
+  await Promise.all(SCHEDULE_LANES.map(async function (h) {
+    try {
+      var res = await fetch(WORKER + '/schedule?host=' + h, { cache: 'no-store' });
+      var data = await res.json();
+      (data.slots || []).forEach(function (s) { if (s && s.name && !/autoplay/i.test(s.name)) all.push(s); });
+    } catch (e) {}
+  }));
+  onNowSlots = all;
+  renderOnNow();
+  drawExportPreview();
+}
+function slotSpan(s) {
+  var a = timeToMins(s.start), b = timeToMins(s.end);
+  if (b <= a) b = 1440;
+  return [a, b];
+}
+function renderOnNow() {
+  var now = getAdminEATNow(), cur = null, next = null;
+  onNowSlots.forEach(function (s) {
+    if ((parseInt(s.day) || 0) !== now.day) return;
+    var sp = slotSpan(s);
+    if (now.mins >= sp[0] && now.mins < sp[1]) cur = s;
+    else if (sp[0] > now.mins && (!next || sp[0] < slotSpan(next)[0])) next = s;
+  });
+  var title = document.getElementById('onNowTitle'), sub = document.getElementById('onNowSub');
+  var btn = document.getElementById('onNowBtn'), img = document.getElementById('onNowImg');
+  var live = selectedModeLive === 'djset';
+  img.style.display = 'none'; btn.style.display = 'none'; btn.className = 'btn';
+  if (cur && /^https:\/\//.test(cur.image || '')) { img.src = cur.image; img.style.display = 'block'; }
+  if (live) {
+    var same = cur && showKey(cur.name) === showKey(liveDjTitle);
+    title.textContent = 'Live now: ' + (liveDjTitle || 'DJ set');
+    sub.textContent = same ? 'Scheduled until ' + fmtDisplayTime(cur.end) + ' EAT. Press End when the show is over.'
+      : (cur ? 'The schedule says ' + cur.name + ' is on now.' : 'Nothing is scheduled right now. Press End when the set is over.');
+    btn.textContent = 'End set (back to Last.fm)'; btn.className = 'btn secondary'; btn.style.display = 'inline-block';
+    btn.onclick = endLiveSet;
+  } else if (cur) {
+    title.textContent = 'Scheduled now: ' + cur.name;
+    sub.textContent = fmtDisplayTime(cur.start) + ' to ' + fmtDisplayTime(cur.end) + ' EAT. The site is on Last.fm until you go live.';
+    btn.textContent = 'Go live as ' + cur.name; btn.style.display = 'inline-block';
+    btn.onclick = function () { goLiveAs(cur); };
+  } else {
+    title.textContent = 'Nothing scheduled right now';
+    sub.textContent = next ? 'Next today: ' + next.name + ' at ' + fmtDisplayTime(next.start) + ' EAT.' : 'No more shows today.';
+  }
+}
+async function goLiveAs(s) {
+  document.getElementById('djTitle').value = s.name || '';
+  document.getElementById('djName').value = s.dj || (me && me.name) || '';
+  document.getElementById('djImage').value = s.image || '';
+  document.getElementById('djRole').value = 'DJ'; toggleDjRoleOther();
+  document.getElementById('djTags').value = (s.tags || []).join(', ');
+  document.getElementById('djBio').value = s.bio || s.description || '';
+  previewDjImg();
+  selectMode('djset');
+  await saveBroadcast();
+}
+async function endLiveSet() {
+  selectMode('lastfm');
+  await saveBroadcast();
+}
+var selectedModeLive = 'lastfm';
+setInterval(function () { if (me && document.getElementById('onNowBox')) renderOnNow(); }, 30000);
+setInterval(function () { if (me) loadOnNow(); }, 300000);
 
 function toggleDjRoleOther() {
   var isOther = document.getElementById('djRole').value === 'Other';
@@ -1316,7 +1453,12 @@ async function saveBroadcast() {
       body: JSON.stringify(body)
     });
     var data = await res.json();
-    if (data.ok) showMsg('broadcastMsg', 'success', 'Mode updated — live within 15 seconds');
+    if (data.ok) {
+      showMsg('broadcastMsg', 'success', 'Mode updated — live within 15 seconds');
+      selectedModeLive = selectedMode;
+      if (body.djset) liveDjTitle = body.djset.title;
+      renderOnNow();
+    }
     else showMsg('broadcastMsg', 'error', data.error || 'Failed to update');
   } catch(e) { showMsg('broadcastMsg', 'error', 'Connection error'); }
 }
@@ -1339,7 +1481,8 @@ async function loadSchedule() {
         end: s.end || '02:00',
         name: s.name || '',
         description: s.description || '',
-        image: s.image || ''
+        image: s.image || '',
+        dj: s.dj || '', tags: Array.isArray(s.tags) ? s.tags : [], bio: s.bio || '', djset: !!s.djset, resident: !!s.resident
       };
     });
   } catch(e) { scheduleSlots = []; }
@@ -1601,7 +1744,7 @@ function onResizeMove(e) {
 function onResizeEnd(e) {
   document.removeEventListener('pointermove', onResizeMove);
   document.removeEventListener('pointerup', onResizeEnd);
-  if (dragState && dragState.moved) suppressNextBlockClick = true;
+  if (dragState && dragState.moved) { suppressNextBlockClick = true; saveSchedule(); }
   dragState = null;
 }
 
@@ -1630,8 +1773,12 @@ function openShowModal(index, dayForNew, startMinsForNew) {
     editingDay = dayForNew;
     var s = (typeof startMinsForNew === 'number') ? startMinsForNew : 18 * 60;
     var e = Math.min(s + 120, 1440);
-    slot = { day: dayForNew, start: minsToTime(s), end: minsToTime(e), name: '', description: '', image: '' };
+    slot = { day: dayForNew, start: minsToTime(s), end: minsToTime(e), name: '', description: '', image: '', dj: '', tags: [], bio: '' };
+    var draft = readShowDraft();
+    if (draft) { ['name','description','image','dj','bio'].forEach(function (k) { slot[k] = draft[k] || ''; }); slot.tags = draft.tags || []; slot.djset = !!draft.djset; slot.resident = !!draft.resident; }
+    document.getElementById('sm-draft-note').style.display = draft ? 'block' : 'none';
   } else {
+    document.getElementById('sm-draft-note').style.display = 'none';
     slot = scheduleSlots[index];
     editingDay = slot.day;
   }
@@ -1644,6 +1791,13 @@ function openShowModal(index, dayForNew, startMinsForNew) {
   document.getElementById('sm-desc').value = slot.description || '';
   document.getElementById('sm-image').value = slot.image || '';
   previewShowImg();
+  document.getElementById('sm-dj').value = slot.dj || '';
+  document.getElementById('sm-tags').value = (slot.tags || []).join(', ');
+  document.getElementById('sm-bio').value = slot.bio || '';
+  document.getElementById('sm-djset').checked = !!slot.djset;
+  document.getElementById('sm-resident').checked = !!slot.resident;
+  document.getElementById('sm-remember').checked = true;
+  fillSavedShowPicker(slot.name);
 
   populateHourSelect(document.getElementById('sm-start-h'));
   populateHourSelect(document.getElementById('sm-end-h'));
@@ -1660,9 +1814,127 @@ function openShowModal(index, dayForNew, startMinsForNew) {
   document.getElementById('showModalOverlay').classList.add('active');
 }
 
+// Cancel and the X throw the half-filled show away on purpose. Anything else
+// (a reload, a closed tab) keeps it as a draft for the next "add show".
 function closeShowModal() {
   document.getElementById('showModalOverlay').classList.remove('active');
   editingIndex = null; editingDay = null;
+  clearShowDraft();
+}
+
+// ── SAVED SHOWS (stored as the reserved profile "_shows") + DRAFT ──
+var savedShows = [];
+var SHOW_DRAFT_KEY = 'july_admin_show_draft';
+function showKey(n) { return String(n || '').trim().toLowerCase(); }
+function tagList(v) { return String(v || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
+function modalShowDetails() {
+  return {
+    name: document.getElementById('sm-name').value.trim(),
+    description: document.getElementById('sm-desc').value.trim(),
+    image: document.getElementById('sm-image').value.trim(),
+    dj: document.getElementById('sm-dj').value.trim(),
+    tags: tagList(document.getElementById('sm-tags').value),
+    bio: document.getElementById('sm-bio').value.trim(),
+    djset: document.getElementById('sm-djset').checked,
+    resident: document.getElementById('sm-resident').checked
+  };
+}
+function readShowDraft() {
+  try { var d = JSON.parse(localStorage.getItem(SHOW_DRAFT_KEY) || 'null'); return d && (d.name || d.image || d.description || d.dj || d.bio) ? d : null; } catch (e) { return null; }
+}
+function writeShowDraft() {
+  if (editingIndex !== null && editingIndex !== undefined) return;
+  if (!document.getElementById('showModalOverlay').classList.contains('active')) return;
+  try { localStorage.setItem(SHOW_DRAFT_KEY, JSON.stringify(modalShowDetails())); } catch (e) {}
+}
+function clearShowDraft(alsoEmptyForm) {
+  try { localStorage.removeItem(SHOW_DRAFT_KEY); } catch (e) {}
+  if (alsoEmptyForm) {
+    ['sm-name','sm-desc','sm-image','sm-dj','sm-tags','sm-bio'].forEach(function (id) { document.getElementById(id).value = ''; });
+    previewShowImg();
+    document.getElementById('sm-djset').checked = false;
+    document.getElementById('sm-resident').checked = false;
+    document.getElementById('sm-pick').value = '';
+    document.getElementById('sm-draft-note').style.display = 'none';
+  }
+}
+['input', 'change'].forEach(function (ev) {
+  document.addEventListener(ev, function (e) {
+    if (e.target && e.target.id && e.target.id.indexOf('sm-') === 0 && e.target.id !== 'sm-pick') writeShowDraft();
+  });
+});
+
+async function loadSavedShows() {
+  try {
+    var res = await fetch(WORKER + '/profile?host=_shows', { cache: 'no-store' });
+    var data = await res.json();
+    savedShows = (data.profile && Array.isArray(data.profile.list)) ? data.profile.list : [];
+  } catch (e) { savedShows = []; }
+  renderSavedShows();
+}
+async function storeSavedShows() {
+  renderSavedShows();
+  try {
+    var res = await fetch(WORKER + '/profile', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: adminToken, host: '_shows', profile: { list: savedShows } })
+    });
+    var data = await res.json();
+    if (!data.ok) showMsg('scheduleMsg', 'error', data.error || 'Could not save the Saved Shows list');
+  } catch (e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
+}
+function rememberShow(d) {
+  var k = showKey(d.name), found = false;
+  savedShows = savedShows.map(function (s) { if (showKey(s.name) === k) { found = true; return d; } return s; });
+  if (!found) savedShows.push(d);
+  savedShows.sort(function (a, b) { return showKey(a.name) < showKey(b.name) ? -1 : 1; });
+  storeSavedShows();
+}
+function removeSavedShow(i) {
+  var s = savedShows[i];
+  if (!s || !confirm('Remove "' + s.name + '" from Saved Shows? It stays on the week if it is scheduled.')) return;
+  savedShows.splice(i, 1);
+  storeSavedShows();
+}
+function renderSavedShows() {
+  var box = document.getElementById('savedShows');
+  box.textContent = '';
+  document.getElementById('savedShowsHint').textContent = savedShows.length
+    ? 'Shows you have added before. When you add a show to the week, pick one of these and its details fill themselves in.'
+    : 'No saved shows yet. The next show you add to the week is kept here, so you only type its details once.';
+  savedShows.forEach(function (s, i) {
+    var el = document.createElement('div'); el.className = 'saved-show';
+    if (/^https:\/\//.test(s.image || '')) { var im = document.createElement('img'); im.src = s.image; im.alt = ''; el.appendChild(im); }
+    var n = document.createElement('span'); n.className = 'ss-name'; n.textContent = s.name; el.appendChild(n);
+    var b = document.createElement('button'); b.textContent = '\u2715'; b.title = 'Remove from Saved Shows';
+    b.onclick = function () { removeSavedShow(i); }; el.appendChild(b);
+    box.appendChild(el);
+  });
+}
+function fillSavedShowPicker(currentName) {
+  var sel = document.getElementById('sm-pick');
+  sel.textContent = '';
+  var first = document.createElement('option'); first.value = ''; first.textContent = 'New show (type the details below)'; sel.appendChild(first);
+  savedShows.forEach(function (s, i) {
+    var o = document.createElement('option'); o.value = String(i); o.textContent = s.name;
+    if (currentName && showKey(s.name) === showKey(currentName)) o.selected = true;
+    sel.appendChild(o);
+  });
+  document.getElementById('sm-pick-field').style.display = savedShows.length ? 'block' : 'none';
+}
+function pickSavedShow() {
+  var s = savedShows[parseInt(document.getElementById('sm-pick').value, 10)];
+  if (!s) return;
+  document.getElementById('sm-name').value = s.name || '';
+  document.getElementById('sm-desc').value = s.description || '';
+  document.getElementById('sm-image').value = s.image || '';
+  document.getElementById('sm-dj').value = s.dj || '';
+  document.getElementById('sm-tags').value = (s.tags || []).join(', ');
+  document.getElementById('sm-bio').value = s.bio || '';
+  document.getElementById('sm-djset').checked = !!s.djset;
+  document.getElementById('sm-resident').checked = !!s.resident;
+  previewShowImg();
+  writeShowDraft();
 }
 
 function saveShowFromModal() {
@@ -1682,7 +1954,12 @@ function saveShowFromModal() {
     end: partsTo24(eh, em, ea),
     name: name,
     description: document.getElementById('sm-desc').value.trim(),
-    image: document.getElementById('sm-image').value.trim()
+    image: document.getElementById('sm-image').value.trim(),
+    dj: document.getElementById('sm-dj').value.trim(),
+    tags: tagList(document.getElementById('sm-tags').value),
+    bio: document.getElementById('sm-bio').value.trim(),
+    djset: document.getElementById('sm-djset').checked,
+    resident: document.getElementById('sm-resident').checked
   };
 
   if (editingIndex === null || editingIndex === undefined) {
@@ -1690,9 +1967,11 @@ function saveShowFromModal() {
   } else {
     scheduleSlots[editingIndex] = slot;
   }
+  if (document.getElementById('sm-remember').checked) rememberShow(modalShowDetails());
 
   renderSchedule();
   closeShowModal();
+  saveSchedule();
 }
 
 function deleteShowFromModal() {
@@ -1700,15 +1979,11 @@ function deleteShowFromModal() {
   scheduleSlots.splice(editingIndex, 1);
   renderSchedule();
   closeShowModal();
+  saveSchedule();
 }
 
 async function saveSchedule() {
   scheduleSlots.forEach(function(s) { s.host = scheduleHost(); });
-
-  if (!scheduleSlots.length) {
-    showMsg('scheduleMsg', 'error', 'No shows to save — add at least one');
-    return;
-  }
 
   try {
     var res = await fetch(WORKER + '/schedule', {
@@ -1718,53 +1993,39 @@ async function saveSchedule() {
     });
     var data = await res.json();
     if (data.ok) {
-      showMsg('scheduleMsg', 'success', 'Schedule saved — live within 30 seconds');
+      showMsg('scheduleMsg', 'success', 'Saved — on the site within 30 seconds');
       new BroadcastChannel('july').postMessage({ type: 'scheduleUpdate' });
+      loadOnNow();
     } else {
       showMsg('scheduleMsg', 'error', data.error || 'Failed to save');
     }
   } catch(e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
 }
 
-// ── DAY EXPORT (Story image/video) ──────────────────────────────────────────
-// Renders a 9:16 canvas cycling through each of a day's shows, with the
-// station logo pinned bottom-left and the site link pinned right, throughout.
-// "Save as Image" grabs a single still frame; "Export Animated Video" records
-// the full cycle via MediaRecorder. Show images are loaded with crossOrigin
-// set, but if a host doesn't send CORS headers the canvas becomes "tainted"
-// and export will fail with a clear message rather than a silent blank file.
-const EXPORT_W = 1080, EXPORT_H = 1920;
-const EXPORT_MAX_TOTAL_MS = 20000;
-const EXPORT_RECAP_MS = 4000;
-const EXPORT_MIN_SHOW_MS = 1100;
-const EXPORT_MAX_SHOW_MS = 2000;
-const EXPORT_FADE_MS = 260;
-// Instagram Stories overlays its own UI on the top and bottom of every
-// story — profile pic/username/progress bar up top, reply bar down below.
-// Real content has to stay inside the safe band between these, or it gets
-// covered. ~250px is the commonly-cited safe margin for organic (non-ad)
-// Stories on a 1080x1920 canvas.
-const EXPORT_SAFE_TOP = 250, EXPORT_SAFE_BOTTOM = 250;
-
-// Scales each show's on-screen time down as the day gets busier, so a
-// packed schedule still fits under the 20s cap instead of just running long.
-function exportGetShowMs(n) {
-  if (!n) return EXPORT_MAX_SHOW_MS;
-  var budget = (EXPORT_MAX_TOTAL_MS - EXPORT_RECAP_MS) / n;
-  return Math.max(EXPORT_MIN_SHOW_MS, Math.min(EXPORT_MAX_SHOW_MS, budget));
-}
-const EXPORT_LOGO_SRC = 'data:image/png;base64,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';
-let exportLogoImg = null;
-let exportAnimHandle = null;
+// ── DAY EXPORT (story image / video) ─────────────────────────────────────────
+// A 9:16 story: the day's line-up (all hosts) set over one art picture with
+// film grain. The picture comes from the saved Backgrounds (julyimages /bg)
+// or from a random public-domain artwork (Art Institute of Chicago open API).
+// Text stays inside Instagram's safe area (clear of its top and bottom bars).
+var EXPORT_W = 1080, EXPORT_H = 1920;
+var EXPORT_VIDEO_MS = 8000;
+var EXPORT_SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+var EXPORT_MONO = "'IBM Plex Mono', 'Courier New', monospace";
+var exportAnimHandle = null;
+var exportLogo = null;     // { dark: canvas, light: canvas }
+var exportGrain = null;
+var exportBg = null;       // { img, light, credit, id, museum }
+var bgItems = [];
 
 function populateExportDaySelect() {
   var sel = document.getElementById('exportDaySelect');
   if (!sel) return;
   sel.innerHTML = '';
+  var today = getAdminEATNow().day;
   DAYS.forEach(function(d, i) {
     var o = document.createElement('option');
-    o.value = i; o.textContent = d;
-    if (i === new Date().getDay()) o.selected = true;
+    o.value = i; o.textContent = d + (i === today ? ' (today)' : '');
+    if (i === today) o.selected = true;
     sel.appendChild(o);
   });
 }
@@ -1778,13 +2039,6 @@ function exportLoadImage(src, useCors) {
     img.onerror = function() { resolve(null); };
     img.src = src;
   });
-}
-
-function getExportDaySlots(dayIndex) {
-  return scheduleSlots
-    .filter(function(s) { return s.day === dayIndex; })
-    .slice()
-    .sort(function(a, b) { return timeToMins(a.start) - timeToMins(b.start); });
 }
 
 function getAdminEATNow() {
@@ -1802,440 +2056,538 @@ function getAdminEATNow() {
   return { day: dayMap[map.weekday], mins: mins };
 }
 
-async function ensureExportFontsReady() {
-  if (!document.fonts) return;
-  try {
-    await Promise.all([
-      document.fonts.load("600 26px 'IBM Plex Mono'"),
-      document.fonts.load("700 96px 'IBM Plex Mono'"),
-      document.fonts.load("400 40px 'IBM Plex Mono'"),
-      document.fonts.load("700 58px 'IBM Plex Mono'"),
-      document.fonts.load("400 34px 'IBM Plex Mono'"),
-      document.fonts.load("600 30px 'IBM Plex Mono'"),
-      document.fonts.load("700 200px 'IBM Plex Mono'"),
-      document.fonts.load("italic 400 30px 'IBM Plex Mono'"),
-      document.fonts.load("700 30px 'IBM Plex Mono'"),
-      document.fonts.load("italic 400 22px 'IBM Plex Mono'"),
-      document.fonts.load("400 24px 'IBM Plex Mono'"),
-      document.fonts.load("600 20px 'IBM Plex Mono'"),
-    ]);
-  } catch(e) {}
+// Every host's shows for that day, autoplay left out, earliest first.
+function exportDaySlots(dayIndex) {
+  return onNowSlots
+    .filter(function(s) { return (parseInt(s.day) || 0) === dayIndex; })
+    .sort(function(a, b) { return timeToMins(a.start) - timeToMins(b.start); });
+}
+// At most 6 shows per story so the text stays big; a busier day is split into even parts (7 = 4 + 3, 10 = 5 + 5).
+var EXPORT_PER_PAGE = 6;
+var exportPage = 0;
+function exportPages(dayIndex) {
+  var slots = exportDaySlots(dayIndex);
+  var n = Math.max(1, Math.ceil(slots.length / EXPORT_PER_PAGE));
+  var per = Math.ceil(slots.length / n), out = [];
+  for (var i = 0; i < n; i++) out.push(slots.slice(i * per, (i + 1) * per));
+  return out;
+}
+function exportShowPart(i) { exportPage = i; drawExportPreview(); }
+function renderExportParts(count) {
+  var box = document.getElementById('exportParts');
+  if (!box) return;
+  box.textContent = '';
+  box.style.display = count > 1 ? 'flex' : 'none';
+  if (count < 2) return;
+  for (var i = 0; i < count; i++) (function (i) {
+    var b = document.createElement('button');
+    b.className = 'btn small' + (i === exportPage ? '' : ' secondary');
+    b.textContent = 'Part ' + (i + 1) + ' of ' + count;
+    b.onclick = function () { exportShowPart(i); };
+    box.appendChild(b);
+  })(i);
+}
+// The date of the next such weekday in Nairobi, e.g. "17 NOV".
+function exportDateLabel(dayIndex) {
+  var eat = new Date(Date.now() + 3 * 3600000);
+  var ahead = (dayIndex - eat.getUTCDay() + 7) % 7;
+  var d = new Date(eat.getTime() + ahead * 86400000);
+  return d.getUTCDate() + ' ' + ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getUTCMonth()];
+}
+function exportShortTime(t) {
+  var p = parseTime(t);
+  return parseInt(p.h12, 10) + (parseInt(p.m, 10) ? ':' + pad(p.m) : '') + ' ' + p.ampm;
 }
 
-async function prepareExportAssets(dayIndex) {
-  await ensureExportFontsReady();
-  var slots = getExportDaySlots(dayIndex);
-  if (!exportLogoImg) exportLogoImg = await exportLoadImage(EXPORT_LOGO_SRC, false);
-  var showImages = await Promise.all(slots.map(function(s) { return exportLoadImage(s.image, true); }));
-  return { slots: slots, logo: exportLogoImg, showImages: showImages };
-}
-
-// Site palette (dark theme) — matches b.html's :root / [data-theme="dark"] exactly,
-// so the export looks like a piece of the actual website, not the admin panel.
-var SITE = { bg: '#0a0a0a', ink: '#f5f5f5', border: '#f5f5f5', muted: '#9a9a9a', dim: '#555555' };
-var SITE_FONT = "'IBM Plex Mono', 'Courier New', monospace";
-
-function exportEaseOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
-// Traces the same clipped-corner notch used on the site's Team tiles
-// (clip-path: polygon(0 0, 100% 0, 100% calc(100% - n), calc(100% - n) 100%, 0 100%))
-function exportClippedRect(ctx, x, y, w, h, notch) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + w, y);
-  ctx.lineTo(x + w, y + h - notch);
-  ctx.lineTo(x + w - notch, y + h);
-  ctx.lineTo(x, y + h);
-  ctx.closePath();
-}
-
-function exportWrapLines(ctx, text, maxWidth, maxLines) {
-  var words = String(text || '').split(' ');
-  var lines = [], line = '';
-  for (var i = 0; i < words.length; i++) {
-    var test = line ? line + ' ' + words[i] : words[i];
-    if (ctx.measureText(test).width > maxWidth && line) {
-      lines.push(line);
-      line = words[i];
-      if (lines.length === maxLines) { line = ''; break; }
-    } else {
-      line = test;
-    }
+function exportMakeGrain() {
+  var c = document.createElement('canvas'); c.width = 360; c.height = 640;
+  var x = c.getContext('2d'), d = x.createImageData(c.width, c.height);
+  for (var i = 0; i < d.data.length; i += 4) {
+    var v = 128 + (Math.random() - 0.5) * 150;
+    d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255;
   }
-  if (lines.length < maxLines && line) lines.push(line);
-  return lines;
+  x.putImageData(d, 0, 0);
+  return c;
 }
-
-function exportTruncateLine(ctx, text, maxWidth) {
-  var s = String(text || '');
-  if (ctx.measureText(s).width <= maxWidth) return s;
-  while (s.length > 1 && ctx.measureText(s + '…').width > maxWidth) s = s.slice(0, -1);
-  return s + '…';
-}
-
-// Persistent chrome (background, progress bar, header, logo, link) — drawn
-// fully opaque every frame, never fades. Everything readable is kept inside
-// EXPORT_SAFE_TOP/EXPORT_SAFE_BOTTOM so Instagram's own UI (profile row up
-// top, reply bar down below) never covers it — only the background fill is
-// allowed to bleed to the true edges. Returns the content area bounds so
-// the spotlight/recap drawers know where they can safely place things.
-function exportDrawChrome(ctx, dayName, segCount, activeSeg, segLocalT, websiteText, logo) {
-  var W = EXPORT_W, H = EXPORT_H, margin = 64;
-  var safeTop = EXPORT_SAFE_TOP, safeBottom = H - EXPORT_SAFE_BOTTOM;
-
-  ctx.fillStyle = SITE.bg;
-  ctx.fillRect(0, 0, W, H);
-  ctx.textAlign = 'left';
-
-  var segY = safeTop + 30;
-  var segGap = 8;
-  var segW = (W - margin * 2 - segGap * (segCount - 1)) / segCount;
-  for (var i = 0; i < segCount; i++) {
-    var sx = margin + i * (segW + segGap);
-    ctx.fillStyle = 'rgba(245,245,245,0.15)';
-    ctx.fillRect(sx, segY, segW, 4);
-    if (i <= activeSeg) {
-      var fill = i < activeSeg ? 1 : Math.min(1, segLocalT);
-      ctx.fillStyle = SITE.ink;
-      ctx.fillRect(sx, segY, segW * fill, 4);
-    }
-  }
-
-  var labelY = segY + 66;
-  ctx.fillStyle = SITE.muted;
-  ctx.font = "600 24px " + SITE_FONT;
-  ctx.fillText('J U L Y   R A D I O   —   S C H E D U L E', margin, labelY);
-
-  var dayY = labelY + 82;
-  ctx.fillStyle = SITE.ink;
-  ctx.font = "700 76px " + SITE_FONT;
-  ctx.fillText(dayName.toUpperCase(), margin, dayY);
-
-  var logoSize = 84, bottomY = safeBottom - logoSize;
-  if (logo) ctx.drawImage(logo, margin, bottomY, logoSize, logoSize);
-  ctx.fillStyle = SITE.ink;
-  ctx.font = "600 28px " + SITE_FONT;
-  ctx.textAlign = 'right';
-  ctx.fillText((websiteText || 'julyfm.com').toUpperCase(), W - margin, bottomY + logoSize / 2 + 9);
-  ctx.textAlign = 'left';
-
-  return { margin: margin, contentTop: dayY + 50, contentBottom: bottomY - 36 };
-}
-
-// One show, full-size — used for the spotlight phase (one per show, cycling).
-function exportDrawSpotlight(ctx, area, show, img, alpha, rise) {
-  var W = EXPORT_W;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.translate(0, rise);
-
-  var boxSize = 620, boxX = (W - boxSize) / 2, boxY = area.contentTop, notch = 46;
-  var cx = boxX + boxSize / 2, cy = boxY + boxSize / 2;
-
-  exportClippedRect(ctx, boxX, boxY, boxSize, boxSize, notch);
-  ctx.save();
-  ctx.clip();
-  ctx.fillStyle = '#141414';
-  ctx.fillRect(boxX, boxY, boxSize, boxSize);
-  if (img) {
-    var ir = img.width / img.height, br = 1, sw = img.width, sh = img.height, isx = 0, isy = 0;
-    if (ir > br) { sw = sh * br; isx = (img.width - sw) / 2; }
-    else { sh = sw / br; isy = (img.height - sh) / 2; }
-    ctx.drawImage(img, isx, isy, sw, sh, boxX, boxY, boxSize, boxSize);
-  } else {
-    ctx.fillStyle = SITE.dim;
-    ctx.font = "700 160px " + SITE_FONT;
-    ctx.textAlign = 'center';
-    ctx.fillText((show.name || '?')[0].toUpperCase(), cx, cy + 56);
-    ctx.textAlign = 'left';
-  }
-  ctx.restore();
-
-  exportClippedRect(ctx, boxX, boxY, boxSize, boxSize, notch);
-  ctx.strokeStyle = SITE.border; ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = SITE.ink;
-  ctx.font = "700 46px " + SITE_FONT;
-  ctx.textAlign = 'center';
-  ctx.fillText((show.name || 'Untitled').toUpperCase(), W / 2, boxY + boxSize + 64);
-
-  ctx.fillStyle = SITE.muted;
-  ctx.font = "400 28px " + SITE_FONT;
-  ctx.fillText(fmtDisplayTime(show.start) + ' – ' + fmtDisplayTime(show.end), W / 2, boxY + boxSize + 108);
-
-  if (show.description) {
-    ctx.font = "italic 400 25px " + SITE_FONT;
-    ctx.fillStyle = SITE.dim;
-    var lines = exportWrapLines(ctx, show.description, 820, 3);
-    var ly = boxY + boxSize + 150;
-    for (var li = 0; li < lines.length; li++) ctx.fillText(lines[li], W / 2, ly + li * 34);
-  }
-  ctx.textAlign = 'left';
-  ctx.restore();
-}
-
-// Every show for the day, stacked as rows — used for the final recap phase.
-// Mirrors the site's own Schedule list (time · thumbnail · name+description ·
-// tag), including the bordered "ON AIR" highlight when the exported day is
-// today and a show is currently playing.
-function exportDrawRecap(ctx, area, slots, showImages, alpha, rise, eat, isToday) {
-  var W = EXPORT_W, margin = area.margin;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.translate(0, rise);
-
-  var listTop = area.contentTop, listBottom = area.contentBottom;
-  var availH = listBottom - listTop;
-  var rowGap = 14, n = slots.length;
-  var rowH = Math.floor((availH - rowGap * (n - 1)) / n);
-  var shown = n;
-  if (rowH < 96) {
-    rowH = 150;
-    shown = Math.max(1, Math.floor((availH + rowGap) / (rowH + rowGap)));
-  }
-
-  var y = listTop;
-  for (var i = 0; i < shown; i++) {
-    var s = slots[i], img = showImages[i];
-    var isOnAir = isToday && eat && eat.mins >= timeToMins(s.start) && eat.mins < timeToMins(s.end);
-    var rowX = margin, rowW = W - margin * 2;
-
-    if (isOnAir) {
-      ctx.strokeStyle = SITE.border; ctx.lineWidth = 2;
-      ctx.strokeRect(rowX - 10, y - 10, rowW + 20, rowH + 20);
-    }
-
-    ctx.fillStyle = SITE.muted;
-    ctx.font = "400 22px " + SITE_FONT;
-    ctx.fillText(fmtDisplayTime(s.start), rowX, y + rowH / 2 - 8);
-    ctx.fillText(fmtDisplayTime(s.end), rowX, y + rowH / 2 + 18);
-
-    var thumbSize = rowH, thumbX = rowX + 120, notch = Math.max(10, thumbSize * 0.12);
-    exportClippedRect(ctx, thumbX, y, thumbSize, thumbSize, notch);
-    ctx.save();
-    ctx.clip();
-    ctx.fillStyle = '#141414';
-    ctx.fillRect(thumbX, y, thumbSize, thumbSize);
+async function exportPrepare() {
+  if (document.fonts) { try { await Promise.all([document.fonts.load("500 30px 'IBM Plex Mono'"), document.fonts.load("600 28px 'IBM Plex Mono'")]); } catch (e) {} }
+  if (!exportGrain) exportGrain = exportMakeGrain();
+  if (!exportLogo) {
+    var img = await exportLoadImage('july-radio-logo-header.png', false);
     if (img) {
-      var ir = img.width / img.height, br = 1, sw = img.width, sh = img.height, isx = 0, isy = 0;
-      if (ir > br) { sw = sh * br; isx = (img.width - sw) / 2; }
-      else { sh = sw / br; isy = (img.height - sh) / 2; }
-      ctx.drawImage(img, isx, isy, sw, sh, thumbX, y, thumbSize, thumbSize);
-    } else {
-      ctx.fillStyle = SITE.dim;
-      ctx.font = "700 " + Math.floor(thumbSize * 0.5) + "px " + SITE_FONT;
-      ctx.textAlign = 'center';
-      ctx.fillText((s.name || '?')[0].toUpperCase(), thumbX + thumbSize / 2, y + thumbSize / 2 + thumbSize * 0.18);
-      ctx.textAlign = 'left';
+      var mk = function(invert) {
+        var c = document.createElement('canvas'); c.width = 480; c.height = 360;
+        var x = c.getContext('2d'); x.drawImage(img, 0, 0, 480, 360);
+        if (invert) { try {
+          var d = x.getImageData(0, 0, 480, 360);
+          for (var i = 0; i < d.data.length; i += 4) { d.data[i] = 255 - d.data[i]; d.data[i + 1] = 255 - d.data[i + 1]; d.data[i + 2] = 255 - d.data[i + 2]; }
+          x.putImageData(d, 0, 0);
+        } catch (e) {} }
+        return c;
+      };
+      exportLogo = { dark: mk(false), light: mk(true) };
     }
-    ctx.restore();
-    exportClippedRect(ctx, thumbX, y, thumbSize, thumbSize, notch);
-    ctx.strokeStyle = SITE.border; ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    var textX = thumbX + thumbSize + 24, tagW = 220;
-    var textMaxW = Math.max(60, rowX + rowW - textX - tagW - 20);
-
-    var nameSize = Math.min(30, Math.floor(rowH * 0.19)), nameLH = Math.min(34, Math.floor(rowH * 0.22));
-    ctx.fillStyle = SITE.ink;
-    ctx.font = "700 " + nameSize + "px " + SITE_FONT;
-    var nameLines = exportWrapLines(ctx, (s.name || 'Untitled').toUpperCase(), textMaxW, 2);
-    for (var li = 0; li < nameLines.length; li++) ctx.fillText(nameLines[li], textX, y + nameSize + li * nameLH);
-
-    if (s.description) {
-      var descSize = Math.min(22, Math.floor(rowH * 0.14));
-      ctx.font = "italic 400 " + descSize + "px " + SITE_FONT;
-      ctx.fillStyle = SITE.dim;
-      var descY = y + nameSize + nameLines.length * nameLH + 4;
-      if (descY < y + rowH - 6) ctx.fillText(exportTruncateLine(ctx, s.description, textMaxW), textX, descY);
-    }
-
-    ctx.font = "600 20px " + SITE_FONT;
-    var tagLabel = isOnAir ? 'ON AIR' : (s.name || '').toUpperCase();
-    var tagPadX = 16, tagH = 34;
-    var tagBoxW = Math.min(tagW, ctx.measureText(tagLabel).width + tagPadX * 2);
-    var tagBoxX = rowX + rowW - tagBoxW, tagBoxY = y + rowH / 2 - tagH / 2;
-    if (isOnAir) {
-      ctx.fillStyle = SITE.ink;
-      ctx.fillRect(tagBoxX, tagBoxY, tagBoxW, tagH);
-      ctx.fillStyle = SITE.bg;
-    } else {
-      ctx.strokeStyle = SITE.border; ctx.lineWidth = 1;
-      ctx.strokeRect(tagBoxX, tagBoxY, tagBoxW, tagH);
-      ctx.fillStyle = SITE.ink;
-    }
-    ctx.textAlign = 'center';
-    ctx.fillText(exportTruncateLine(ctx, tagLabel, tagBoxW - tagPadX * 2), tagBoxX + tagBoxW / 2, tagBoxY + tagH / 2 + 7);
-    ctx.textAlign = 'left';
-
-    y += rowH + rowGap;
-  }
-
-  if (shown < n) {
-    ctx.fillStyle = SITE.muted;
-    ctx.font = "400 22px " + SITE_FONT;
-    ctx.fillText('+ ' + (n - shown) + ' more', margin, y + 6);
-  }
-  ctx.restore();
-}
-
-function exportDrawFrame(ctx, dayIndex, dayName, slots, showImages, logo, phase, activeIndex, elapsedInPhase, websiteText, showMs) {
-  var segCount = slots.length ? slots.length + 1 : 1;
-  var activeSeg = phase === 'recap' ? slots.length : activeIndex;
-  var phaseDuration = phase === 'recap' ? EXPORT_RECAP_MS : showMs;
-  var segLocalT = Math.min(1, elapsedInPhase / phaseDuration);
-
-  var area = exportDrawChrome(ctx, dayName, segCount, activeSeg, segLocalT, websiteText, logo);
-
-  var fadeF = Math.min(1, elapsedInPhase / EXPORT_FADE_MS);
-  var eased = exportEaseOutCubic(fadeF);
-  var alpha = eased, rise = (1 - eased) * 18;
-
-  if (!slots.length) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(0, rise);
-    ctx.fillStyle = SITE.muted;
-    ctx.font = "400 34px " + SITE_FONT;
-    ctx.fillText('No shows scheduled', area.margin, area.contentTop + 40);
-    ctx.restore();
-    return;
-  }
-
-  if (phase === 'show') {
-    exportDrawSpotlight(ctx, area, slots[activeIndex], showImages[activeIndex], alpha, rise);
-  } else {
-    var eat = getAdminEATNow();
-    exportDrawRecap(ctx, area, slots, showImages, alpha, rise, eat, eat.day === dayIndex);
   }
 }
-
-function runExportAnimation(dayIndex, canvas, assets, onFrame, onDone) {
-  var dayName = DAYS[dayIndex];
-  var websiteText = document.getElementById('exportSiteText').value.trim();
-  var ctx = canvas.getContext('2d');
-  var n = assets.slots.length;
-  var showMs = exportGetShowMs(n);
-  var showsTotal = n * showMs;
-  var total = n ? showsTotal + EXPORT_RECAP_MS : showMs;
-  var start = performance.now();
-
-  function frame(now) {
-    var elapsed = now - start;
-    var phase, activeIndex, elapsedInPhase;
-    if (!n) {
-      phase = 'show'; activeIndex = 0; elapsedInPhase = elapsed;
-    } else if (elapsed < showsTotal) {
-      activeIndex = Math.min(n - 1, Math.floor(elapsed / showMs));
-      phase = 'show';
-      elapsedInPhase = elapsed - activeIndex * showMs;
-    } else {
-      phase = 'recap'; activeIndex = -1;
-      elapsedInPhase = elapsed - showsTotal;
-    }
-    exportDrawFrame(ctx, dayIndex, dayName, assets.slots, assets.showImages, assets.logo, phase, activeIndex, elapsedInPhase, websiteText, showMs);
-    if (onFrame) onFrame(elapsed, total);
-    if (elapsed < total) {
-      exportAnimHandle = requestAnimationFrame(frame);
-    } else if (onDone) {
-      onDone();
-    }
-  }
-  exportAnimHandle = requestAnimationFrame(frame);
-  return total;
+// The background picture, blurred by the slider. The blurred copy is made once and reused for every video frame.
+var exportBlurCache = { img: null, blur: 0, canvas: null };
+function exportBgSource() {
+  var img = exportBg.img;
+  var el = document.getElementById('exportBlur');
+  var blur = el ? (parseInt(el.value, 10) || 0) : 0;
+  if (!blur) return img;
+  var cch = exportBlurCache;
+  if (cch.img === img && cch.blur === blur && cch.canvas) return cch.canvas;
+  var c = document.createElement('canvas'); c.width = EXPORT_W; c.height = EXPORT_H;
+  var x = c.getContext('2d');
+  if (!('filter' in x)) return img;           // very old browser: no blur
+  var over = blur * 3;
+  var sc = Math.max((c.width + 2 * over) / img.naturalWidth, (c.height + 2 * over) / img.naturalHeight);
+  var dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
+  x.filter = 'blur(' + blur + 'px)';
+  x.drawImage(img, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+  exportBlurCache = { img: img, blur: blur, canvas: c };
+  return c;
 }
 
-async function exportDayImage() {
-  var dayIndex = parseInt(document.getElementById('exportDaySelect').value);
-  var canvas = document.getElementById('exportCanvas');
-  document.getElementById('exportPreviewWrap').style.display = 'block';
-  showMsg('exportMsg', 'success', 'Rendering…');
-
-  var assets = await prepareExportAssets(dayIndex);
-  var ctx = canvas.getContext('2d');
-  var websiteText = document.getElementById('exportSiteText').value.trim();
-  exportDrawFrame(ctx, dayIndex, DAYS[dayIndex], assets.slots, assets.showImages, assets.logo, 'show', 0, EXPORT_FADE_MS + 1, websiteText, EXPORT_MAX_SHOW_MS);
-
+// Is the picture mostly light? Then the text goes black, otherwise white.
+function exportIsLight(img) {
   try {
-    var dataUrl = canvas.toDataURL('image/png');
-    var link = document.getElementById('exportDownloadLink');
-    link.href = dataUrl;
-    link.download = 'july-radio-' + DAYS[dayIndex].toLowerCase() + '.png';
-    link.textContent = 'Download Image';
-    link.style.display = 'inline-block';
-    link.click();
-    showMsg('exportMsg', 'success', 'Image ready — download started');
-  } catch(e) {
-    showMsg('exportMsg', 'error', 'Could not export — one of the show images is hosted somewhere that blocks downloads (CORS). Try a different image host for that show.');
-  }
+    var c = document.createElement('canvas'); c.width = 24; c.height = 24;
+    var x = c.getContext('2d'); x.drawImage(img, 0, 0, 24, 24);
+    var d = x.getImageData(0, 0, 24, 24).data, sum = 0;
+    for (var i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    return sum / (d.length / 4) > 135;
+  } catch (e) { return false; }
+}
+function exportFit(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  while (text.length > 1 && ctx.measureText(text + '…').width > maxWidth) text = text.slice(0, -1);
+  return text.replace(/\s+$/, '') + '…';
 }
 
-async function exportDayVideo() {
-  var dayIndex = parseInt(document.getElementById('exportDaySelect').value);
-  var canvas = document.getElementById('exportCanvas');
-  document.getElementById('exportPreviewWrap').style.display = 'block';
-  var btn = document.getElementById('exportVideoBtn');
-
-  if (!window.MediaRecorder) {
-    showMsg('exportMsg', 'error', "This browser can't record video — try Save as Image instead, or use Chrome/Firefox.");
-    return;
-  }
-
-  var mimeType = '';
-  var candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
-  for (var i = 0; i < candidates.length; i++) {
-    if (MediaRecorder.isTypeSupported(candidates[i])) { mimeType = candidates[i]; break; }
-  }
-  if (!mimeType) {
-    showMsg('exportMsg', 'error', "This browser can't record video — try Save as Image instead, or use Chrome/Firefox.");
-    return;
-  }
-
-  if (exportAnimHandle) cancelAnimationFrame(exportAnimHandle);
-  btn.disabled = true;
-  showMsg('exportMsg', 'success', 'Preparing…');
-
-  var assets = await prepareExportAssets(dayIndex);
-  var stream = canvas.captureStream(30);
-  var chunks = [];
-  var recorder;
-  try {
-    recorder = new MediaRecorder(stream, { mimeType: mimeType });
-  } catch(e) {
-    showMsg('exportMsg', 'error', 'Could not start recording in this browser.');
-    btn.disabled = false;
-    return;
-  }
-
-  recorder.ondataavailable = function(e) { if (e.data && e.data.size) chunks.push(e.data); };
-  recorder.onstop = function() {
-    try {
-      var blob = new Blob(chunks, { type: mimeType.split(';')[0] });
-      var url = URL.createObjectURL(blob);
-      var ext = mimeType.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
-      var link = document.getElementById('exportDownloadLink');
-      link.href = url;
-      link.download = 'july-radio-' + DAYS[dayIndex].toLowerCase() + '.' + ext;
-      link.textContent = 'Download Video';
-      link.style.display = 'inline-block';
-      link.click();
-      showMsg('exportMsg', 'success', 'Video ready — download started');
-    } catch(e) {
-      showMsg('exportMsg', 'error', 'Could not finish the video — one of the show images may be hosted somewhere that blocks this (CORS). Try a different image host.');
-    }
-    btn.disabled = false;
+// t = milliseconds into the video, or null for the finished still picture.
+function exportDraw(ctx, dayIndex, t, page) {
+  var W = EXPORT_W, H = EXPORT_H, M = 84;
+  var still = (t === null || t === undefined);
+  var ease = function(delay) {
+    if (still) return 1;
+    var k = Math.max(0, Math.min(1, (t - delay) / 600));
+    return 1 - Math.pow(1 - k, 3);
   };
+  var light = exportBg ? exportBg.light : true;
+  var ink = light ? '#0a0a0a' : '#f5f5f5';
 
-  recorder.start();
-  showMsg('exportMsg', 'success', 'Recording…');
-  runExportAnimation(dayIndex, canvas, assets, function(elapsed, total) {
-    var status = document.getElementById('exportStatus');
-    if (status) status.textContent = 'Recording… ' + Math.round(elapsed / 1000) + 's / ' + Math.round(total / 1000) + 's';
-  }, function() {
-    recorder.stop();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#e9e5db'; ctx.fillRect(0, 0, W, H);
+  if (exportBg && exportBg.img) {
+    var im = exportBgSource(), zoom = 1 + 0.07 * (still ? 0.4 : t / EXPORT_VIDEO_MS);
+    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+    var sc = Math.max(W / iw, H / ih) * zoom;
+    var dw = iw * sc, dh = ih * sc;
+    ctx.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.fillStyle = light ? 'rgba(240,236,226,0.50)' : 'rgba(8,8,8,0.46)';
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (exportGrain) {
+    ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = 0.32;
+    var ox = still ? 0 : Math.floor(Math.random() * 300), oy = still ? 0 : Math.floor(Math.random() * 300);
+    ctx.drawImage(exportGrain, -ox, -oy, W + 300, H + 300);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  }
+
+  var put = function(a, rise, fn) { if (a <= 0) return; ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1 - a) * rise); fn(); ctx.restore(); };
+  ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  var spaced = function(px) { try { ctx.letterSpacing = px + 'px'; } catch (e) {} };
+
+  var site = (document.getElementById('exportSiteText').value.trim() || 'JULY.RIP').toUpperCase();
+  var logo = exportLogo ? (light ? exportLogo.dark : exportLogo.light) : null;
+
+  var pages = exportPages(dayIndex);
+  page = Math.max(0, Math.min(pages.length - 1, page || 0));
+
+  // Header: small and quiet
+  put(ease(0), 20, function() {
+    ctx.font = "600 26px " + EXPORT_MONO; spaced(4);
+    ctx.fillText('JULY RADIO', M, 312);
+    ctx.textAlign = 'right';
+    ctx.fillText(DAYS[dayIndex].slice(0, 3).toUpperCase() + ' ' + exportDateLabel(dayIndex), W - M, 312);
+    ctx.textAlign = 'left';
+    ctx.fillRect(M, 334, W - 2 * M, 2);
+    ctx.font = "700 60px " + EXPORT_SANS; spaced(-1);
+    ctx.fillText(DAYS[dayIndex].toUpperCase() + ' SCHEDULE', M - 2, 418);
+    ctx.font = "500 22px " + EXPORT_MONO; spaced(3);
+    ctx.globalAlpha *= 0.75;
+    ctx.fillText((page > 0 ? 'CONTINUED  /  ' : '') + 'ALL TIMES EAT (NAIROBI)', M, 462);
+    if (pages.length > 1) { ctx.textAlign = 'right'; ctx.fillText((page + 1) + ' / ' + pages.length, W - M, 462); ctx.textAlign = 'left'; }
+  });
+
+  // Line-up: cover art + time, name, DJ
+  var slots = pages[page];
+  var listTop = 530, listBottom = 1392;
+  var rows = slots.length;
+  if (!rows) {
+    put(ease(500), 24, function() {
+      ctx.font = "700 60px " + EXPORT_SANS; spaced(-1);
+      ctx.fillText('MUSIC AROUND THE CLOCK', M, listTop + 100);
+      ctx.font = "500 26px " + EXPORT_MONO; spaced(2);
+      ctx.fillText('NO SHOWS TODAY. THE RADIO NEVER STOPS.', M, listTop + 150);
+    });
+  } else {
+    // Each row: the cover is exactly as tall as its three lines of text, so
+    // the top of the cover lines up with the time and the bottom with the DJ line.
+    var k = Math.min(1.4, (listBottom - listTop) / (rows * 144));
+    var metaSize = Math.round(22 * k), nameSize = Math.round(31 * k);
+    var gapA = Math.round(13 * k), gapB = Math.round(12 * k);
+    var cover = Math.round(metaSize * 0.72 + gapA + nameSize * 0.72 + gapB + metaSize * 0.72 + 2);
+    var rowH = Math.round(144 * k);
+    var tx = M + cover + Math.round(26 * k), tw = W - M - tx;
+    var star = function(cx, cy, r) {
+      ctx.beginPath();
+      for (var p = 0; p < 10; p++) {
+        var rad = p % 2 ? r * 0.42 : r, ang = -Math.PI / 2 + p * Math.PI / 5;
+        ctx[p ? 'lineTo' : 'moveTo'](cx + Math.cos(ang) * rad, cy + Math.sin(ang) * rad);
+      }
+      ctx.closePath();
+    };
+    slots.forEach(function(s, i) {
+      put(ease(500 + i * 260), 26, function() {
+        var y = listTop + i * rowH;
+        var art = exportCovers[s.image];
+        if (art) {
+          var side = Math.min(art.naturalWidth, art.naturalHeight);
+          ctx.drawImage(art, (art.naturalWidth - side) / 2, (art.naturalHeight - side) / 2, side, side, M, y, cover, cover);
+        } else {
+          ctx.fillRect(M, y, cover, cover);
+          if (exportLogo) ctx.drawImage(light ? exportLogo.dark : exportLogo.light, M + cover * 0.08, y + cover * 0.185, cover * 0.84, cover * 0.63);
+        }
+        ctx.lineWidth = 2; ctx.strokeRect(M, y, cover, cover);
+        var resident = exportIsResident(s);
+        if (s.djset || resident) {             // a star on the cover's corner: red for residents
+          var r = cover * 0.2;
+          ctx.fillStyle = light ? '#f5f5f5' : '#0a0a0a'; star(M + cover, y, r * 1.28); ctx.fill();
+          ctx.fillStyle = resident ? '#e0261c' : ink; star(M + cover, y, r); ctx.fill();
+          ctx.fillStyle = ink;
+        }
+        var l1 = y + metaSize * 0.72, l2 = l1 + gapA + nameSize * 0.72, l3 = l2 + gapB + metaSize * 0.72;
+        if (!s.dj) { var shift = (cover - (l2 - y)) / 2; l1 += shift; l2 += shift; }
+        ctx.font = "500 " + metaSize + "px " + EXPORT_MONO; spaced(2);
+        var when = exportShortTime(s.start) + ' – ' + exportShortTime(s.end);
+        ctx.fillText(when, tx, l1);
+        var tag = resident ? 'RESIDENT' : (s.djset ? 'GUEST DJ' : '');
+        if (tag) {                             // the tag sits in a thin rectangle after the time
+          var bx = tx + ctx.measureText(when).width + Math.round(18 * k);
+          var tagSize = Math.round(metaSize * 0.8), padX = Math.round(10 * k), padY = Math.round(7 * k);
+          ctx.font = "600 " + tagSize + "px " + EXPORT_MONO; spaced(2);
+          var tagW = ctx.measureText(tag).width - 2;
+          var mid = l1 - metaSize * 0.36;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx, Math.round(mid - tagSize * 0.36 - padY), Math.round(tagW + 2 * padX), Math.round(tagSize * 0.72 + 2 * padY));
+          ctx.fillText(tag, bx + padX, mid + tagSize * 0.36);
+        }
+        ctx.font = "600 " + nameSize + "px " + EXPORT_MONO; spaced(1);
+        ctx.fillText(exportFit(ctx, String(s.name || '').toUpperCase(), tw), tx, l2);
+        if (s.dj) {
+          ctx.font = "500 " + metaSize + "px " + EXPORT_MONO; spaced(2);
+          ctx.globalAlpha *= 0.75;
+          ctx.fillText(exportFit(ctx, 'WITH ' + String(s.dj).toUpperCase(), tw), tx, l3);
+          ctx.globalAlpha /= 0.75;
+        }
+        if (i < rows - 1) { ctx.globalAlpha *= 0.3; ctx.fillRect(M, y + cover + Math.round((rowH - cover) / 2) - 1, W - 2 * M, 2); }
+      });
+    });
+  }
+
+  // Footer: dog + link
+  put(ease(still ? 0 : Math.min(3200, 700 + rows * 260)), 0, function() {
+    ctx.fillRect(M, 1420, W - 2 * M, 2);
+    if (logo) ctx.drawImage(logo, M - 22, 1438, 176, 132);
+    ctx.textAlign = 'right';
+    ctx.font = "700 40px " + EXPORT_SANS; spaced(0);
+    ctx.fillText('LIVE ▶ ' + site, W - M, 1508);
+    ctx.font = "500 22px " + EXPORT_MONO; spaced(3);
+    ctx.fillText('24/7 FROM NAIROBI', W - M, 1546);
+    ctx.textAlign = 'left'; spaced(0);
   });
 }
+
+// A resident's show: ticked in the show form, or the DJ name is one of the Residents on the Team tab.
+function exportIsResident(s) {
+  if (s.resident) return true;
+  var dj = showKey(s.dj);
+  if (!dj) return false;
+  try {
+    return (rosters.resident || []).some(function (id) {
+      var pr = teamProfiles[id];
+      return showKey(id) === dj || (pr && showKey(pr.name) === dj);
+    });
+  } catch (e) { return false; }
+}
+
+// Show covers for the story. A cover that will not load (or blocks copying) gets the dog tile instead.
+var exportCovers = {};
+async function exportLoadCovers(dayIndex) {
+  await Promise.all(exportDaySlots(dayIndex).map(async function(s) {
+    if (!s.image || !/^https:\/\//.test(s.image) || (s.image in exportCovers)) return;
+    exportCovers[s.image] = await exportLoadImage(s.image, true);
+  }));
+}
+
+async function drawExportPreview() {
+  var canvas = document.getElementById('exportCanvas');
+  if (!canvas) return;
+  if (exportBusy) return;                       // a save is running; leave the canvas alone
+  await exportPrepare();
+  var day = parseInt(document.getElementById('exportDaySelect').value) || 0;
+  await exportLoadCovers(day);
+  var count = exportPages(day).length;
+  if (exportPage >= count) exportPage = 0;
+  renderExportParts(count);
+  exportDraw(canvas.getContext('2d'), day, null, exportPage);
+}
+var exportBusy = false;
+function exportDownload(blob, name) {
+  var link = document.getElementById('exportDownloadLink');
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  link.click();
+}
+function exportFileName(dayIndex, part, count, ext) {
+  return 'july-radio-' + DAYS[dayIndex].toLowerCase() + (count > 1 ? '-part' + (part + 1) : '') + '.' + ext;
+}
+var EXPORT_TAINT_MSG = 'Could not save: this picture is hosted somewhere that blocks copying. Pick another background.';
+
+// Saves every part of the day (one file per part).
+async function exportDayImage() {
+  if (exportBusy) return;
+  var dayIndex = parseInt(document.getElementById('exportDaySelect').value) || 0;
+  var canvas = document.getElementById('exportCanvas');
+  await drawExportPreview();
+  exportBusy = true;
+  var count = exportPages(dayIndex).length, ok = 0;
+  try {
+    for (var p = 0; p < count; p++) {
+      exportDraw(canvas.getContext('2d'), dayIndex, null, p);
+      var blob = await new Promise(function (res) { canvas.toBlob(res, 'image/png'); });
+      if (!blob) throw new Error('blocked');
+      exportDownload(blob, exportFileName(dayIndex, p, count, 'png'));
+      ok++;
+      await new Promise(function (r) { setTimeout(r, 400); });
+    }
+    showMsg('exportMsg', 'success', count > 1 ? count + ' images saved (one per part). Post them in order.' : 'Image saved — check your Downloads');
+  } catch (e) { showMsg('exportMsg', 'error', EXPORT_TAINT_MSG); }
+  exportBusy = false;
+  drawExportPreview();
+}
+
+function exportRecordPart(canvas, dayIndex, part, count, mimeType, status) {
+  return new Promise(function (resolve, reject) {
+    var ctx = canvas.getContext('2d'), chunks = [], recorder;
+    exportDraw(ctx, dayIndex, 0, part);
+    try { recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: mimeType, videoBitsPerSecond: 9000000 }); }
+    catch (e) { reject(e); return; }
+    recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = function () {
+      var blob = new Blob(chunks, { type: mimeType.split(';')[0] });
+      if (blob.size) resolve(blob); else reject(new Error('empty'));
+    };
+    recorder.start();
+    var start = performance.now();
+    (function frame(now) {
+      var el = Math.max(0, now - start);
+      exportDraw(ctx, dayIndex, Math.min(el, EXPORT_VIDEO_MS), part);
+      status.textContent = 'Recording' + (count > 1 ? ' part ' + (part + 1) + ' of ' + count : '') + '… ' + Math.min(8, Math.round(el / 1000)) + 's / 8s (keep this tab open)';
+      if (el < EXPORT_VIDEO_MS) exportAnimHandle = requestAnimationFrame(frame);
+      else recorder.stop();
+    })(start);
+  });
+}
+async function exportDayVideo() {
+  if (exportBusy) return;
+  var dayIndex = parseInt(document.getElementById('exportDaySelect').value) || 0;
+  var canvas = document.getElementById('exportCanvas');
+  var btn = document.getElementById('exportVideoBtn');
+  var status = document.getElementById('exportStatus');
+  var mimeType = '';
+  // MP4 first: it is the one Instagram takes without converting.
+  var candidates = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  if (window.MediaRecorder) for (var i = 0; i < candidates.length; i++) {
+    if (MediaRecorder.isTypeSupported(candidates[i])) { mimeType = candidates[i]; break; }
+  }
+  if (!mimeType || !canvas.captureStream) {
+    showMsg('exportMsg', 'error', "This browser can't record video. Use Save as Image, or open the admin in Chrome.");
+    return;
+  }
+  await drawExportPreview();
+  exportBusy = true; btn.disabled = true;
+  var isMp4 = mimeType.indexOf('mp4') !== -1;
+  var count = exportPages(dayIndex).length;
+  try {
+    for (var p = 0; p < count; p++) {
+      var blob = await exportRecordPart(canvas, dayIndex, p, count, mimeType, status);
+      exportDownload(blob, exportFileName(dayIndex, p, count, isMp4 ? 'mp4' : 'webm'));
+      await new Promise(function (r) { setTimeout(r, 400); });
+    }
+    showMsg('exportMsg', isMp4 ? 'success' : 'error', isMp4
+      ? (count > 1 ? count + ' videos saved (one per part). Post them in order.' : 'Video saved (MP4) — check your Downloads')
+      : 'Saved as .webm, which Instagram does not take. Open the admin in an up-to-date Chrome to get an MP4.');
+  } catch (e) {
+    showMsg('exportMsg', 'error', exportBg ? EXPORT_TAINT_MSG : 'Could not record in this browser.');
+  }
+  exportAnimHandle = null; exportBusy = false; btn.disabled = false; status.textContent = '';
+  drawExportPreview();
+}
+
+// ── STORY BACKGROUNDS ──
+function bgNote(text, canKeep) {
+  document.getElementById('bgNoteText').textContent = text || '';
+  document.getElementById('bgKeepBtn').style.display = canKeep ? 'inline-block' : 'none';
+}
+async function loadBackgrounds() {
+  try {
+    var res = await fetch(WORKER + '/bg', { cache: 'no-store' });
+    var data = await res.json();
+    bgItems = Array.isArray(data.items) ? data.items : [];
+  } catch (e) { bgItems = []; }
+  renderBackgrounds();
+  drawExportPreview();
+}
+function renderBackgrounds() {
+  var strip = document.getElementById('bgStrip');
+  strip.textContent = '';
+  var none = document.createElement('button');
+  none.className = 'bg-tile bg-none' + (!exportBg ? ' on' : ''); none.textContent = 'None';
+  none.onclick = function() { exportBg = null; bgNote(''); renderBackgrounds(); drawExportPreview(); };
+  strip.appendChild(none);
+  bgItems.forEach(function(it) {
+    var tile = document.createElement('div');
+    tile.className = 'bg-tile' + (exportBg && exportBg.id === it.id ? ' on' : '');
+    tile.title = it.credit || '';
+    var im = document.createElement('img'); im.crossOrigin = 'anonymous'; im.loading = 'lazy'; im.alt = ''; im.src = WORKER + '/bg/' + it.id;
+    var x = document.createElement('button'); x.textContent = '✕'; x.title = 'Remove this picture';
+    x.onclick = function(e) { e.stopPropagation(); removeBackground(it); };
+    tile.onclick = function() { selectBackground(it); };
+    tile.appendChild(im); tile.appendChild(x);
+    strip.appendChild(tile);
+  });
+  if (!bgItems.length) {
+    var h = document.createElement('span'); h.className = 'bg-empty';
+    h.textContent = 'No saved pictures yet. Add your own, or try Surprise me.';
+    strip.appendChild(h);
+  }
+}
+async function selectBackground(it) {
+  var img = await exportLoadImage(WORKER + '/bg/' + it.id, true);
+  if (!img) { showMsg('exportMsg', 'error', 'Could not load that picture'); return; }
+  exportBg = { img: img, light: exportIsLight(img), credit: it.credit || '', id: it.id, museum: false };
+  bgNote(it.credit || '');
+  renderBackgrounds(); drawExportPreview();
+}
+// Shrinks a picture to story size and returns it as a JPEG data URL (under the server's limit).
+function bgToJpeg(img) {
+  var sc = Math.min(1, Math.max(EXPORT_W / img.naturalWidth, EXPORT_H / img.naturalHeight));
+  var w = Math.round(img.naturalWidth * sc), h = Math.round(img.naturalHeight * sc);
+  var long = Math.max(w, h); if (long > 2400) { w = Math.round(w * 2400 / long); h = Math.round(h * 2400 / long); }
+  var c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  var q = 0.84, url = c.toDataURL('image/jpeg', q);
+  while (url.length > 1500000 && q > 0.4) { q -= 0.12; url = c.toDataURL('image/jpeg', q); }
+  return url;
+}
+async function storeBackground(img, credit) {
+  var url;
+  try { url = bgToJpeg(img); } catch (e) { showMsg('exportMsg', 'error', EXPORT_TAINT_MSG); return null; }
+  try {
+    var res = await fetch(WORKER + '/bg', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: adminToken, image: url, credit: credit || '' })
+    });
+    var data = await res.json();
+    if (!data.ok) { showMsg('exportMsg', 'error', data.error || 'Could not save the picture'); return null; }
+    var it = { id: data.id, credit: credit || '' };
+    bgItems.unshift(it);
+    return it;
+  } catch (e) { showMsg('exportMsg', 'error', 'Connection error'); return null; }
+}
+async function addBackgroundFiles(files) {
+  var list = Array.prototype.filter.call(files || [], function(f) { return /^image\//.test(f.type); });
+  if (!list.length) return;
+  var last = null, done = 0;
+  for (var i = 0; i < list.length; i++) {
+    showMsg('exportMsg', 'success', 'Adding picture ' + (i + 1) + ' of ' + list.length + '…');
+    var src = URL.createObjectURL(list[i]);
+    var img = await exportLoadImage(src, false);
+    if (img) { var it = await storeBackground(img, ''); if (it) { last = it; done++; } }
+    URL.revokeObjectURL(src);
+  }
+  if (done) showMsg('exportMsg', 'success', done + (done === 1 ? ' picture' : ' pictures') + ' added to Backgrounds');
+  if (last) await selectBackground(last); else renderBackgrounds();
+}
+async function removeBackground(it) {
+  if (!confirm('Remove this picture from Backgrounds?')) return;
+  try {
+    var res = await fetch(WORKER + '/bg', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: adminToken, remove: it.id })
+    });
+    var data = await res.json();
+    if (!data.ok) { showMsg('exportMsg', 'error', data.error || 'Could not remove it'); return; }
+  } catch (e) { showMsg('exportMsg', 'error', 'Connection error'); return; }
+  bgItems = bgItems.filter(function(b) { return b.id !== it.id; });
+  if (exportBg && exportBg.id === it.id) { exportBg = null; bgNote(''); }
+  renderBackgrounds(); drawExportPreview();
+}
+// A random public-domain artwork from the Art Institute of Chicago's open collection.
+var MUSEUM_TERMS = ['abstract', 'ink', 'botanical study', 'charcoal', 'fern', 'monotype', 'cyanotype', 'photogram', 'clouds', 'trees', 'woodcut', 'sketch', 'flowers', 'night', 'sea', 'shadow', 'smoke', 'moon'];
+async function surpriseMuseum() {
+  var btn = document.getElementById('bgSurpriseBtn');
+  btn.disabled = true; bgNote('Looking through the museum…');
+  try {
+    for (var tries = 0; tries < 3; tries++) {
+      var term = MUSEUM_TERMS[Math.floor(Math.random() * MUSEUM_TERMS.length)];
+      var params = {
+        q: term, limit: 24, page: 1 + Math.floor(Math.random() * 3),
+        fields: ['id', 'title', 'artist_title', 'date_display', 'image_id'],
+        query: { bool: { filter: [
+          { term: { is_public_domain: true } },
+          { terms: { 'artwork_type_title.keyword': ['Print', 'Drawing and Watercolor', 'Photograph'] } }
+        ] } }
+      };
+      var url = 'https://api.artic.edu/api/v1/artworks/search?params=' + encodeURIComponent(JSON.stringify(params));
+      var res = await fetch(url);
+      var data = await res.json();
+      var pool = (data.data || []).filter(function(a) { return a.image_id; });
+      if (!pool.length) continue;
+      var a = pool[Math.floor(Math.random() * pool.length)];
+      var img = await exportLoadImage('https://www.artic.edu/iiif/2/' + a.image_id + '/full/843,/0/default.jpg', true);
+      if (!img) continue;
+      var credit = [a.title, a.artist_title, a.date_display].filter(Boolean).join(', ') + ' (Art Institute of Chicago, public domain)';
+      exportBg = { img: img, light: exportIsLight(img), credit: credit, id: null, museum: true };
+      bgNote(credit, true);
+      renderBackgrounds(); drawExportPreview();
+      btn.disabled = false;
+      return;
+    }
+    bgNote('The museum did not answer. Try again in a moment.');
+  } catch (e) { bgNote('Could not reach the museum. Check the internet and try again.'); }
+  btn.disabled = false;
+}
+async function keepMuseumBackground() {
+  if (!exportBg || !exportBg.museum) return;
+  var it = await storeBackground(exportBg.img, exportBg.credit);
+  if (!it) return;
+  exportBg.id = it.id; exportBg.museum = false;
+  bgNote(exportBg.credit);
+  showMsg('exportMsg', 'success', 'Kept in Backgrounds');
+  renderBackgrounds();
+}
+document.addEventListener('dragover', function(e) { if (e.target.closest && e.target.closest('#bgDrop')) e.preventDefault(); });
+document.addEventListener('drop', function(e) {
+  if (!e.target.closest || !e.target.closest('#bgDrop')) return;
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.files) addBackgroundFiles(e.dataTransfer.files);
+});
 
 // ── PROFILE ───────────────────────────────────────────────────────────────────
 var profileLinksDraft = [];
