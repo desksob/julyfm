@@ -715,7 +715,7 @@
       <div class="section-title">Cover Maker</div>
       <div class="msg" id="cvMsg"></div>
       <div class="cv-font-note" id="cvFontNote">
-        The covers use the font <b>Compacta Black Poster</b>, which is not on this computer. Load the font file once (.ttf or .otf) and this browser will remember it.
+        The cover font (<b>Compacta Black Poster</b>) did not load. Reload the page first. If it still shows this, load the font file once (.ttf or .otf) and this browser will remember it.
         <input type="file" id="cvFontFile" accept=".ttf,.otf,.woff,.woff2,font/*" style="display:none;" onchange="cvFontFile(this.files[0]); this.value='';">
         <div style="margin-top:8px;"><button class="btn secondary small" onclick="document.getElementById('cvFontFile').click()">Load font file</button></div>
       </div>
@@ -2530,8 +2530,8 @@ async function exportDayVideo() {
 // Covers use Compacta Black Poster. It is a paid font, so it is never uploaded to the site:
 // it comes from the computer (if installed) or from a font file the person loads once,
 // which is kept in this browser only (localStorage july_cover_font).
-var CV_FONT = "'JulyCompacta', 'Arial Narrow', sans-serif";              // the two top lines
-var CV_FONT_LIVE = "'JulyHelvCond', 'Helvetica Neue', 'Arial Narrow', sans-serif"; // LIVE / JULY.RIP
+var CV_FONT = "'JulyCompactaS', 'JulyCompacta', 'Arial Narrow', sans-serif";              // the two top lines
+var CV_FONT_LIVE = "'JulyHelvCondS', 'JulyHelvCond', 'Helvetica Neue', 'Arial Narrow', sans-serif"; // LIVE / JULY.RIP
 var CV_FONT_KEY = 'july_cover_font';
 var cvFontOk = false, cvScaleTop = 1, cvScaleLive = 1;
 var CV_HOLD = 1800, CV_MOVE = 450;
@@ -2545,23 +2545,43 @@ var cvGifWorkerUrl = null, cvShowSig = null;
 
 function cvSize() { return document.getElementById('cvSize').value === 'tall' ? [1080, 1440] : [1080, 1080]; }
 
+// Both cover fonts come from the API (only for logged-in admins), so the Cover Maker looks
+// the same on every computer and phone and nobody has to install or upload anything.
+var cvSrvTried = false;
+async function cvServerFont(family, which) {
+  try {
+    var fr = await fetch(WORKER + '/font', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: adminToken, which: which }) });
+    if (!fr.ok || !/font/.test(fr.headers.get('Content-Type') || '')) return false;
+    var f = new FontFace(family, await fr.arrayBuffer());
+    await f.load(); document.fonts.add(f);
+    return true;
+  } catch (e) { return false; }
+}
 async function cvLoadFont() {
   if (cvFontOk) return true;
-  try {
-    var saved = localStorage.getItem(CV_FONT_KEY);
-    if (saved) {
-      var bin = atob(saved), buf = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-      var ff = new FontFace('JulyCompacta', buf.buffer);
-      await ff.load(); document.fonts.add(ff);
-    }
-  } catch (e) {}
-  try { cvFontOk = (await document.fonts.load("40px 'JulyCompacta'")).length > 0; } catch (e) { cvFontOk = false; }
+  if (!cvSrvTried && adminToken) {
+    cvSrvTried = true;
+    var got = await Promise.all([cvServerFont('JulyCompactaS', 'compacta'), cvServerFont('JulyHelvCondS', 'helvcond')]);
+    cvFontOk = got[0];
+  }
+  if (!cvFontOk) {
+    // Last resort: the font installed on this computer, or a font file loaded once in this browser.
+    try {
+      var saved = localStorage.getItem(CV_FONT_KEY);
+      if (saved) {
+        var bin = atob(saved), buf = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        var ff = new FontFace('JulyCompacta', buf.buffer);
+        await ff.load(); document.fonts.add(ff);
+      }
+    } catch (e) {}
+    try { cvFontOk = (await document.fonts.load("40px 'JulyCompacta'")).length > 0; } catch (e) { cvFontOk = false; }
+  }
   if (cvFontOk) {
     // Match the sizes on the July covers: the top line "SULTRY NOCTURNALS W/ OKUL" is 625 px wide
     // and "JULY.RIP" is 120 px wide on a 1080 px cover.
     var m = document.createElement('canvas').getContext('2d');
-    m.font = "100px 'JulyCompacta'";
+    m.font = "100px " + CV_FONT;
     cvScaleTop = 625 / m.measureText('SULTRY NOCTURNALS W/ OKUL').width * 100 / 52;
   }
   try { await document.fonts.load("40px 'JulyHelvCond'"); } catch (e) {}
