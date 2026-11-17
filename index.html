@@ -125,6 +125,8 @@ html[data-theme="dark"] header img{ filter:invert(1); }
   font-family:'IBM Plex Mono','Courier New',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase;
   padding:9px 14px; text-decoration:none; }
 .sup-btn:hover{ background:var(--ink); color:var(--bg); }
+.sup-partner-logo{ display:inline-block; background:#fff; border:1px solid var(--border); padding:10px 14px; line-height:0; }
+.sup-partner-logo img{ height:34px; width:auto; display:block; }
 .sup-empty{ font-size:12px; color:var(--dim); padding:30px 0; text-align:center; }
 
 
@@ -3416,14 +3418,23 @@ function copySupport(i, btn) {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(done, done);
   else { const t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t); done(); }
 }
+const ATPESA_URL = 'https://atpesa.me/julyradio';
+// For now the Support page shows only the atpesa card. The text and options saved in the admin
+// Support tab are kept, just not shown; set this to false to show them again.
+const SUPPORT_ONLY_ATPESA = true;
 function renderSupport(cfg) {
   const box = document.getElementById('supportBody');
   if (!box) return;
+  if (SUPPORT_ONLY_ATPESA) cfg = null;
   const methods = (cfg && cfg.methods || []).filter(m => m && (m.number || supSafeUrl(m.url)));
-  if (!methods.length) { box.innerHTML = '<div class="sup-empty">Support options are coming soon.</div>'; return; }
   supportCopyVals = [];
   let html = '<div class="sup-head"><div class="sup-title">' + supEsc((cfg && cfg.title) || 'Support July Radio') + '</div>'
     + ((cfg && cfg.intro) ? '<div class="sup-intro">' + supEsc(cfg.intro) + '</div>' : '') + '</div>';
+  // Partner: atpesa donation page for July Radio (always shown first).
+  html += '<div class="sup-card"><div class="sup-label">Donate with our partner</div>'
+    + '<a class="sup-partner-logo" href="' + ATPESA_URL + '" target="_blank" rel="noopener" aria-label="Donate to July Radio on atpesa"><img src="/atpesa-logo.png" alt="atpesa" width="99" height="34"></a>'
+    + '<div class="sup-meta">Support July Radio through atpesa. Pay with <b>M-Pesa</b> or <b>card</b>, any amount.</div>'
+    + '<div class="sup-row"><a class="sup-btn" href="' + ATPESA_URL + '" target="_blank" rel="noopener">Donate on atpesa ↗</a></div></div>';
   methods.forEach(m => {
     const url = supSafeUrl(m.url);
     const label = m.label || (m.kind === 'paybill' ? 'M-Pesa Paybill' : m.kind === 'till' ? 'M-Pesa Till' : 'Support');
