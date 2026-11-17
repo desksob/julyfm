@@ -142,6 +142,19 @@
   .bg-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
   .bg-tile button{ position:absolute; top:2px; right:2px; width:16px; height:16px; border:none; background:var(--bar); color:var(--bar-ink); font-size:9px; line-height:16px; padding:0; cursor:pointer; display:none; }
   .bg-tile:hover button{ display:block; }
+  @font-face { font-family: 'JulyHelvCond'; src: local('Helvetica Neue Condensed Bold'), local('HelveticaNeue-CondensedBold'); }
+  @font-face { font-family: 'JulyCompacta'; src: local('Compacta Black Poster W01'), local('CompactaBlackPosterW01'), local('Compacta Black Poster'), local('Compacta-BlackPoster'); }
+  .cv-show-box{ border-top:1px solid var(--border); margin-top:18px; padding-top:14px; }
+  .cv-show-box select{ width:100%; margin-bottom:12px; }
+  .cv-font-note{ border:1px solid var(--border); padding:10px 12px; font-size:11px; line-height:1.6; margin-bottom:14px; display:none; }
+  .cv-thumbs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .cv-thumb{ position:relative; width:64px; height:64px; border:1px solid var(--border); cursor:pointer; overflow:hidden; }
+  .cv-thumb.on{ outline:3px solid var(--ink); outline-offset:-3px; }
+  .cv-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .cv-thumb span{ position:absolute; left:2px; bottom:2px; background:var(--bar); color:var(--bar-ink); font-size:9px; padding:1px 4px; }
+  .cv-thumb button{ position:absolute; top:2px; right:2px; width:16px; height:16px; border:none; background:var(--bar); color:var(--bar-ink); font-size:9px; line-height:16px; padding:0; cursor:pointer; display:none; }
+  .cv-thumb button.cv-left{ right:auto; left:2px; }
+  .cv-thumb:hover button{ display:block; }
   .bg-empty{ font-size:11px; color:var(--muted); margin-left:6px; }
   .bg-note{ font-size:10px; color:var(--muted); line-height:1.5; min-height:14px; }
   .export-download-link{ display:none; margin-top:10px; text-decoration:none; }
@@ -337,6 +350,7 @@
     <div class="dash-nav-item" data-perm="server" onclick="showPanel('offline',this)">Server Status</div>
     <div class="dash-nav-item" data-perm="chat" onclick="showPanel('chat',this)">Chat</div>
     <div class="dash-nav-item" data-perm="schedule" onclick="showPanel('schedule',this)">Schedule</div>
+    <div class="dash-nav-item" onclick="showPanel('covers',this)">Covers</div>
     <div class="dash-nav-item" onclick="showPanel('profile',this)">Profile</div>
     <div class="dash-nav-item" data-perm="team" onclick="showPanel('team',this)">Team</div>
     <div class="dash-nav-item" data-perm="ticker" onclick="showPanel('ticker',this)">Ticker</div>
@@ -694,6 +708,71 @@
       <div class="perm-grid" id="newUserPerms"></div>
       <button class="btn" onclick="addUser()">Add person</button>
       <div class="hint sub">You get a one-time password to send them. They must choose their own the first time they log in.</div>
+    </div>
+
+    <!-- COVERS -->
+    <div class="dash-panel" id="panel-covers">
+      <div class="section-title">Cover Maker</div>
+      <div class="msg" id="cvMsg"></div>
+      <div class="cv-font-note" id="cvFontNote">
+        The covers use the font <b>Compacta Black Poster</b>, which is not on this computer. Load the font file once (.ttf or .otf) and this browser will remember it.
+        <input type="file" id="cvFontFile" accept=".ttf,.otf,.woff,.woff2,font/*" style="display:none;" onchange="cvFontFile(this.files[0]); this.value='';">
+        <div style="margin-top:8px;"><button class="btn secondary small" onclick="document.getElementById('cvFontFile').click()">Load font file</button></div>
+      </div>
+      <div class="export-layout">
+        <div class="export-side">
+          <div class="field">
+            <label class="field-label">Size</label>
+            <select id="cvSize" onchange="cvRender()">
+              <option value="square">Square 1080 x 1080</option>
+              <option value="tall">Tall 1080 x 1440 (Instagram post)</option>
+            </select>
+          </div>
+          <div class="field" id="cvDrop">
+            <label class="field-label">Pictures</label>
+            <div class="cv-thumbs" id="cvThumbs"></div>
+            <input type="file" id="cvFile" accept="image/*" multiple style="display:none;" onchange="cvAddFiles(this.files); this.value='';">
+            <button class="btn secondary small" onclick="document.getElementById('cvFile').click()">+ Add pictures</button>
+            <div class="hint" id="cvHint" style="margin:8px 0 0;"></div>
+          </div>
+          <div class="field"><label class="field-label">Top line</label><input type="text" id="cvLine1" placeholder="e.g. GENRE INFOCUS" oninput="cvRender()"></div>
+          <div class="field"><label class="field-label">Second line</label><input type="text" id="cvLine2" placeholder="e.g. SULTRY NOCTURNALS W/ OKUL" oninput="cvRender()"></div>
+          <div class="field">
+            <label class="field-label">Text and logo colour</label>
+            <select id="cvText" onchange="cvRender()"><option value="auto">Auto (from the picture)</option><option value="white">White</option><option value="black">Black</option></select>
+          </div>
+          <div class="field">
+            <label class="field-label">Grain</label>
+            <input type="range" id="cvGrain" min="0" max="100" value="0" style="width:100%;padding:0;border:none;accent-color:var(--ink);" oninput="cvRender()">
+          </div>
+          <div class="btn-row">
+            <button class="btn secondary" onclick="cvSaveImage()">Save as Image</button>
+            <button class="btn" id="cvVideoBtn" style="display:none;" onclick="cvSaveVideo()">Save as Video</button>
+            <button class="btn secondary" id="cvGifBtn" style="display:none;" onclick="cvSaveGif()">Save as GIF</button>
+          </div>
+          <div class="export-status" id="cvStatus"></div>
+          <a id="cvDownload" download style="display:none;"></a>
+          <div class="cv-show-box" id="cvShowBox">
+            <label class="field-label">Put this cover on a show</label>
+            <div class="hint" id="cvShowHint" style="margin:0 0 8px;"></div>
+            <div id="cvShowFields">
+              <select id="cvShowPick" onchange="cvShowPickChanged()"></select>
+              <div id="cvNewShow">
+                <div class="field"><label class="field-label">Show name</label><input type="text" id="cvNsName" placeholder="e.g. Sultry Nocturnals"></div>
+                <div class="field"><label class="field-label">DJ / host</label><input type="text" id="cvNsDj" placeholder="e.g. Okul"></div>
+                <div class="field"><label class="field-label">Description</label><textarea id="cvNsDesc" rows="2"></textarea></div>
+                <div class="field"><label class="field-label">Tags (comma separated)</label><input type="text" id="cvNsTags" placeholder="e.g. house, late night"></div>
+                <label class="check-line"><input type="checkbox" id="cvNsDjset"> This is a DJ set</label>
+                <label class="check-line"><input type="checkbox" id="cvNsResident"> Resident</label>
+              </div>
+              <div class="btn-row"><button class="btn" id="cvShowBtn" onclick="cvAddToShow()">Add cover to show</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="export-canvas-wrap" style="width:320px;">
+          <canvas id="cvCanvas" width="1080" height="1080" style="width:100%;border:1px solid var(--border);display:block;background:#1a1a1a;"></canvas>
+        </div>
+      </div>
     </div>
 
     <!-- FESTIVE THEME -->
@@ -1115,6 +1194,7 @@ function showPanel(id, el) {
   if (id === 'schedule') applyWeekScrollIfNeeded();
   if (id === 'chat') openChatPanel();
   if (id === 'users') loadUsers();
+  if (id === 'covers') cvRender();
 }
 
 // ── CHAT ──────────────────────────────────────────────────────────────────
@@ -1881,14 +1961,15 @@ async function storeSavedShows() {
     });
     var data = await res.json();
     if (!data.ok) showMsg('scheduleMsg', 'error', data.error || 'Could not save the Saved Shows list');
-  } catch (e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
+    return !!data.ok;
+  } catch (e) { showMsg('scheduleMsg', 'error', 'Connection error'); return false; }
 }
 function rememberShow(d) {
   var k = showKey(d.name), found = false;
   savedShows = savedShows.map(function (s) { if (showKey(s.name) === k) { found = true; return d; } return s; });
   if (!found) savedShows.push(d);
   savedShows.sort(function (a, b) { return showKey(a.name) < showKey(b.name) ? -1 : 1; });
-  storeSavedShows();
+  return storeSavedShows();
 }
 function removeSavedShow(i) {
   var s = savedShows[i];
@@ -1999,7 +2080,8 @@ async function saveSchedule() {
     } else {
       showMsg('scheduleMsg', 'error', data.error || 'Failed to save');
     }
-  } catch(e) { showMsg('scheduleMsg', 'error', 'Connection error'); }
+    return !!data.ok;
+  } catch(e) { showMsg('scheduleMsg', 'error', 'Connection error'); return false; }
 }
 
 // ── DAY EXPORT (story image / video) ─────────────────────────────────────────
@@ -2438,6 +2520,475 @@ async function exportDayVideo() {
   exportAnimHandle = null; exportBusy = false; btn.disabled = false; status.textContent = '';
   drawExportPreview();
 }
+
+// ── COVER MAKER ──────────────────────────────────────────────────────────────
+// Show covers in the July look: picture full-bleed, two lines of heavy caps top
+// left, the dog in a box bottom left (dog tinted from the picture), LIVE ▶ JULY.RIP
+// bottom right. One picture = a PNG cover. Two or more = a looping MP4 where the
+// pictures slide left in turn and the last one slides up back to the first.
+// Pictures stay in this browser only; nothing is uploaded.
+// Covers use Compacta Black Poster. It is a paid font, so it is never uploaded to the site:
+// it comes from the computer (if installed) or from a font file the person loads once,
+// which is kept in this browser only (localStorage july_cover_font).
+var CV_FONT = "'JulyCompacta', 'Arial Narrow', sans-serif";              // the two top lines
+var CV_FONT_LIVE = "'JulyHelvCond', 'Helvetica Neue', 'Arial Narrow', sans-serif"; // LIVE / JULY.RIP
+var CV_FONT_KEY = 'july_cover_font';
+var cvFontOk = false, cvScaleTop = 1, cvScaleLive = 1;
+var CV_HOLD = 1800, CV_MOVE = 450;
+var cvPics = [];          // { img, url, auto: {text, box, dog} }
+var cvCur = 0;
+var cvDog = null;         // dog silhouette canvas (black on transparent)
+var cvDogTint = {};
+var cvBusy = false, cvGrain = null;
+var cvGrainFixed = false;   // GIFs keep one grain pattern (moving grain makes them huge)
+var cvGifWorkerUrl = null, cvShowSig = null;
+
+function cvSize() { return document.getElementById('cvSize').value === 'tall' ? [1080, 1440] : [1080, 1080]; }
+
+async function cvLoadFont() {
+  if (cvFontOk) return true;
+  try {
+    var saved = localStorage.getItem(CV_FONT_KEY);
+    if (saved) {
+      var bin = atob(saved), buf = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      var ff = new FontFace('JulyCompacta', buf.buffer);
+      await ff.load(); document.fonts.add(ff);
+    }
+  } catch (e) {}
+  try { cvFontOk = (await document.fonts.load("40px 'JulyCompacta'")).length > 0; } catch (e) { cvFontOk = false; }
+  if (cvFontOk) {
+    // Match the sizes on the July covers: the top line "SULTRY NOCTURNALS W/ OKUL" is 625 px wide
+    // and "JULY.RIP" is 120 px wide on a 1080 px cover.
+    var m = document.createElement('canvas').getContext('2d');
+    m.font = "100px 'JulyCompacta'";
+    cvScaleTop = 625 / m.measureText('SULTRY NOCTURNALS W/ OKUL').width * 100 / 52;
+  }
+  try { await document.fonts.load("40px 'JulyHelvCond'"); } catch (e) {}
+  var m2 = document.createElement('canvas').getContext('2d');
+  m2.font = "100px " + CV_FONT_LIVE;
+  cvScaleLive = 120 / m2.measureText('JULY.RIP').width * 100 / 34;
+  document.getElementById('cvFontNote').style.display = cvFontOk ? 'none' : 'block';
+  return cvFontOk;
+}
+async function cvFontFile(file) {
+  if (!file) return;
+  try {
+    var buf = await file.arrayBuffer();
+    var ff = new FontFace('JulyCompacta', buf);
+    await ff.load(); document.fonts.add(ff);
+    var bytes = new Uint8Array(buf), bin = '';
+    for (var i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+    try { localStorage.setItem(CV_FONT_KEY, btoa(bin)); } catch (e) {}
+    cvFontOk = false;
+    await cvLoadFont();
+    showMsg('cvMsg', 'success', 'Font loaded. This browser will remember it.');
+    cvRender();
+  } catch (e) { showMsg('cvMsg', 'error', 'That file is not a font this browser can read. Pick the .ttf or .otf file.'); }
+}
+async function cvPrepare() {
+  await cvLoadFont();
+  if (!cvGrain && typeof exportMakeGrain === 'function') cvGrain = exportMakeGrain();
+  if (cvDog) return;
+  var img = await exportLoadImage('july-radio-logo-header.png', false);
+  if (!img) return;
+  var c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  var x = c.getContext('2d'); x.drawImage(img, 0, 0);
+  var d = x.getImageData(0, 0, c.width, c.height).data, x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+  for (var y = 0; y < c.height; y += 2) for (var i = 0; i < c.width; i += 2) {
+    if (d[(y * c.width + i) * 4 + 3] > 40) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  var w = x1 - x0 + 2, h = y1 - y0 + 2;
+  cvDog = document.createElement('canvas'); cvDog.width = w; cvDog.height = h;
+  // The logo is a box with the dog cut out, so the picture shows through the dog.
+  cvDog.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, w, h);
+}
+function cvTintedDog(color) {
+  if (!cvDog) return null;
+  if (cvDogTint[color]) return cvDogTint[color];
+  var c = document.createElement('canvas'); c.width = cvDog.width; c.height = cvDog.height;
+  var x = c.getContext('2d'); x.drawImage(cvDog, 0, 0);
+  x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
+  cvDogTint[color] = c;
+  return c;
+}
+
+// Colours from the picture: text black on bright tops, white otherwise; the dog takes
+// the picture's main colour (darkened on a white box, brightened on a black box).
+function cvRgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, h = 0, s = 0;
+  if (mx !== mn) {
+    var dd = mx - mn; s = l > 0.5 ? dd / (2 - mx - mn) : dd / (mx + mn);
+    h = mx === r ? (g - b) / dd + (g < b ? 6 : 0) : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4; h /= 6;
+  }
+  return [h, s, l];
+}
+function cvHsl(h, s, l) { return 'hsl(' + Math.round(h * 360) + ',' + Math.round(s * 100) + '%,' + Math.round(l * 100) + '%)'; }
+function cvAnalyse(img) {
+  var n = 48, c = document.createElement('canvas'); c.width = n; c.height = n;
+  var x = c.getContext('2d');
+  var sc = Math.max(n / img.naturalWidth, n / img.naturalHeight);
+  x.drawImage(img, (n - img.naturalWidth * sc) / 2, (n - img.naturalHeight * sc) / 2, img.naturalWidth * sc, img.naturalHeight * sc);
+  var d = x.getImageData(0, 0, n, n).data;
+  var top = 0, tn = 0, buckets = {};
+  for (var y = 0; y < n; y++) for (var i = 0; i < n; i++) {
+    var p = (y * n + i) * 4, r = d[p], g = d[p + 1], b = d[p + 2];
+    var lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (y < n * 0.16 && i < n * 0.7) { top += lum; tn++; }
+    var hsl = cvRgbToHsl(r, g, b);
+    if (hsl[1] > 0.25 && hsl[2] > 0.12 && hsl[2] < 0.9) {
+      var k = Math.floor(hsl[0] * 12) % 12, bk = buckets[k] || (buckets[k] = { n: 0, h: 0, s: 0 });
+      bk.n++; bk.h += hsl[0]; bk.s += hsl[1];
+    }
+  }
+  var textDark = top / tn > 165, best = null;
+  for (var key in buckets) if (!best || buckets[key].n > best.n) best = buckets[key];
+  var dog;
+  if (best && best.n > n * n * 0.06) {
+    var h = best.h / best.n, s = Math.min(0.85, best.s / best.n + 0.1);
+    dog = textDark ? cvHsl(h, s, 0.6) : cvHsl(h, s, 0.38);
+  } else dog = textDark ? '#d8d8d8' : '#111111';
+  return { text: textDark ? '#0a0a0a' : '#ffffff', box: textDark ? '#0a0a0a' : '#ffffff', dog: dog };
+}
+
+// Colours actually used for picture i (auto, or what the person picked).
+function cvColors(i) {
+  var a = (cvPics[i] && cvPics[i].auto) || { text: '#ffffff', box: '#ffffff', dog: '#111111' };
+  var t = document.getElementById('cvText').value;
+  var text = t === 'white' ? '#ffffff' : t === 'black' ? '#0a0a0a' : a.text;
+  var box = t === 'auto' ? a.box : (text === '#ffffff' ? '#ffffff' : '#0a0a0a');
+  return { text: text, box: box };
+}
+
+function cvDrawPic(ctx, pic, W, H, dx, dy) {
+  if (!pic) { ctx.fillStyle = '#1a1a1a'; ctx.fillRect(dx, dy, W, H); return; }
+  var im = pic.img, sc = Math.max(W / im.naturalWidth, H / im.naturalHeight);
+  var w = im.naturalWidth * sc, h = im.naturalHeight * sc;
+  ctx.drawImage(im, dx + (W - w) / 2, dy + (H - h) / 2, w, h);
+}
+function cvLine(ctx, text, x, y, maxW, size) {
+  ctx.font = size + "px " + CV_FONT;
+  try { ctx.fontStretch = 'normal'; ctx.letterSpacing = '0px'; } catch (e) {}
+  var s = size;
+  while (s > 20 && ctx.measureText(text).width > maxW) { s -= 2; ctx.font = s + "px " + CV_FONT; }
+  ctx.fillText(text, x, y);
+}
+
+// t = ms into the slideshow (null = still of picture cvCur).
+function cvDraw(ctx, t) {
+  var sz = cvSize(), W = sz[0], H = sz[1], S = W / 1080, n = cvPics.length;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  var a = cvCur, b = cvCur, k = 0, up = false;
+  if (t !== null && t !== undefined && n > 1) {
+    var seg = CV_HOLD + CV_MOVE, i = Math.floor(t / seg) % n, lt = t - Math.floor(t / seg) * seg;
+    a = i; b = (i + 1) % n; up = i === n - 1;
+    if (lt > CV_HOLD) { var q = (lt - CV_HOLD) / CV_MOVE; k = q < 0.5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2; }
+  }
+  if (k === 0) cvDrawPic(ctx, cvPics[a], W, H, 0, 0);
+  else if (up) { cvDrawPic(ctx, cvPics[a], W, H, 0, -k * H); cvDrawPic(ctx, cvPics[b], W, H, 0, (1 - k) * H); }
+  else { cvDrawPic(ctx, cvPics[a], W, H, -k * W, 0); cvDrawPic(ctx, cvPics[b], W, H, (1 - k) * W, 0); }
+
+  var g = parseInt(document.getElementById('cvGrain').value, 10) || 0;
+  if (g && cvGrain) {
+    ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = g / 100 * 0.6;
+    var ox = cvGrainFixed ? 150 : Math.floor(Math.random() * 300), oy = cvGrainFixed ? 150 : Math.floor(Math.random() * 300);
+    ctx.drawImage(cvGrain, -ox, -oy, W + 300, H + 300);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  }
+
+  var col = cvColors(k < 0.5 ? a : b);
+  ctx.fillStyle = col.text; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  var l1 = document.getElementById('cvLine1').value.trim().toUpperCase();
+  var l2 = document.getElementById('cvLine2').value.trim().toUpperCase();
+  var size = Math.round(52 * S * cvScaleTop), x0 = Math.round(33 * S);
+  if (l1) cvLine(ctx, l1, x0, Math.round(82 * S), W - 2 * x0, size);
+  if (l2) cvLine(ctx, l2, x0, Math.round((l1 ? 133 : 82) * S), W - 2 * x0, size);
+
+  // Bottom row
+  var lift = H > W ? Math.round(24 * S) : 0;
+  var bx = Math.round(27 * S), bw = Math.round(158 * S), bh = Math.round(108 * S), by = H - Math.round(136 * S) - lift;
+  var logo = cvTintedDog(col.box);
+  if (logo) ctx.drawImage(logo, bx, by, bw, bh);
+  ctx.fillStyle = col.text; ctx.textAlign = 'right';
+  var right = W - Math.round(40 * S), fs = Math.round(34 * S * cvScaleLive);
+  ctx.font = fs + "px " + CV_FONT_LIVE;
+  try { ctx.fontStretch = 'normal'; ctx.letterSpacing = '0px'; } catch (e) {}
+  ctx.fillText('JULY.RIP', right, by + Math.round(93 * S));
+  // Play icon: a stepped (pixel) triangle as tall as the capitals of LIVE, sitting on the same line.
+  var ty = by + Math.round(48 * S);
+  var cap = ctx.measureText('LIVE').actualBoundingBoxAscent || fs * 0.72;
+  var rows = 9, step = cap / rows, triW = Math.round(cap * 0.62);
+  var tx = right - Math.round(4 * S) - triW;
+  for (var r = 0; r < rows; r++) {
+    var mid = (rows - 1) / 2, w = triW * (1 - Math.abs(r - mid) / (mid + 1));
+    ctx.fillRect(Math.round(tx), Math.round(ty - cap + r * step), Math.round(w), Math.ceil(step));
+  }
+  ctx.fillText('LIVE', tx - Math.round(6 * S), ty);
+  ctx.textAlign = 'left';
+}
+
+async function cvRender() {
+  if (cvBusy) return;
+  await cvPrepare();
+  var c = document.getElementById('cvCanvas'), sz = cvSize();
+  if (c.width !== sz[0] || c.height !== sz[1]) { c.width = sz[0]; c.height = sz[1]; }
+  cvDraw(c.getContext('2d'), null);
+  var n = cvPics.length;
+  document.getElementById('cvVideoBtn').style.display = n > 1 ? 'inline-block' : 'none';
+  document.getElementById('cvGifBtn').style.display = n > 1 ? 'inline-block' : 'none';
+  cvFillShowPick();
+  document.getElementById('cvHint').textContent = n > 1
+    ? n + ' pictures: Save as Video makes a ' + Math.round(n * (CV_HOLD + CV_MOVE) / 100) / 10 + ' s loop. Save as Image saves the picture shown.'
+    : 'One picture makes a cover image. Add two or more for a sliding video, like New This Week.';
+}
+function cvRenderThumbs() {
+  var box = document.getElementById('cvThumbs');
+  box.textContent = '';
+  cvPics.forEach(function (p, i) {
+    var t = document.createElement('div'); t.className = 'cv-thumb' + (i === cvCur ? ' on' : '');
+    var im = document.createElement('img'); im.src = p.url; im.alt = ''; t.appendChild(im);
+    var no = document.createElement('span'); no.textContent = i + 1; t.appendChild(no);
+    var x = document.createElement('button'); x.textContent = '✕'; x.title = 'Remove';
+    x.onclick = function (e) { e.stopPropagation(); URL.revokeObjectURL(p.url); cvPics.splice(i, 1); cvCur = Math.min(cvCur, Math.max(0, cvPics.length - 1)); cvRenderThumbs(); cvRender(); };
+    t.appendChild(x);
+    if (i > 0) {
+      var l = document.createElement('button'); l.className = 'cv-left'; l.textContent = '◀'; l.title = 'Move earlier';
+      l.onclick = function (e) { e.stopPropagation(); var m = cvPics.splice(i, 1)[0]; cvPics.splice(i - 1, 0, m); cvCur = i - 1; cvRenderThumbs(); cvRender(); };
+      t.appendChild(l);
+    }
+    t.onclick = function () { cvCur = i; cvRenderThumbs(); cvRender(); };
+    box.appendChild(t);
+  });
+}
+async function cvAddFiles(files) {
+  var list = Array.prototype.filter.call(files || [], function (f) { return /^image\//.test(f.type); });
+  for (var i = 0; i < list.length; i++) {
+    var url = URL.createObjectURL(list[i]);
+    var img = await exportLoadImage(url, false);
+    if (img) cvPics.push({ img: img, url: url, auto: cvAnalyse(img) });
+  }
+  if (list.length) cvCur = cvPics.length - 1;
+  cvRenderThumbs(); cvRender();
+}
+function cvFileName(ext) {
+  var base = (document.getElementById('cvLine1').value + ' ' + document.getElementById('cvLine2').value).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cover';
+  return 'july-' + base.slice(0, 50) + '-' + document.getElementById('cvSize').value + '.' + ext;
+}
+function cvSaveBlob(blob, name) {
+  var a = document.getElementById('cvDownload');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+}
+async function cvSaveImage() {
+  if (!cvPics.length) { showMsg('cvMsg', 'error', 'Add a picture first'); return; }
+  await cvRender();
+  document.getElementById('cvCanvas').toBlob(function (b) {
+    if (!b) { showMsg('cvMsg', 'error', 'Could not save the image'); return; }
+    cvSaveBlob(b, cvFileName('png'));
+    showMsg('cvMsg', 'success', 'Image saved — check your Downloads');
+  }, 'image/png');
+}
+async function cvSaveVideo() {
+  if (cvBusy || cvPics.length < 2) return;
+  var mime = '';
+  ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm'].some(function (m) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) { mime = m; return true; } return false;
+  });
+  var c = document.getElementById('cvCanvas');
+  if (!mime || !c.captureStream) { showMsg('cvMsg', 'error', "This browser can't record video. Open the admin in Chrome."); return; }
+  await cvRender();
+  cvBusy = true;
+  var btn = document.getElementById('cvVideoBtn'), st = document.getElementById('cvStatus');
+  btn.disabled = true;
+  var ctx = c.getContext('2d'), total = cvPics.length * (CV_HOLD + CV_MOVE), chunks = [];
+  cvDraw(ctx, 0);
+  var rec = new MediaRecorder(c.captureStream(30), { mimeType: mime, videoBitsPerSecond: 10000000 });
+  rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = function () {
+    cvBusy = false; btn.disabled = false; st.textContent = '';
+    var mp4 = mime.indexOf('mp4') >= 0;
+    cvSaveBlob(new Blob(chunks, { type: mime.split(';')[0] }), cvFileName(mp4 ? 'mp4' : 'webm'));
+    showMsg('cvMsg', mp4 ? 'success' : 'error', mp4 ? 'Video saved (MP4) — check your Downloads' : 'Saved as .webm, which Instagram does not take. Use an up-to-date Chrome.');
+    cvRender();
+  };
+  rec.start();
+  var start = performance.now();
+  (function frame(now) {
+    var el = Math.max(0, now - start);
+    cvDraw(ctx, Math.min(el, total - 1));
+    st.textContent = 'Recording… ' + Math.floor(el / 1000) + 's / ' + Math.round(total / 1000) + 's (keep this tab open)';
+    if (el < total) requestAnimationFrame(frame); else rec.stop();
+  })(start);
+}
+
+// ── GIF (the sliding cover as an animated GIF, made in the browser with gif.js from cdnjs) ──
+async function cvLoadGifLib() {
+  if (!window.GIF) await new Promise(function (ok, bad) {
+    var sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js';
+    sc.onload = ok; sc.onerror = function () { bad(new Error('Could not load the GIF maker. Check the internet and try again.')); };
+    document.head.appendChild(sc);
+  });
+  if (!cvGifWorkerUrl) {
+    var r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+    if (!r.ok) throw new Error('Could not load the GIF maker. Check the internet and try again.');
+    cvGifWorkerUrl = URL.createObjectURL(new Blob([await r.text()], { type: 'application/javascript' }));
+  }
+}
+// Same timing as the video: each picture holds, then slides (20 frames a second while moving).
+async function cvMakeGif(st) {
+  await cvLoadGifLib();
+  await cvPrepare();
+  var sz = cvSize(), c = document.createElement('canvas');
+  c.width = sz[0]; c.height = sz[1];
+  var ctx = c.getContext('2d', { willReadFrequently: true });
+  var gif = new GIF({ workers: Math.min(4, navigator.hardwareConcurrency || 2), quality: 10, width: sz[0], height: sz[1], workerScript: cvGifWorkerUrl, repeat: 0 });
+  var n = cvPics.length, seg = CV_HOLD + CV_MOVE, step = 50;
+  cvGrainFixed = true;
+  try {
+    for (var i = 0; i < n; i++) {
+      st.textContent = 'Making GIF… drawing picture ' + (i + 1) + ' of ' + n;
+      cvDraw(ctx, i * seg);
+      gif.addFrame(ctx, { copy: true, delay: CV_HOLD + step });
+      for (var j = 1; j < CV_MOVE / step; j++) {
+        cvDraw(ctx, i * seg + CV_HOLD + j * step);
+        gif.addFrame(ctx, { copy: true, delay: step });
+      }
+      await new Promise(function (ok) { setTimeout(ok, 0); });
+    }
+  } finally { cvGrainFixed = false; }
+  return new Promise(function (ok, bad) {
+    gif.on('progress', function (p) { st.textContent = 'Making GIF… ' + Math.round(p * 100) + '% (keep this tab open)'; });
+    gif.on('finished', function (blob) { ok(blob); });
+    gif.on('abort', function () { bad(new Error('The GIF was stopped')); });
+    gif.render();
+  });
+}
+function cvButtons(on) {
+  ['cvVideoBtn', 'cvGifBtn', 'cvShowBtn'].forEach(function (id) { document.getElementById(id).disabled = !on; });
+}
+async function cvSaveGif() {
+  if (cvBusy || cvPics.length < 2) return;
+  await cvRender();
+  var st = document.getElementById('cvStatus');
+  cvBusy = true; cvButtons(false);
+  try {
+    var blob = await cvMakeGif(st);
+    cvSaveBlob(blob, cvFileName('gif'));
+    showMsg('cvMsg', 'success', 'GIF saved (' + (Math.round(blob.size / 100000) / 10) + ' MB) — check your Downloads');
+  } catch (e) { showMsg('cvMsg', 'error', e.message || 'Could not make the GIF'); }
+  cvBusy = false; cvButtons(true); st.textContent = '';
+  cvRender();
+}
+
+// ── PUT A COVER ON A SHOW (uploaded to x02.me through julyimages /x02, which holds the x02 key) ──
+function cvFillShowPick() {
+  var sel = document.getElementById('cvShowPick');
+  var sig = savedShows.map(function (s) { return s.name; }).join('\n');
+  if (sig !== cvShowSig) {
+    var keep = sel.value;
+    cvShowSig = sig; sel.textContent = '';
+    var o = document.createElement('option'); o.value = 'new'; o.textContent = 'New Saved Show'; sel.appendChild(o);
+    savedShows.forEach(function (s, i) {
+      var op = document.createElement('option'); op.value = String(i); op.textContent = s.name; sel.appendChild(op);
+    });
+    sel.value = keep && sel.querySelector('option[value="' + keep + '"]') ? keep : 'new';
+  }
+  var sz = cvSize(), square = sz[0] === sz[1], n = cvPics.length;
+  document.getElementById('cvShowFields').style.display = square && n ? 'block' : 'none';
+  document.getElementById('cvShowHint').textContent = !square
+    ? 'Switch Size to Square 1080 x 1080 to put this cover on a show.'
+    : !n ? 'Add a picture first.'
+    : n > 1 ? 'The sliding cover is made into a GIF, uploaded to x02.me and set as the show picture on the website.'
+    : 'The cover is uploaded to x02.me and set as the show picture on the website.';
+  document.getElementById('cvShowBtn').textContent = n > 1 ? 'Add GIF to show' : 'Add cover to show';
+  cvShowPickChanged();
+}
+function cvShowPickChanged() {
+  document.getElementById('cvNewShow').style.display = document.getElementById('cvShowPick').value === 'new' ? 'block' : 'none';
+}
+function cvBlobToDataUrl(blob) {
+  return new Promise(function (ok, bad) {
+    var fr = new FileReader();
+    fr.onload = function () { ok(fr.result); };
+    fr.onerror = function () { bad(new Error('Could not read the cover')); };
+    fr.readAsDataURL(blob);
+  });
+}
+async function cvUpload(blob, name) {
+  var res = await fetch(WORKER + '/x02', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: adminToken, image: await cvBlobToDataUrl(blob), name: name })
+  });
+  var data = await res.json().catch(function () { return {}; });
+  if (!data.ok || !/^https:\/\//.test(data.url || '')) throw new Error(data.error || 'Upload failed');
+  return data.url;
+}
+async function cvAddToShow() {
+  if (cvBusy) return;
+  if (!cvPics.length) { showMsg('cvMsg', 'error', 'Add a picture first'); return; }
+  var sz = cvSize();
+  if (sz[0] !== sz[1]) { showMsg('cvMsg', 'error', 'Switch Size to Square 1080 x 1080 first'); return; }
+  var pick = document.getElementById('cvShowPick').value, isNew = pick === 'new';
+  var target = isNew ? null : savedShows[parseInt(pick, 10)];
+  var name = isNew ? document.getElementById('cvNsName').value.trim() : (target && target.name);
+  if (!name) { showMsg('cvMsg', 'error', isNew ? 'Type the show name' : 'Pick a show'); return; }
+  if (isNew && savedShows.some(function (s) { return showKey(s.name) === showKey(name); })) {
+    showMsg('cvMsg', 'error', 'There is already a Saved Show called "' + name + '". Pick it from the list instead.'); return;
+  }
+  var slots = scheduleSlots.filter(function (s) { return showKey(s.name) === showKey(name); });
+  if (!isNew && !confirm('Replace the picture of "' + name + '" in Saved Shows' + (slots.length ? ' and on ' + slots.length + ' slot' + (slots.length > 1 ? 's' : '') + ' in the schedule' : '') + '? The website shows the new one within a minute.')) return;
+
+  await cvRender();
+  var st = document.getElementById('cvStatus');
+  cvBusy = true; cvButtons(false);
+  try {
+    var blob, kind;
+    if (cvPics.length > 1) { blob = await cvMakeGif(st); kind = 'GIF'; }
+    else {
+      blob = await new Promise(function (ok) { document.getElementById('cvCanvas').toBlob(ok, 'image/jpeg', 0.92); });
+      kind = 'cover';
+      if (!blob) throw new Error('Could not make the cover');
+    }
+    st.textContent = 'Uploading to x02.me… (' + (Math.round(blob.size / 100000) / 10) + ' MB)';
+    var url = await cvUpload(blob, 'july-' + name);
+    st.textContent = 'Saving the show…';
+    var ok;
+    if (isNew) {
+      ok = await rememberShow({
+        name: name,
+        description: document.getElementById('cvNsDesc').value.trim(),
+        image: url,
+        dj: document.getElementById('cvNsDj').value.trim(),
+        tags: tagList(document.getElementById('cvNsTags').value),
+        bio: '',
+        djset: document.getElementById('cvNsDjset').checked,
+        resident: document.getElementById('cvNsResident').checked
+      });
+    } else {
+      target.image = url;
+      ok = await storeSavedShows();
+      if (ok && slots.length) {
+        slots.forEach(function (s) { s.image = url; });
+        renderSchedule();
+        ok = await saveSchedule();
+      }
+    }
+    if (!ok) throw new Error('The ' + kind + ' is on x02.me but the show did not save. Try again.');
+    if (isNew) { ['cvNsName', 'cvNsDj', 'cvNsDesc', 'cvNsTags'].forEach(function (id) { document.getElementById(id).value = ''; }); cvNsDjset.checked = false; cvNsResident.checked = false; }
+    showMsg('cvMsg', 'success', isNew
+      ? '"' + name + '" is in Saved Shows with this ' + kind + '. Add it to the week from the Schedule tab.'
+      : 'New ' + kind + ' on "' + name + '"' + (slots.length ? ' and its ' + slots.length + ' slot' + (slots.length > 1 ? 's' : '') + ' in the schedule' : '') + '.');
+  } catch (e) { showMsg('cvMsg', 'error', e.message || 'Something went wrong'); }
+  cvBusy = false; cvButtons(true); st.textContent = '';
+  cvRender();
+}
+document.addEventListener('dragover', function (e) { if (e.target.closest && e.target.closest('#cvDrop')) e.preventDefault(); });
+document.addEventListener('drop', function (e) {
+  if (!e.target.closest || !e.target.closest('#cvDrop')) return;
+  e.preventDefault();
+  if (e.dataTransfer) cvAddFiles(e.dataTransfer.files);
+});
 
 // ── STORY BACKGROUNDS ──
 function bgNote(text, canKeep) {
