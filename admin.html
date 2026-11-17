@@ -2212,7 +2212,29 @@ async function exportPrepare() {
   }
 }
 // The background picture, blurred by the slider. The blurred copy is made once and reused for every video frame.
+// The blur is done by hand (box blur on a smaller copy), because Safari and iPhones ignore the canvas "filter" setting.
 var exportBlurCache = { img: null, blur: 0, canvas: null };
+function exportBoxBlur(d, w, h, r) {
+  var t = new Uint8ClampedArray(d.length), pass, a, b;
+  function run(src, dst, len, lines, step, lineStep) {
+    for (var l = 0; l < lines; l++) {
+      var base = l * lineStep;
+      for (var ch = 0; ch < 3; ch++) {
+        var sum = 0, k;
+        for (k = -r; k <= r; k++) sum += src[base + Math.min(len - 1, Math.max(0, k)) * step + ch];
+        for (var i = 0; i < len; i++) {
+          dst[base + i * step + ch] = sum / (2 * r + 1);
+          sum += src[base + Math.min(len - 1, i + r + 1) * step + ch] - src[base + Math.max(0, i - r) * step + ch];
+        }
+      }
+      for (var j = 0; j < len; j++) dst[base + j * step + 3] = 255;
+    }
+  }
+  for (pass = 0; pass < 3; pass++) {
+    run(d, t, w, h, 4, w * 4);   // across
+    run(t, d, h, w, w * 4, 4);   // down
+  }
+}
 function exportBgSource() {
   var img = exportBg.img;
   var el = document.getElementById('exportBlur');
@@ -2220,14 +2242,24 @@ function exportBgSource() {
   if (!blur) return img;
   var cch = exportBlurCache;
   if (cch.img === img && cch.blur === blur && cch.canvas) return cch.canvas;
+  // Work on a smaller copy (about 3 px of blur there), then scale it back up: fast and smooth.
+  var f = Math.max(2, blur / 3), over = blur * 3;
+  var sw = Math.ceil((EXPORT_W + 2 * over) / f), sh = Math.ceil((EXPORT_H + 2 * over) / f);
+  var s = document.createElement('canvas'); s.width = sw; s.height = sh;
+  var sx = s.getContext('2d');
+  var sc = Math.max(sw / img.naturalWidth, sh / img.naturalHeight);
+  var dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
+  sx.imageSmoothingQuality = 'high';
+  sx.drawImage(img, (sw - dw) / 2, (sh - dh) / 2, dw, dh);
+  try {
+    var data = sx.getImageData(0, 0, sw, sh);
+    exportBoxBlur(data.data, sw, sh, Math.max(1, Math.round(blur / f)));
+    sx.putImageData(data, 0, 0);
+  } catch (e) { return img; }
   var c = document.createElement('canvas'); c.width = EXPORT_W; c.height = EXPORT_H;
   var x = c.getContext('2d');
-  if (!('filter' in x)) return img;           // very old browser: no blur
-  var over = blur * 3;
-  var sc = Math.max((c.width + 2 * over) / img.naturalWidth, (c.height + 2 * over) / img.naturalHeight);
-  var dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
-  x.filter = 'blur(' + blur + 'px)';
-  x.drawImage(img, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(s, -over, -over, EXPORT_W + 2 * over, EXPORT_H + 2 * over);
   exportBlurCache = { img: img, blur: blur, canvas: c };
   return c;
 }
@@ -3110,29 +3142,50 @@ async function removeBackground(it) {
   renderBackgrounds(); drawExportPreview();
 }
 // A random public-domain artwork from the Art Institute of Chicago's open collection.
-var MUSEUM_TERMS = ['abstract', 'ink', 'botanical study', 'charcoal', 'fern', 'monotype', 'cyanotype', 'photogram', 'clouds', 'trees', 'woodcut', 'sketch', 'flowers', 'night', 'sea', 'shadow', 'smoke', 'moon'];
+// Mostly black-and-white photographs (Stieglitz, Hine, Evans and others); sometimes a black-and-white
+// landscape, night or sea print. Large, not colourful, chosen at random from the whole set, taller pictures first,
+// and never one of the last 40 shown.
+var MUSEUM_PRINT_WORDS = ['landscape', 'night', 'sea', 'storm', 'clouds', 'river', 'forest', 'trees', 'moonlight', 'rain', 'mountains', 'waves', 'city', 'street'];
+function museumSeen() { try { return JSON.parse(localStorage.getItem('july_museum_seen') || '[]'); } catch (e) { return []; } }
+function museumRemember(id) {
+  var l = museumSeen().filter(function(x) { return x !== id; }); l.push(id);
+  try { localStorage.setItem('july_museum_seen', JSON.stringify(l.slice(-40))); } catch (e) {}
+}
 async function surpriseMuseum() {
   var btn = document.getElementById('bgSurpriseBtn');
   btn.disabled = true; bgNote('Looking through the museum…');
   try {
+    var seen = museumSeen();
     for (var tries = 0; tries < 3; tries++) {
-      var term = MUSEUM_TERMS[Math.floor(Math.random() * MUSEUM_TERMS.length)];
+      var photo = Math.random() < 0.75;
+      var filter = [
+        { term: { is_public_domain: true } },
+        { terms: { 'artwork_type_title.keyword': photo ? ['Photograph'] : ['Print', 'Drawing and Watercolor'] } },
+        { range: { colorfulness: { gt: 0.3, lte: 12 } } },
+        { range: { 'thumbnail.width': { gte: 1500 } } },
+        { range: { 'thumbnail.height': { gte: 1500 } } }
+      ];
+      var bool = { filter: filter, must_not: [{ terms: { 'artist_title.keyword': ['Honoré-Victorin Daumier', 'Paul Gavarni'] } }] };   // cartoons with captions
+      if (!photo) {
+        var w = MUSEUM_PRINT_WORDS[Math.floor(Math.random() * MUSEUM_PRINT_WORDS.length)];
+        bool.must = [{ multi_match: { query: w, fields: ['title', 'subject_titles', 'term_titles'] } }];
+      }
       var params = {
-        q: term, limit: 24, page: 1 + Math.floor(Math.random() * 3),
-        fields: ['id', 'title', 'artist_title', 'date_display', 'image_id'],
-        query: { bool: { filter: [
-          { term: { is_public_domain: true } },
-          { terms: { 'artwork_type_title.keyword': ['Print', 'Drawing and Watercolor', 'Photograph'] } }
-        ] } }
+        limit: 30,
+        fields: ['id', 'title', 'artist_title', 'date_display', 'image_id', 'thumbnail'],
+        query: { function_score: { query: { bool: bool }, random_score: { seed: Math.floor(Math.random() * 1e9) }, boost_mode: 'replace' } }
       };
       var url = 'https://api.artic.edu/api/v1/artworks/search?params=' + encodeURIComponent(JSON.stringify(params));
       var res = await fetch(url);
       var data = await res.json();
-      var pool = (data.data || []).filter(function(a) { return a.image_id; });
+      var pool = (data.data || []).filter(function(a) { return a.image_id && seen.indexOf(a.image_id) < 0; });
       if (!pool.length) continue;
-      var a = pool[Math.floor(Math.random() * pool.length)];
+      // Tall pictures fill the 9:16 story best, so try those first.
+      var tall = pool.filter(function(a) { var t = a.thumbnail || {}; return t.width && t.height / t.width >= 1.1; });
+      var a = (tall.length ? tall : pool)[0];
       var img = await exportLoadImage('https://www.artic.edu/iiif/2/' + a.image_id + '/full/843,/0/default.jpg', true);
       if (!img) continue;
+      museumRemember(a.image_id);
       var credit = [a.title, a.artist_title, a.date_display].filter(Boolean).join(', ') + ' (Art Institute of Chicago, public domain)';
       exportBg = { img: img, light: exportIsLight(img), credit: credit, id: null, museum: true };
       bgNote(credit, true);
