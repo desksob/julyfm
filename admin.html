@@ -2191,6 +2191,25 @@ function exportMakeGrain() {
   x.putImageData(d, 0, 0);
   return c;
 }
+// Shrink a picture in halving steps at high quality (one big jump leaves jagged edges on the logo).
+function exportShrink(src, w, h) {
+  var sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+  while (sw / 2 >= w * 1.5) {
+    var half = document.createElement('canvas'); half.width = Math.round(sw / 2); half.height = Math.round(sh / 2);
+    var hx = half.getContext('2d'); hx.imageSmoothingEnabled = true; hx.imageSmoothingQuality = 'high';
+    hx.drawImage(src, 0, 0, half.width, half.height);
+    src = half; sw = half.width; sh = half.height;
+  }
+  var c = document.createElement('canvas'); c.width = w; c.height = h;
+  var x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  x.drawImage(src, 0, 0, w, h);
+  return c;
+}
+var exportLogoSized = {};
+function exportLogoAt(logo, w, h) {
+  var k = (logo === exportLogo.dark ? 'd' : 'l') + w + 'x' + h;
+  return exportLogoSized[k] || (exportLogoSized[k] = exportShrink(logo, w, h));
+}
 async function exportPrepare() {
   if (document.fonts) { try { await Promise.all([document.fonts.load("500 30px 'IBM Plex Mono'"), document.fonts.load("600 28px 'IBM Plex Mono'")]); } catch (e) {} }
   if (!exportGrain) exportGrain = exportMakeGrain();
@@ -2198,8 +2217,7 @@ async function exportPrepare() {
     var img = await exportLoadImage('july-radio-logo-header.png', false);
     if (img) {
       var mk = function(invert) {
-        var c = document.createElement('canvas'); c.width = 480; c.height = 360;
-        var x = c.getContext('2d'); x.drawImage(img, 0, 0, 480, 360);
+        var c = exportShrink(img, 480, 360), x = c.getContext('2d');
         if (invert) { try {
           var d = x.getImageData(0, 0, 480, 360);
           for (var i = 0; i < d.data.length; i += 4) { d.data[i] = 255 - d.data[i]; d.data[i + 1] = 255 - d.data[i + 1]; d.data[i + 2] = 255 - d.data[i + 2]; }
@@ -2374,7 +2392,7 @@ function exportDraw(ctx, dayIndex, t, page) {
           ctx.drawImage(art, (art.naturalWidth - side) / 2, (art.naturalHeight - side) / 2, side, side, M, y, cover, cover);
         } else {
           ctx.fillRect(M, y, cover, cover);
-          if (exportLogo) ctx.drawImage(light ? exportLogo.dark : exportLogo.light, M + cover * 0.08, y + cover * 0.185, cover * 0.84, cover * 0.63);
+          if (exportLogo) ctx.drawImage(exportLogoAt(light ? exportLogo.dark : exportLogo.light, Math.round(cover * 0.84), Math.round(cover * 0.63)), Math.round(M + cover * 0.08), Math.round(y + cover * 0.185));
         }
         ctx.lineWidth = 2; ctx.strokeRect(M, y, cover, cover);
         var resident = exportIsResident(s);
@@ -2416,7 +2434,7 @@ function exportDraw(ctx, dayIndex, t, page) {
   // Footer: dog + link
   put(ease(still ? 0 : Math.min(3200, 700 + rows * 260)), 0, function() {
     ctx.fillRect(M, 1420, W - 2 * M, 2);
-    if (logo) ctx.drawImage(logo, M - 22, 1438, 176, 132);
+    if (logo) ctx.drawImage(exportLogoAt(logo, 176, 132), M - 22, 1438);
     ctx.textAlign = 'right';
     ctx.font = "700 40px " + EXPORT_SANS; spaced(0);
     ctx.fillText('LIVE ▶ ' + site, W - M, 1508);
@@ -2647,21 +2665,37 @@ async function cvPrepare() {
   var c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
   var x = c.getContext('2d'); x.drawImage(img, 0, 0);
   var d = x.getImageData(0, 0, c.width, c.height).data, x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
-  for (var y = 0; y < c.height; y += 2) for (var i = 0; i < c.width; i += 2) {
-    if (d[(y * c.width + i) * 4 + 3] > 40) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  for (var y = 0; y < c.height; y++) for (var i = 0; i < c.width; i++) {
+    if (d[(y * c.width + i) * 4 + 3] > 128) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   }
-  var w = x1 - x0 + 2, h = y1 - y0 + 2;
+  var w = x1 - x0 + 1, h = y1 - y0 + 1;
   cvDog = document.createElement('canvas'); cvDog.width = w; cvDog.height = h;
   // The logo is a box with the dog cut out, so the picture shows through the dog.
   cvDog.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, w, h);
 }
-function cvTintedDog(color) {
+// The logo at its exact size on the cover: a sharp box in the colour, with the dog cut out of it.
+// Only the dog shape is shrunk (in halving steps at high quality, see exportShrink), so its edges are smooth
+// and the box edges stay crisp. Shrinking the whole logo in one jump left jagged, blobby edges.
+var cvDogHole = null;
+function cvTintedDog(color, w, h) {
   if (!cvDog) return null;
-  if (cvDogTint[color]) return cvDogTint[color];
-  var c = document.createElement('canvas'); c.width = cvDog.width; c.height = cvDog.height;
-  var x = c.getContext('2d'); x.drawImage(cvDog, 0, 0);
-  x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
-  cvDogTint[color] = c;
+  var key = color + '|' + w + 'x' + h;
+  if (cvDogTint[key]) return cvDogTint[key];
+  if (!cvDogHole) {
+    cvDogHole = document.createElement('canvas'); cvDogHole.width = cvDog.width; cvDogHole.height = cvDog.height;
+    var hx = cvDogHole.getContext('2d');
+    hx.fillStyle = '#000'; hx.fillRect(0, 0, cvDogHole.width, cvDogHole.height);
+    hx.globalCompositeOperation = 'destination-out'; hx.drawImage(cvDog, 0, 0);   // what is left is the dog
+    hx.globalCompositeOperation = 'source-over';   // the dog never touches the box edge; keep the edge solid
+    var e = 6, W2 = cvDogHole.width, H2 = cvDogHole.height;
+    hx.clearRect(0, 0, W2, e); hx.clearRect(0, H2 - e, W2, e); hx.clearRect(0, 0, e, H2); hx.clearRect(W2 - e, 0, e, H2);
+  }
+  var c = document.createElement('canvas'); c.width = w; c.height = h;
+  var x = c.getContext('2d');
+  x.fillStyle = color; x.fillRect(0, 0, w, h);
+  x.globalCompositeOperation = 'destination-out';
+  x.drawImage(exportShrink(cvDogHole, w, h), 0, 0);
+  cvDogTint[key] = c;
   return c;
 }
 
@@ -2760,8 +2794,8 @@ function cvDraw(ctx, t) {
   // Bottom row
   var lift = H > W ? Math.round(24 * S) : 0;
   var bx = Math.round(27 * S), bw = Math.round(158 * S), bh = Math.round(108 * S), by = H - Math.round(136 * S) - lift;
-  var logo = cvTintedDog(col.box);
-  if (logo) ctx.drawImage(logo, bx, by, bw, bh);
+  var logo = cvTintedDog(col.box, bw, bh);
+  if (logo) ctx.drawImage(logo, bx, by);
   ctx.fillStyle = col.text; ctx.textAlign = 'right';
   var right = W - Math.round(40 * S), fs = Math.round(34 * S * cvScaleLive);
   ctx.font = fs + "px " + CV_FONT_LIVE;
