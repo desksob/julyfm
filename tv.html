@@ -203,6 +203,7 @@ function fail() {
 }
 function start() {
   clearTimeout(retry);
+  pieces = {}; checkedStart = 0;
   showMsg('Connecting…'); setState('Connecting');
   if (window.Hls && Hls.isSupported()) {
     hls = new Hls({ liveSyncDurationCount: 3, enableWorker: true });
@@ -213,6 +214,7 @@ function start() {
       fail();
     });
     hls.on(Hls.Events.MANIFEST_PARSED, () => { if (wantPlay) video.play().catch(() => {}); });
+    hls.on(Hls.Events.LEVEL_UPDATED, (e, d) => notePieces(d.details.fragments));
     hls.loadSource(TV_URL);
     hls.attachMedia(video);
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -302,26 +304,79 @@ async function loadGuide() {
       out.push({ st, sp, song: sub || title, artist: sub ? title : '' });
     });
     out.sort((a, b) => a.st - b.st);
-    if (out.length) { guide = out; guideAt = Date.now(); }
+    if (out.length) { guide = out; guideAt = Date.now(); checkedStart = 0; }
   } catch (e) {}
   document.body.classList.toggle('noguide', !guide.length);
   layout();
+  checkDrift();
   paintGuide();
 }
-// The picture runs a few seconds behind the server, so match the guide to the picture, not the clock.
-function behindMs() {
+// Which moment of the TV schedule is on screen. Every 4-second piece of the stream carries the
+// TV server's own clock (EXT-X-PROGRAM-DATE-TIME), so read that instead of guessing from our clock.
+function pictureTime() {
   try {
-    if (hls && isFinite(hls.latency) && hls.latency > 0) return hls.latency * 1000;
-    const r = video.seekable;
-    if (r && r.length) return Math.max(0, (r.end(r.length - 1) - video.currentTime) * 1000);
+    if (hls && hls.playingDate) return hls.playingDate.getTime() - drift;
+    if (!hls && video.getStartDate) { const s = video.getStartDate().getTime(); if (s > 0) return s + video.currentTime * 1000 - drift; }
+    if (hls && isFinite(hls.latency) && hls.latency > 0) return Date.now() - hls.latency * 1000 - drift;
   } catch (e) {}
-  return 0;
+  return Date.now() - drift;
 }
+// When the TV server runs for hours or rebuilds its schedule, its picture can fall minutes behind
+// its own guide. Each new video starts a new numbered part in the stream, so we time every whole
+// video and look it up in the guide by its exact length. That tells us how far behind it is (drift).
+let drift = 0, pieces = {}, checkedStart = 0, guideRetry = 0;
+function notePieces(frags) {
+  frags.forEach(f => {
+    if (!f.programDateTime) return;
+    const old = pieces[f.sn];
+    if (old && Math.abs(old[1] - f.programDateTime) > 2000) { pieces = {}; checkedStart = 0; } // the server restarted the stream
+    pieces[f.sn] = [f.cc, f.programDateTime];
+  });
+  const sns = Object.keys(pieces).map(Number).sort((a, b) => a - b);
+  sns.slice(0, Math.max(0, sns.length - 600)).forEach(sn => delete pieces[sn]);
+  checkDrift();
+}
+function videoStarts() {
+  const sns = Object.keys(pieces).map(Number).sort((a, b) => a - b), out = [];
+  for (let i = 1; i < sns.length; i++)
+    if (sns[i] === sns[i - 1] + 1 && pieces[sns[i]][0] !== pieces[sns[i - 1]][0]) out.push(pieces[sns[i]][1]);
+  return out;
+}
+function checkDrift() {
+  const starts = videoStarts();
+  if (!guide.length || !starts.length) return;
+  const last = starts[starts.length - 1];
+  if (last === checkedStart) return;
+  // The gap grows by a fraction of a second with every video, so follow it each time a video starts.
+  const fits = d => guide.find(g => Math.abs(g.st - (last - d)) < 2500);
+  const same = fits(drift) || fits(0);
+  if (same) { checkedStart = last; setDrift(last - same.st); return; }
+  // Find the last whole video by its length. Several guide items can share a length, so the match
+  // must be the only one, or at least 15 minutes nearer than any other; else two videos in a row must match.
+  for (let k = starts.length - 1; k >= 1; k--) {
+    const len = starts[k] - starts[k - 1], hits = [];
+    guide.forEach((g, i) => {
+      const d = starts[k - 1] - g.st;
+      if (Math.abs(g.sp - g.st - len) <= 1500 && Math.abs(d) < 3 * 3600000) hits.push({ i, d });
+    });
+    hits.sort((a, b) => Math.abs(a.d - drift) - Math.abs(b.d - drift));
+    let pick = hits.length === 1 || (hits.length > 1 && Math.abs(hits[0].d - drift) + 900000 < Math.abs(hits[1].d - drift)) ? hits[0] : null;
+    if (!pick && hits.length > 1 && k >= 2) {
+      const prev = starts[k - 1] - starts[k - 2];
+      const both = hits.filter(h => h.i > 0 && Math.abs(guide[h.i - 1].sp - guide[h.i - 1].st - prev) <= 1500);
+      if (both.length === 1) pick = both[0];
+    }
+    if (pick) { checkedStart = last; setDrift(pick.d); return; }
+  }
+  // Nothing fits: the server may have rebuilt its schedule, so fetch a fresh guide (at most once a minute).
+  if (Date.now() - guideRetry > 60000) { guideRetry = Date.now(); loadGuide(); }
+}
+function setDrift(d) { if (Math.abs(d - drift) < 1000) return; drift = d; lastNowKey = ''; paintGuide(); }
 const eatHM = ms => new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms));
 const mmss = ms => { const t = Math.max(0, Math.round(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 function paintGuide() {
   if (!guide.length) return;
-  const t = Date.now() - behindMs();
+  const t = pictureTime();
   let i = guide.findIndex(g => t >= g.st && t < g.sp);
   if (i < 0) { // between items or the list ran out: show the next one and fetch a fresh list
     if (Date.now() - guideAt > 60000) { guideAt = Date.now(); loadGuide(); }
@@ -340,7 +395,7 @@ function paintGuide() {
   list.textContent = '';
   guide.slice(i + 1, i + 13).forEach(g => {
     const row = document.createElement('div'); row.className = 'g-row';
-    const tm = document.createElement('div'); tm.className = 'g-time'; tm.textContent = eatHM(g.st);
+    const tm = document.createElement('div'); tm.className = 'g-time'; tm.textContent = eatHM(g.st + drift);
     const tx = document.createElement('div');
     const so = document.createElement('div'); so.className = 's'; so.textContent = g.song;
     const ar = document.createElement('div'); ar.className = 'a'; ar.textContent = g.artist;
