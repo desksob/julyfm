@@ -905,15 +905,6 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
     </div>
     <div class="tvm-col tvm-col-right">
       <div class="tvm-row-media">
-        <div class="tvm-panel tvm-tv">
-          <div class="tvm-panel-label">July Music Television</div>
-          <div class="tvm-video-slot" id="tvModeVideoSlot">
-            <div class="tvm-vol-control">
-              <input type="range" min="0" max="100" value="100" id="tvmVolSlider" oninput="setTvVideoVol(this.value)">
-              <span class="tvm-vol-icon">🔊</span>
-            </div>
-          </div>
-        </div>
         <div class="tvm-panel tvm-visualizer">
           <div class="tvm-panel-label">Visualizer</div>
           <div class="tvm-viz-slot" id="tvmVizSlot"></div>
@@ -955,6 +946,7 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
 
   <nav>
     <a class="active" href="/" data-sec="listen" onclick="show('listen',this);return false">Listen</a>
+    <a href="/tv">TV</a>
     <a href="/schedule" data-sec="schedule" onclick="show('schedule',this);return false">Schedule</a>
     <a href="/events" data-sec="events" onclick="show('events',this);return false">Events</a>
     <a href="/team" data-sec="djs" onclick="show('djs',this);return false">Team</a>
@@ -984,10 +976,6 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
       <button class="dock-icon" data-dock-for="history" onclick="openCard('history')" title="History">
         <span class="dock-status"></span>
         <span class="dock-icon-glyph">≡</span><span class="dock-icon-label">History</span>
-      </button>
-      <button class="dock-icon" data-dock-for="tv" onclick="openCard('tv')" title="TV">
-        <span class="dock-status"></span>
-        <span class="dock-icon-glyph">▭</span><span class="dock-icon-label">TV</span>
       </button>
       <button class="dock-icon" data-dock-for="visualizer" onclick="openCard('visualizer')" title="Visualizer">
         <span class="dock-status"></span>
@@ -1120,26 +1108,6 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
         </div>
         <div class="win-body" id="body-history">
         <div id="historyList"></div>
-        </div>
-      </div>
-
-      <!-- TV -->
-      <div class="watch-card win-card" data-card-id="tv">
-        <div class="resize-handle" title="Resize"></div>
-        <div class="win-titlebar">
-          <span class="win-title">JULY MUSIC TELEVISION</span>
-          <div class="win-controls">
-            <button class="win-btn win-min" onclick="minimizeCard('tv',event)" title="Minimize">–</button>
-            <button class="win-btn win-close" onclick="closeCard('tv',event)" title="Close">×</button>
-          </div>
-        </div>
-        <div class="win-body" id="body-tv">
-          <video id="tvPlayer" class="tv-video" controls playsinline></video>
-          <div class="status-line" id="tvStatus" style="margin-top:10px;">· PRESS PLAY TO START STREAM</div>
-          <div class="viz-controls" style="margin-top:14px;">
-            <button class="viz-btn" id="tvPlayBtn" onclick="toggleTv()">Play</button>
-            <button class="viz-btn" id="tvStopBtn" onclick="stopTv()">Stop</button>
-          </div>
         </div>
       </div>
 
@@ -1312,7 +1280,6 @@ input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; he
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/lib/butterchurn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/lib/isSupported.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js"></script>
@@ -1326,78 +1293,6 @@ function safeUrl(u) {
   if (/^https?:\/\//i.test(u) || /^\/(?!\/)/.test(u) || /^[\w.-]+\.(png|jpe?g|gif|webp|svg)$/i.test(u)) return escH(u);
   if (/^data:image\/(png|jpe?g|gif|webp);/i.test(u)) return u.replace(/"/g, '%22');
   return '';
-}
-const TV_STREAM_URL = 'https://tv.july.rip/iptv/channel/10.m3u8';
-let tvPlayer = null, tvPlaying = false;
-
-function initTv() {
-  if (tvPlayer) return;
-  const video = document.getElementById('tvPlayer');
-  const statusEl = document.getElementById('tvStatus');
-
-  // Safari / iOS: native HLS support built into the <video> element, no library needed
-  if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = TV_STREAM_URL;
-    tvPlayer = { native: true, video: video };
-    return;
-  }
-
-  // Chrome / Firefox / Edge / Android: need hls.js since there's no native HLS support
-  if (window.Hls && Hls.isSupported()) {
-    const hls = new Hls({
-      liveSyncDurationCount: 3,
-      enableWorker: true
-    });
-    hls.loadSource(TV_STREAM_URL);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      if (data.fatal) {
-        statusEl.textContent = '· STREAM ERROR, TRY AGAIN';
-        tvPlaying = false;
-        document.getElementById('tvPlayBtn').textContent = 'Play';
-      }
-    });
-    tvPlayer = { native: false, hls: hls, video: video };
-    return;
-  }
-
-  statusEl.textContent = '· YOUR BROWSER CAN\'T PLAY THIS STREAM';
-}
-
-function toggleTv() {
-  const statusEl = document.getElementById('tvStatus');
-  const btn = document.getElementById('tvPlayBtn');
-  if (!tvPlayer) initTv();
-  if (!tvPlayer) return;
-  if (!tvPlaying) {
-    tvPlayer.video.play();
-    tvPlaying = true;
-    btn.textContent = 'Pause';
-    statusEl.textContent = '· LIVE';
-  } else {
-    tvPlayer.video.pause();
-    tvPlaying = false;
-    btn.textContent = 'Play';
-    statusEl.textContent = '· PAUSED';
-  }
-}
-
-function stopTv() {
-  const statusEl = document.getElementById('tvStatus');
-  const btn = document.getElementById('tvPlayBtn');
-  if (tvPlayer) {
-    tvPlayer.video.pause();
-    if (tvPlayer.native) {
-      tvPlayer.video.removeAttribute('src');
-      tvPlayer.video.load();
-    } else if (tvPlayer.hls) {
-      tvPlayer.hls.destroy();
-    }
-    tvPlayer = null;
-  }
-  tvPlaying = false;
-  btn.textContent = 'Play';
-  statusEl.textContent = '· PRESS PLAY TO START STREAM';
 }
 </script>
 <script>
@@ -3885,18 +3780,10 @@ let tvModeClockInterval = null;
 
 let tvModeActive = false;
 
-function setTvVideoVol(val) {
-  const video = document.getElementById('tvPlayer');
-  if (video) video.volume = val / 100;
-}
-
 function enterTvMode() {
   const overlay = document.getElementById('tvModeOverlay');
-  const slot = document.getElementById('tvModeVideoSlot');
-  const video = document.getElementById('tvPlayer');
-  if (!overlay || !slot || !video) return;
+  if (!overlay) return;
 
-  slot.appendChild(video); // reparenting keeps playback going, no reload
   overlay.classList.add('active');
   tvModeActive = true;
 
@@ -3908,9 +3795,6 @@ function enterTvMode() {
   }
   vizPrevAutoCycleState = vizAutoCycleEnabled;
   setVizAutoCycle(true); // 5s auto-cycle is on by default in TV Mode
-
-  const volSlider = document.getElementById('tvmVolSlider');
-  if (volSlider) volSlider.value = Math.round((video.volume || 1) * 100);
 
   const logo = document.getElementById('tvmLogo');
   const headerLogo = document.querySelector('header img');
@@ -3927,9 +3811,6 @@ function enterTvMode() {
 
   if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
   document.addEventListener('keydown', tvModeEscHandler);
-
-  if (!tvPlayer) initTv();
-  if (!tvPlaying) toggleTv();
 }
 
 // Called once on entry, and again from the normal render functions whenever
@@ -3996,13 +3877,10 @@ function syncTvModeContent() {
 
 function exitTvMode() {
   const overlay = document.getElementById('tvModeOverlay');
-  const video = document.getElementById('tvPlayer');
-  const homeSlot = document.getElementById('body-tv');
   if (!overlay) return;
 
   overlay.classList.remove('active');
   tvModeActive = false;
-  if (video && homeSlot) homeSlot.insertBefore(video, homeSlot.firstChild);
 
   const vizCanvas = document.getElementById('vizCanvas');
   const homeVizSlot = document.getElementById('body-visualizer');
