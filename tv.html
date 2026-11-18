@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>July Music Television | July Radio</title>
+<meta name="description" content="July Music Television: our archive music television project, playing music videos from all eras, 24/7 from July Radio in Nairobi.">
+<link rel="canonical" href="https://july.rip/tv">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="July Radio">
+<meta property="og:title" content="July Music Television | July Radio">
+<meta property="og:description" content="Our archive music television project, playing music videos from all eras.">
+<meta property="og:url" content="https://july.rip/tv">
+<meta property="og:image" content="https://july.rip/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a0a0a">
+<script>
+(function(){ try { document.documentElement.setAttribute('data-theme', localStorage.getItem('july-theme') || 'light'); } catch(e) {} })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<!--
+  JULY MUSIC TELEVISION (july.rip/tv, 18 Nov 2026)
+  The TV moved off the home page onto its own page. One 4:3 window, sized to fit the screen.
+  Starts muted (browsers only allow silent autoplay); the Sound button (filled while off) or a tap on the picture unmutes.
+  Keys: space = pause/play, M = sound, F = full screen.
+-->
+<style>
+:root{ --bg:#ffffff; --ink:#0a0a0a; --border:#0a0a0a; --muted:#6e6e6e; --dim:#b0b0b0; --hair:#e2e2e2; }
+html[data-theme="dark"]{ --bg:#0a0a0a; --ink:#f5f5f5; --border:#f5f5f5; --muted:#9a9a9a; --dim:#555555; --hair:#262626; }
+*{ margin:0; padding:0; box-sizing:border-box; }
+html, body{ background:var(--bg); }
+body{
+  color:var(--ink); font-family:'IBM Plex Mono','Courier New',monospace; font-weight:500;
+  min-height:100vh; min-height:100dvh; display:flex; flex-direction:column;
+  transition:background .2s ease, color .2s ease;
+}
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.2;} }
+.dot{ width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1.4s ease-in-out infinite; flex-shrink:0; }
+
+/* ONE COLUMN, SIZED TO THE TV: header, TV (+ guide) and caption share the same edges.
+   layout() in the script sets --w (TV width) and --total so the 4:3 picture always fits the window. */
+.page{ width:var(--total, min(1000px, calc(100vw - 32px))); margin:0 auto; padding-bottom:24px; }
+header{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:28px 0 18px; border-bottom:1px solid var(--border); }
+header a.logo{ display:block; line-height:0; flex-shrink:0; }
+header img{ height:56px; width:auto; display:block; }
+html[data-theme="dark"] header img{ filter:invert(1); }
+.head-right{ display:flex; align-items:center; gap:12px; }
+.clock{ font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+body.narrow .clock{ display:none; }
+body.smalltv .vol input[type=range]{ display:none; } /* small TV window: keep the buttons on one line */
+.btn{
+  font-family:inherit; font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink); background:transparent; border:1px solid var(--border); padding:6px 10px;
+  cursor:pointer; text-decoration:none; white-space:nowrap; display:inline-flex; align-items:center; gap:8px;
+}
+.btn:hover, .btn.on{ background:var(--ink); color:var(--bg); }
+
+/* THE TV (4:3) and the guide beside it, or under it when there is no room */
+.row{ display:flex; gap:24px; align-items:stretch; margin-top:28px; }
+.tvwin{ border:1px solid var(--border); background:var(--bg); width:var(--w, 100%); flex-shrink:0; }
+.guide{ width:300px; flex-shrink:0; contain:size; border:1px solid var(--border); display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+body.noguide .guide{ display:none; }
+body.stack .row{ flex-direction:column; }
+body.stack .guide{ width:100%; contain:none; }
+body.stack .g-row:nth-child(n+4){ display:none; }
+
+/* GUIDE (from the TV server's own programme list) */
+.g-now{ padding:16px 14px 14px; }
+.g-song{ font-size:17px; font-weight:600; text-transform:uppercase; line-height:1.2; word-break:break-word; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.g-artist{ font-size:12px; color:var(--muted); margin-top:6px; letter-spacing:.02em; }
+.prog{ height:2px; background:var(--hair); margin-top:14px; }
+.prog i{ display:block; height:100%; width:0; background:var(--ink); transition:width 1s linear; }
+.g-label{ font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--bg); background:var(--ink); padding:6px 14px; }
+.g-list{ flex:1; min-height:0; overflow:hidden; }
+.g-row{ display:grid; grid-template-columns:46px 1fr; gap:10px; padding:10px 14px; border-bottom:1px solid var(--hair); }
+.g-row > div{ min-width:0; }
+.g-time{ font-size:10px; color:var(--dim); font-variant-numeric:tabular-nums; padding-top:2px; }
+.g-row .s{ font-size:12px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.g-row .a{ font-size:10px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.titlebar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:var(--ink); color:var(--bg); padding:8px 12px;
+  font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap;
+}
+.titlebar .l, .titlebar .r{ display:flex; align-items:center; gap:8px; overflow:hidden; }
+.titlebar .r{ color:var(--bg); opacity:.75; }
+
+.screen{ position:relative; width:100%; aspect-ratio:4/3; background:#000; overflow:hidden; cursor:pointer; }
+.screen video{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; display:block; }
+.screen:fullscreen{ width:100vw; height:100vh; aspect-ratio:auto; cursor:default; }
+.screen:-webkit-full-screen{ width:100vw; height:100vh; aspect-ratio:auto; }
+.msg{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  color:#9a9a9a; font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; text-align:center; padding:20px;
+}
+
+.controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px; border-top:1px solid var(--border); }
+.controls .grow{ flex:1; }
+.vol{ display:flex; align-items:center; gap:8px; }
+input[type=range]{ -webkit-appearance:none; appearance:none; width:110px; height:1px; background:var(--muted); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:11px; height:11px; border-radius:0; background:var(--ink); border:1px solid var(--ink); }
+input[type=range]::-moz-range-thumb{ width:11px; height:11px; border-radius:0; background:var(--ink); border:1px solid var(--ink); }
+
+.about{ display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-top:14px; font-size:11px; line-height:1.7; color:var(--muted); }
+.about a{ color:var(--ink); text-decoration:none; border-bottom:1px solid transparent; }
+.about a:hover{ border-bottom-color:var(--ink); }
+
+@media (max-width:620px){
+  header{ padding:20px 0 14px; }
+  header img{ height:44px; }
+  .row{ margin-top:20px; }
+  .vol input[type=range]{ display:none; } /* phones: use the phone's own volume buttons */
+  .controls{ padding:10px; gap:6px; }
+  .about{ margin-top:12px; }
+}
+@media (max-height:640px){ /* short windows: a smaller header leaves more room for the picture */
+  header{ padding:12px 0 10px; }
+  header img{ height:38px; }
+  .row{ margin-top:14px; }
+  .controls{ padding:8px 10px; }
+  .about{ margin-top:8px; }
+}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <header>
+    <a class="logo" href="/" title="July Radio"><img src="https://july.rip/july-radio-logo-header.png" alt="July Radio"></a>
+    <div class="head-right">
+      <span class="clock" id="clock"></span>
+      <a class="btn" href="/">Listen ▶</a>
+      <button class="btn" id="themeBtn" type="button">Dark</button>
+    </div>
+  </header>
+
+  <div class="row">
+    <div class="tvwin" id="tvwin">
+      <div class="titlebar">
+        <span class="l"><span class="dot"></span>July Music Television</span>
+        <span class="r" id="state">Connecting</span>
+      </div>
+      <div class="screen" id="screen">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="msg" id="msg">Connecting…</div>
+      </div>
+      <div class="controls" id="controls">
+        <button class="btn" id="playBtn" type="button">Pause</button>
+        <div class="vol">
+          <button class="btn" id="muteBtn" type="button">Sound: off</button>
+          <input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume">
+        </div>
+        <span class="grow"></span>
+        <button class="btn" id="fsBtn" type="button">Full screen</button>
+      </div>
+    </div>
+    <div class="guide">
+      <div class="titlebar"><span class="l">Now playing</span><span class="r" id="left"></span></div>
+      <div class="g-now"><div class="g-song" id="nowSong">…</div><div class="g-artist" id="nowArtist"></div><div class="prog"><i id="prog"></i></div></div>
+      <div class="g-label">Up next</div>
+      <div class="g-list" id="nextList"></div>
+    </div>
+  </div>
+  <div class="about" id="about">
+    <span>Our archive music television project, playing music videos from all eras.</span>
+    <a href="/">july.rip</a>
+  </div>
+</div>
+
+<script>
+const TV_URL = 'https://tv.july.rip/iptv/channel/10.m3u8';
+const $ = id => document.getElementById(id);
+const video = $('video'), screenEl = $('screen');
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+// ── Theme (same setting as the rest of july.rip) ──
+function paintThemeBtn() { $('themeBtn').textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark'; }
+$('themeBtn').onclick = () => {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t); store.set('july-theme', t); paintThemeBtn();
+};
+paintThemeBtn();
+
+// ── Nairobi clock ──
+function tick() {
+  $('clock').textContent = new Intl.DateTimeFormat('en-GB', { timeZone:'Africa/Nairobi', hour:'2-digit', minute:'2-digit', hour12:false }).format(new Date()) + ' EAT · Nairobi';
+}
+tick(); setInterval(tick, 10000);
+
+// ── Stream ──
+let hls = null, retry = null, wantPlay = true;
+function showMsg(t) { $('msg').textContent = t; $('msg').style.display = t ? 'flex' : 'none'; }
+function setState(t) { $('state').textContent = t; }
+function fail() {
+  showMsg('TV is off air right now · trying again');
+  setState('Off air');
+  if (hls) { hls.destroy(); hls = null; }
+  clearTimeout(retry); retry = setTimeout(start, 30000);
+}
+function start() {
+  clearTimeout(retry);
+  showMsg('Connecting…'); setState('Connecting');
+  if (window.Hls && Hls.isSupported()) {
+    hls = new Hls({ liveSyncDurationCount: 3, enableWorker: true });
+    let recovered = false;
+    hls.on(Hls.Events.ERROR, (e, data) => {
+      if (!data.fatal) return;
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; hls.recoverMediaError(); return; }
+      fail();
+    });
+    hls.on(Hls.Events.MANIFEST_PARSED, () => { if (wantPlay) video.play().catch(() => {}); });
+    hls.loadSource(TV_URL);
+    hls.attachMedia(video);
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = TV_URL;
+    video.onerror = fail;
+    if (wantPlay) video.play().catch(() => {});
+  } else {
+    showMsg('This browser cannot play the TV stream'); setState('Not supported');
+  }
+}
+video.addEventListener('playing', () => { showMsg(''); setState('Live'); paint(); keepAwake(); });
+video.addEventListener('pause', paint);
+video.addEventListener('volumechange', paint);
+video.addEventListener('waiting', () => setState('Loading'));
+
+// ── Controls ──
+function paint() {
+  $('playBtn').textContent = video.paused ? 'Play' : 'Pause';
+  const silent = video.muted || video.volume === 0;
+  $('muteBtn').textContent = silent ? 'Sound: off' : 'Sound: on';
+  $('muteBtn').classList.toggle('on', silent); // filled while the sound is off, so it's easy to find
+  if (!video.paused && $('state').textContent !== 'Loading') setState('Live');
+  if (video.paused && $('msg').style.display === 'none') setState('Paused');
+}
+function togglePlay() {
+  if (video.paused) {
+    wantPlay = true;
+    if (!hls && !video.src) start(); else video.play().catch(() => {});
+  } else { wantPlay = false; video.pause(); }
+}
+function soundOn() {
+  video.muted = false;
+  if (video.volume === 0) { video.volume = 0.8; $('vol').value = 80; }
+  if (video.paused) video.play().catch(() => {});
+}
+function toggleMute() { if (video.muted || video.volume === 0) soundOn(); else video.muted = true; }
+function fullScreen() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document); return;
+  }
+  if (screenEl.requestFullscreen) screenEl.requestFullscreen().catch(() => {});
+  else if (screenEl.webkitRequestFullscreen) screenEl.webkitRequestFullscreen();
+  else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); // iPhone
+}
+$('playBtn').onclick = togglePlay;
+$('muteBtn').onclick = toggleMute;
+$('fsBtn').onclick = fullScreen;
+screenEl.addEventListener('click', () => { if (video.muted) soundOn(); else togglePlay(); });
+screenEl.addEventListener('dblclick', fullScreen);
+const savedVol = parseInt(store.get('july_tv_vol'), 10);
+if (savedVol >= 0 && savedVol <= 100) $('vol').value = savedVol;
+video.volume = $('vol').value / 100;
+$('vol').oninput = e => { video.volume = e.target.value / 100; if (video.volume > 0) video.muted = false; store.set('july_tv_vol', e.target.value); };
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  else if (e.key === 'm' || e.key === 'M') toggleMute();
+  else if (e.key === 'f' || e.key === 'F') fullScreen();
+});
+
+// Keep the screen awake while the TV plays
+async function keepAwake() { try { if (navigator.wakeLock && !video.paused) await navigator.wakeLock.request('screen'); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) keepAwake(); });
+
+// ── GUIDE: what's on, from the TV server's own programme list (ErsatzTV XMLTV) ──
+// Music videos carry the artist in <title> and the song in <sub-title> (as on July OS).
+const GUIDE_URL = 'https://tv.july.rip/iptv/xmltv.xml', CHANNEL = '10';
+let guide = [], guideAt = 0, lastNowKey = '';
+function xmltvTime(v) { // "20261118105527 +0300" -> ms
+  const m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)\s*([+-])(\d\d)(\d\d)/.exec((v || '').trim());
+  if (!m) return 0;
+  const off = (m[7] === '-' ? -1 : 1) * (parseInt(m[8], 10) * 60 + parseInt(m[9], 10));
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - off * 60000;
+}
+async function loadGuide() {
+  try {
+    const xml = new DOMParser().parseFromString(await (await fetch(GUIDE_URL, { cache: 'no-store' })).text(), 'text/xml');
+    const out = [];
+    xml.querySelectorAll('programme').forEach(p => {
+      let id = p.getAttribute('channel') || '';
+      if (id.startsWith('C')) id = id.slice(1);
+      if (id !== CHANNEL && !id.startsWith(CHANNEL + '.')) return;
+      const st = xmltvTime(p.getAttribute('start')), sp = xmltvTime(p.getAttribute('stop'));
+      if (!(sp > st)) return;
+      const title = ((p.querySelector('title') || {}).textContent || '').trim();
+      const sub = ((p.querySelector('sub-title') || {}).textContent || '').trim();
+      out.push({ st, sp, song: sub || title, artist: sub ? title : '' });
+    });
+    out.sort((a, b) => a.st - b.st);
+    if (out.length) { guide = out; guideAt = Date.now(); }
+  } catch (e) {}
+  document.body.classList.toggle('noguide', !guide.length);
+  layout();
+  paintGuide();
+}
+// The picture runs a few seconds behind the server, so match the guide to the picture, not the clock.
+function behindMs() {
+  try {
+    if (hls && isFinite(hls.latency) && hls.latency > 0) return hls.latency * 1000;
+    const r = video.seekable;
+    if (r && r.length) return Math.max(0, (r.end(r.length - 1) - video.currentTime) * 1000);
+  } catch (e) {}
+  return 0;
+}
+const eatHM = ms => new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms));
+const mmss = ms => { const t = Math.max(0, Math.round(ms / 1000)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+function paintGuide() {
+  if (!guide.length) return;
+  const t = Date.now() - behindMs();
+  let i = guide.findIndex(g => t >= g.st && t < g.sp);
+  if (i < 0) { // between items or the list ran out: show the next one and fetch a fresh list
+    if (Date.now() - guideAt > 60000) { guideAt = Date.now(); loadGuide(); }
+    i = guide.findIndex(g => g.st > t);
+    if (i < 0) return;
+  }
+  const now = guide[i];
+  $('prog').style.width = Math.min(100, Math.max(0, (t - now.st) / (now.sp - now.st) * 100)) + '%';
+  $('left').textContent = t >= now.st ? mmss(now.sp - t) + ' left' : '';
+  const key = now.st + '|' + now.song;
+  if (key === lastNowKey) return;
+  lastNowKey = key;
+  $('nowSong').textContent = now.song;
+  $('nowArtist').textContent = now.artist;
+  const list = $('nextList');
+  list.textContent = '';
+  guide.slice(i + 1, i + 13).forEach(g => {
+    const row = document.createElement('div'); row.className = 'g-row';
+    const tm = document.createElement('div'); tm.className = 'g-time'; tm.textContent = eatHM(g.st);
+    const tx = document.createElement('div');
+    const so = document.createElement('div'); so.className = 's'; so.textContent = g.song;
+    const ar = document.createElement('div'); ar.className = 'a'; ar.textContent = g.artist;
+    tx.append(so, ar); row.append(tm, tx); list.append(row);
+  });
+  fitRows();
+  document.title = (now.artist ? now.artist + ' · ' : '') + now.song + ' | July Music Television';
+  if ('mediaSession' in navigator && window.MediaMetadata) {
+    try { navigator.mediaSession.metadata = new MediaMetadata({ title: now.song, artist: now.artist, album: 'July Music Television' }); } catch (e) {}
+  }
+}
+// Hide rows that would be cut off at the bottom of the guide window
+function fitRows() {
+  const list = $('nextList'), h = list.clientHeight;
+  Array.from(list.children).forEach(r => { r.style.visibility = (r.offsetTop - list.offsetTop + r.offsetHeight > h + 1) ? 'hidden' : ''; });
+}
+// ── LAYOUT: biggest 4:3 picture that fits the window; guide beside it when there is room, else under it ──
+function layout() {
+  const page = $('page'), body = document.body, GW = 300, GAP = 24;
+  // the window's own size (innerWidth can grow on phones when something overflows)
+  const vw = document.documentElement.clientWidth || innerWidth, vh = document.documentElement.clientHeight || innerHeight;
+  const margin = vw <= 620 ? 32 : 64;
+  const css = el => getComputedStyle(el);
+  const header = page.querySelector('header'), row = page.querySelector('.row'), tb = $('tvwin').querySelector('.titlebar');
+  const chrome = header.offsetHeight + parseFloat(css(row).marginTop) + tb.offsetHeight + $('controls').offsetHeight + 2
+    + $('about').offsetHeight + parseFloat(css($('about')).marginTop) + parseFloat(css(page).paddingBottom) + 8;
+  const fitW = Math.max(240, (vh - chrome) * 4 / 3);
+  const hasGuide = !body.classList.contains('noguide');
+  const stackW = Math.min(vw - margin, fitW);
+  const sideW = hasGuide ? Math.min(vw - margin - GW - GAP, fitW) : stackW;
+  const side = !hasGuide || sideW >= Math.max(280, stackW * 0.8);
+  const w = Math.floor(side ? sideW : (vw <= 620 ? vw - margin : stackW));
+  const total = side && hasGuide ? w + GW + GAP : w;
+  page.style.setProperty('--w', w + 'px');
+  page.style.setProperty('--total', total + 'px');
+  body.classList.toggle('stack', !side);
+  body.classList.toggle('narrow', total < 560);
+  const small = w < 500;
+  if (body.classList.contains('smalltv') !== small) { body.classList.toggle('smalltv', small); return layout(); }
+  fitRows();
+}
+window.addEventListener('resize', layout);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+layout();
+loadGuide();
+setInterval(loadGuide, 10 * 60000);
+setInterval(paintGuide, 1000);
+
+paint();
+start();
+</script>
+</body>
+</html>
