@@ -108,6 +108,29 @@
   #chatCount, #chatAcctTotal { opacity: 0.6; margin-left: 6px; }
   /* Each section title is a black title bar, like the windows on july.rip. */
   .divider { height: 0; margin: 28px 0 0; }
+  /* Phone Survey tab */
+  .sv-filter { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; }
+  .sv-filter .btn.small.on { background: var(--ink); color: var(--bg); }
+  .sv-dates { display: flex; gap: 10px; }
+  .sv-dates .field-label { margin: 0; }
+  .sv-dates input { width: 150px; margin-top: 4px; }
+  .sv-tiles { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); margin-bottom: 22px; }
+  .sv-tile { padding: 12px 14px; border-left: 1px solid var(--hair); }
+  .sv-tile:first-child { border-left: none; }
+  .sv-tile b { display: block; font-size: 26px; font-weight: 600; line-height: 1.1; }
+  .sv-tile span { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .sv-sub { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 8px; font-weight: 600; }
+  .sv-bars { margin-bottom: 22px; }
+  .sv-row { display: grid; grid-template-columns: minmax(120px, 34%) 1fr 76px; gap: 10px; align-items: center; padding: 3px 0; }
+  .sv-row:hover { background: var(--soft); }
+  .sv-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-name small { color: var(--muted); }
+  .sv-track { height: 12px; }
+  .sv-fill { height: 100%; min-width: 2px; background: var(--ink); border-radius: 0 4px 4px 0; }
+  .sv-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sv-num small { color: var(--muted); }
+  .sv-empty { color: var(--muted); font-size: 11px; padding: 4px 0; }
+  @media (max-width: 700px) { .sv-tiles { grid-template-columns: 1fr 1fr; } .sv-tile:nth-child(3) { border-left: none; } .sv-tile:nth-child(n+3) { border-top: 1px solid var(--hair); } .sv-row { grid-template-columns: 40% 1fr 64px; } }
   .section-title { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; background: var(--bar); color: var(--bar-ink); padding: 8px 12px; margin: 0 -16px 16px; }
   .divider + .section-title { border-top: 1px solid var(--border); }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -358,6 +381,7 @@
     <div class="dash-nav-item" data-perm="event" onclick="showPanel('event',this)">Event</div>
     <div class="dash-nav-item" data-perm="support" onclick="showPanel('support',this)">Support</div>
     <div class="dash-nav-item" data-perm="festive" onclick="showPanel('festive',this)">Festive Theme</div>
+    <div class="dash-nav-item" data-perm="survey" onclick="showPanel('survey',this)">Phone Survey</div>
     <div class="dash-nav-item" data-perm="users" onclick="showPanel('users',this)">Users</div>
   </div>
 
@@ -690,6 +714,46 @@
       </div>
     </div>
 
+    <!-- PHONE SURVEY (answers live in the july-chat Worker, /survey/*) -->
+    <div class="dash-panel" id="panel-survey">
+      <div class="section-title">Phone Survey</div>
+      <div class="msg" id="surveyMsg"></div>
+      <div class="hint">A small card on july.rip asks listeners "What phone are you listening on?" (phones only, never on laptops or tablets; once per phone; after Skip it can ask again in 30 days). On Android we fill in the phone for them and they confirm it. On iPhone they pick it, because Apple hides the model. No names, numbers or IP addresses are kept. Preview the card: <a href="https://july.rip/?phonetest=1" target="_blank" rel="noopener">july.rip/?phonetest=1</a> (try <b>?phonetest=iphone</b> or <b>?phonetest=android:SM-A155F</b>).</div>
+      <div class="field"><label class="field-label">The survey is</label>
+        <select id="surveyOn" onchange="saveSurveyOn()">
+          <option value="0">Off: nobody sees the card</option>
+          <option value="1">On: listeners on phones see the card</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-title">Answers</div>
+      <div class="sv-filter">
+        <div class="btn-row" id="surveyRanges">
+          <button class="btn secondary small" data-days="0" onclick="surveyRange(0,this)">All time</button>
+          <button class="btn secondary small" data-days="1" onclick="surveyRange(1,this)">Today</button>
+          <button class="btn secondary small" data-days="7" onclick="surveyRange(7,this)">7 days</button>
+          <button class="btn secondary small" data-days="30" onclick="surveyRange(30,this)">30 days</button>
+        </div>
+        <div class="sv-dates">
+          <label class="field-label">From <input type="date" id="surveyFrom" onchange="surveyCustom()"></label>
+          <label class="field-label">To <input type="date" id="surveyTo" onchange="surveyCustom()"></label>
+        </div>
+      </div>
+      <div class="sv-tiles" id="surveyTiles"></div>
+      <div class="sv-sub">iPhone or Android</div>
+      <div class="sv-bars" id="surveyPlatforms"></div>
+      <div class="sv-sub">Top brands</div>
+      <div class="sv-bars" id="surveyBrands"></div>
+      <div class="sv-sub">Top models</div>
+      <div class="sv-bars" id="surveyModels"></div>
+      <div class="hint sub">Dates are Nairobi time. "Filled in for them" means the listener kept the phone we detected; the CSV has the detected model code for every Android answer.</div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn" onclick="surveyCsv()">Download CSV</button>
+        <button class="btn secondary" onclick="loadSurvey()">Refresh</button>
+      </div>
+    </div>
+
     <!-- USERS (Head only) -->
     <div class="dash-panel" id="panel-users">
       <div class="section-title">Users <span id="usersTotal"></span></div>
@@ -958,7 +1022,7 @@ var ADMIN_TOKEN_KEY = 'july_admin_token';
 var PERM_LABELS = {
   broadcast: 'Broadcast (Last.fm / DJ set)', server: 'Server Status', chat: 'Chat (moderate, Staff badge)',
   schedule: 'Schedule', team: 'Team', ticker: 'Ticker', alerts: 'Alerts', event: 'Event',
-  support: 'Support page', festive: 'Festive Theme'
+  support: 'Support page', festive: 'Festive Theme', survey: 'Phone Survey (see answers, switch on/off)'
 };
 var SCHEDULE_LANES = ['c', 'fziwe', 'fiscia'];   // the schedules the website reads today
 
@@ -1196,6 +1260,110 @@ function showPanel(id, el) {
   if (id === 'chat') openChatPanel();
   if (id === 'users') loadUsers();
   if (id === 'covers') cvRender();
+  if (id === 'survey') loadSurvey();
+}
+
+// ── PHONE SURVEY ──────────────────────────────────────────────────────────
+// Answers and the on/off switch live in the july-chat Worker (/survey/*), checked with your login token.
+var surveyFromMs = 0, surveyToMs = 0;
+function surveyApi(path, body) {
+  return authApi('/survey/' + path, body, adminToken);
+}
+// Midnight in Nairobi (UTC+3) for a yyyy-mm-dd date, as a timestamp.
+function eatMidnight(ymd) { var p = ymd.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]) - 3 * 3600000; }
+function eatToday() { return new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10); }
+function surveyQuery() { return '?from=' + surveyFromMs + (surveyToMs ? '&to=' + surveyToMs : ''); }
+function surveyMark(btn) {
+  document.querySelectorAll('#surveyRanges .btn').forEach(function (b) { b.classList.toggle('on', b === btn); });
+}
+function surveyRange(days, btn) {
+  surveyMark(btn);
+  surveyToMs = 0;
+  surveyFromMs = days ? eatMidnight(eatToday()) - (days - 1) * 86400000 : 0;
+  document.getElementById('surveyFrom').value = days ? new Date(surveyFromMs + 3 * 3600000).toISOString().slice(0, 10) : '';
+  document.getElementById('surveyTo').value = '';
+  loadSurvey();
+}
+function surveyCustom() {
+  surveyMark(null);
+  var f = document.getElementById('surveyFrom').value, t = document.getElementById('surveyTo').value;
+  surveyFromMs = f ? eatMidnight(f) : 0;
+  surveyToMs = t ? eatMidnight(t) + 86400000 : 0;
+  loadSurvey();
+}
+function surveyBars(boxId, rows, total, label) {
+  var box = document.getElementById(boxId);
+  box.textContent = '';
+  if (!rows.length) { var e = document.createElement('div'); e.className = 'sv-empty'; e.textContent = 'No answers yet.'; box.appendChild(e); return; }
+  var max = rows[0].n;
+  rows.forEach(function (r) {
+    var pct = total ? Math.round(r.n * 100 / total) : 0;
+    var row = document.createElement('div'); row.className = 'sv-row';
+    var name = document.createElement('div'); name.className = 'sv-name';
+    label(r, name);
+    var track = document.createElement('div'); track.className = 'sv-track';
+    var fill = document.createElement('div'); fill.className = 'sv-fill'; fill.style.width = (r.n * 100 / max) + '%';
+    track.appendChild(fill);
+    var num = document.createElement('div'); num.className = 'sv-num';
+    num.textContent = r.n + ' ';
+    var sm = document.createElement('small'); sm.textContent = pct + '%'; num.appendChild(sm);
+    row.title = name.textContent + ': ' + r.n + ' (' + pct + '%)';
+    row.appendChild(name); row.appendChild(track); row.appendChild(num);
+    box.appendChild(row);
+  });
+}
+var SURVEY_TYPES = { iphone: 'iPhone', android: 'Android', other: 'Other phone' };
+async function loadSurvey() {
+  if (!document.querySelector('#surveyRanges .btn.on') && !surveyFromMs && !surveyToMs) surveyMark(document.querySelector('#surveyRanges .btn'));
+  try {
+    var d = await surveyApi('admin/stats' + surveyQuery());
+    document.getElementById('surveyOn').value = d.on ? '1' : '0';
+    var by = function (list, k) { var x = list.find(function (r) { return r.k === k; }); return x ? x.n : 0; };
+    var pct = function (n) { return d.total ? Math.round(n * 100 / d.total) + '%' : '–'; };
+    var tiles = [
+      [d.total, 'Answers'],
+      [pct(by(d.platforms, 'iphone')), 'iPhone'],
+      [pct(by(d.platforms, 'android')), 'Android'],
+      [pct(by(d.sources, 'detected')), 'Filled in for them']
+    ];
+    var tb = document.getElementById('surveyTiles'); tb.textContent = '';
+    tiles.forEach(function (t) {
+      var div = document.createElement('div'); div.className = 'sv-tile';
+      var b = document.createElement('b'); b.textContent = t[0];
+      var sp = document.createElement('span'); sp.textContent = t[1];
+      div.appendChild(b); div.appendChild(sp); tb.appendChild(div);
+    });
+    surveyBars('surveyPlatforms', d.platforms, d.total, function (r, n) { n.textContent = SURVEY_TYPES[r.k] || r.k; });
+    surveyBars('surveyBrands', d.brands, d.total, function (r, n) { n.textContent = r.k; });
+    surveyBars('surveyModels', d.models, d.total, function (r, n) {
+      if (r.brand && r.brand !== 'Apple' && r.brand !== 'Other' && r.k.toLowerCase().indexOf(r.brand.toLowerCase()) !== 0) {
+        var sm = document.createElement('small'); sm.textContent = r.brand + ' '; n.appendChild(sm);
+      }
+      n.appendChild(document.createTextNode(r.k));
+    });
+  } catch (e) {
+    showMsg('surveyMsg', 'error', e.message);
+  }
+}
+async function saveSurveyOn() {
+  var on = document.getElementById('surveyOn').value === '1';
+  try {
+    var d = await surveyApi('admin/config', { on: on });
+    showMsg('surveyMsg', 'success', d.on ? 'The survey is on. Listeners on phones will see the card (40 seconds after they arrive).' : 'The survey is off.');
+  } catch (e) {
+    showMsg('surveyMsg', 'error', e.message);
+    loadSurvey();
+  }
+}
+async function surveyCsv() {
+  try {
+    var res = await fetch(CHAT_HTTP + '/survey/admin/csv' + surveyQuery(), { headers: { 'Authorization': 'Bearer ' + adminToken }, cache: 'no-store' });
+    if (!res.ok) { var d = {}; try { d = await res.json(); } catch (e) {} throw new Error(d.error || 'Could not download.'); }
+    var url = URL.createObjectURL(await res.blob());
+    var a = document.createElement('a'); a.href = url; a.download = 'july-phone-survey-' + eatToday() + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  } catch (e) { showMsg('surveyMsg', 'error', e.message); }
 }
 
 // ── CHAT ──────────────────────────────────────────────────────────────────
